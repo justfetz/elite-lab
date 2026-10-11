@@ -41,17 +41,33 @@ TOPK = 6
 
 
 # ---------- indexing & retrieval (always local) ----------
+def _chunk(text, label_prefix, size=1500):
+    for i in range(0, len(text), size):
+        yield f"{label_prefix} {i // size + 1}", text[i:i + size]
+
+
 def _read_file(path):
-    """Yield (page_label, text) for a file."""
-    if path.suffix.lower() == ".pdf":
-        from pypdf import PdfReader
-        for i, page in enumerate(PdfReader(str(path)).pages, 1):
-            yield f"p.{i}", (page.extract_text() or "")
-    else:
-        # txt/md: split into ~1500-char pseudo-pages so citations stay granular
-        text = path.read_text(encoding="utf-8", errors="ignore")
-        for i in range(0, len(text), 1500):
-            yield f"chunk {i // 1500 + 1}", text[i:i + 1500]
+    """Yield (label, text) for a file. PDFs go page-by-page (so citations are p.N);
+    other formats go through Microsoft's markitdown when available."""
+    ext = path.suffix.lower()
+    if ext == ".pdf":
+        try:
+            from pypdf import PdfReader
+            for i, page in enumerate(PdfReader(str(path)).pages, 1):
+                yield f"p.{i}", (page.extract_text() or "")
+            return
+        except Exception:
+            pass  # fall through to markitdown for tricky PDFs
+    if ext in {".txt", ".md"}:
+        yield from _chunk(path.read_text(encoding="utf-8", errors="ignore"), "chunk")
+        return
+    # docx/pptx/html/epub/pdf-fallback: markitdown -> one markdown doc, chunked
+    try:
+        from markitdown import MarkItDown
+    except ImportError:
+        sys.exit(f"{path.name}: need markitdown for this format.  pip install markitdown")
+    md = MarkItDown().convert(str(path)).text_content
+    yield from _chunk(md, "section")
 
 
 def build():
@@ -63,8 +79,9 @@ def build():
     if not BOOKS.is_dir() or not any(BOOKS.iterdir()):
         sys.exit("Put books you own (.pdf/.txt/.md) in ./books/ first.")
     chunks, meta = [], []
+    exts = {".pdf", ".txt", ".md", ".docx", ".pptx", ".html", ".htm", ".epub"}
     for f in sorted(BOOKS.iterdir()):
-        if f.suffix.lower() not in {".pdf", ".txt", ".md"}:
+        if f.suffix.lower() not in exts:
             continue
         for label, text in _read_file(f):
             if len((text or "").strip()) > 40:

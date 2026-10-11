@@ -81,6 +81,11 @@ def build_parser(modules):
     sub.add_parser("progress", help="show quiz scores")
     sub.add_parser("reset", help="clear progress")
 
+    # run: command a real tool, learn the lesson
+    rp = sub.add_parser("run", help="run a real security tool and get a taught debrief")
+    rp.add_argument("toolargs", nargs=argparse.REMAINDER,
+                    help="tool and its args, e.g. nmap 127.0.0.1")
+
     # lab: HTB-style missions
     lab = sub.add_parser("lab", help="missions: goal, flag, hints, checker")
     lsub = lab.add_subparsers(dest="lab_action")
@@ -110,5 +115,9 @@ def main(argv=None):
     if args.command == "lab":
         action = args.lab_action or "list"
         LAB_HANDLERS[action](args)
+        return
+    if args.command == "run":
+        from .runner import run as run_tool
+        run_tool(args)
         return
     handlers[args.command](modules, args)

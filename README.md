@@ -65,6 +65,7 @@ Common commands:
 | `elite lab start <id>` | Set up a mission (generates the artifact to work on) |
 | `elite lab hint <id>` | Unlock the next hint |
 | `elite lab submit <id> <flag>` | Check your captured flag |
+| `elite run <tool> ...` | Run a real tool (e.g. `nmap 127.0.0.1`) and get a taught debrief |
 | `elite progress` | Your best score and attempts per module |
 | `elite reset` | Clear saved progress |
 
