@@ -1,0 +1,88 @@
+{
+  "key": "security",
+  "title": "Security principles",
+  "order": 20,
+  "lessons": [
+    {
+      "title": "The CIA triad",
+      "body": "Confidentiality - only authorised people can read it. Integrity - it is not changed without permission. Availability - it works when needed. For any threat, ask which of the three it attacks."
+    },
+    {
+      "title": "AuthN vs AuthZ",
+      "body": "Authentication = proving who you are. Authorisation = what you may do once known. Factors: something you know (password), have (key/phone), are (biometric). MFA mixes DIFFERENT factor types; two passwords is not MFA. Phishing-resistant MFA (passkeys, hardware keys) beats SMS codes."
+    },
+    {
+      "title": "Design rules",
+      "body": "Least privilege - minimum access needed. Defense in depth - layer controls. Fail securely - deny on error. Zero trust - verify every request, never trust by location. Kerckhoffs: assume the attacker knows your design; only the keys are secret."
+    },
+    {
+      "title": "Hashing vs encryption",
+      "body": "Encryption is reversible with a key (symmetric AES for bulk; asymmetric RSA/ECC for key exchange and signatures). Hashing is one-way, fixed-size output. Store passwords with a slow salted hash (bcrypt, scrypt, Argon2) - never plain SHA-256, MD5, or reversible encryption. TLS uses asymmetric to agree a key, then symmetric for speed."
+    },
+    {
+      "title": "Attack classes and defenses",
+      "body": "Phishing -> training, phishing-resistant MFA. SQL injection -> parameterised queries. XSS -> output encoding, CSP. Memory corruption -> memory-safe languages. MITM -> TLS with cert validation. DDoS -> rate limiting, CDNs. The pattern: most attacks exploit the line between DATA and CODE, or between trusted and untrusted input."
+    },
+    {
+      "title": "Rules of engagement",
+      "body": "Only test systems you own or have WRITTEN permission to test. Unauthorised access is a crime (US CFAA, UK Computer Misuse Act). Practise legally: your own VM lab, deliberately vulnerable apps (OWASP Juice Shop, DVWA), and CTFs (picoCTF, TryHackMe, Hack The Box). Found a real bug? Use responsible disclosure or a bug bounty."
+    }
+  ],
+  "quiz": [
+    {
+      "q": "A DDoS attack mainly targets which CIA property?",
+      "options": [
+        "Confidentiality",
+        "Integrity",
+        "Availability",
+        "Authenticity"
+      ],
+      "answer": 2,
+      "why": "It knocks a service offline: availability."
+    },
+    {
+      "q": "Which is true MFA?",
+      "options": [
+        "Password + security question",
+        "Password + hardware key",
+        "Two passwords",
+        "Username + password"
+      ],
+      "answer": 1,
+      "why": "Know + have are different factor types."
+    },
+    {
+      "q": "How should passwords be stored?",
+      "options": [
+        "AES-encrypted",
+        "MD5",
+        "Slow salted hash (Argon2)",
+        "Plain text, access-controlled"
+      ],
+      "answer": 2,
+      "why": "Slow salted hashes make stolen databases expensive to crack."
+    },
+    {
+      "q": "Main defense against SQL injection?",
+      "options": [
+        "A firewall",
+        "Parameterised queries",
+        "Longer passwords",
+        "HTTPS"
+      ],
+      "answer": 1,
+      "why": "Parameterised queries keep user input as data, never code."
+    },
+    {
+      "q": "Giving a program only the access it needs is...",
+      "options": [
+        "Defense in depth",
+        "Zero trust",
+        "Least privilege",
+        "Fail securely"
+      ],
+      "answer": 2,
+      "why": "Least privilege limits blast radius if it's compromised."
+    }
+  ]
+}

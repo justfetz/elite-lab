@@ -1,0 +1,35 @@
+{
+  "key": "tools-ad",
+  "title": "Tools: Active Directory",
+  "order": 70,
+  "lessons": [
+    {
+      "title": "Why AD is the enterprise battleground",
+      "body": "Most companies run on Active Directory, so most real intrusions become AD attacks: steal one credential, then find a path to Domain Admin. Build a lab first - free Windows Server evaluation VMs, or the GOAD ('Game of Active Directory') project, which stands up a whole deliberately vulnerable domain for you to practise on legally."
+    }
+  ],
+  "tools": [
+    {
+      "name": "BloodHound",
+      "what": "Maps an Active Directory domain as a graph and finds attack paths - e.g. 'this normal user can eventually reach Domain Admin via these three hops'. Defenders use the same graph to find and cut those paths. A collector (SharpHound) gathers the data; BloodHound visualises it.",
+      "legal": "Only run this against machines you own or have explicit written permission to test. Scanning or attacking other systems is illegal.",
+      "install": "BloodHound Community Edition (Docker); SharpHound collector on the domain.",
+      "try": [
+        "# run SharpHound in your lab domain, then import the data into BloodHound and run",
+        "# the built-in query 'Shortest paths to Domain Admins'"
+      ],
+      "exercise": "In your GOAD/eval lab, collect with SharpHound and find the shortest path to Domain Admin. Then change one group membership and watch the path disappear. That is remediation."
+    },
+    {
+      "name": "Impacket",
+      "what": "A Python toolkit implementing Windows network protocols (SMB, Kerberos, RPC). Its example scripts (secretsdump, psexec, GetUserSPNs for Kerberoasting) are the workhorses of AD testing and of understanding how those protocols really work.",
+      "legal": "Only run this against machines you own or have explicit written permission to test. Scanning or attacking other systems is illegal.",
+      "install": "`pipx install impacket` or clone the repo.",
+      "try": [
+        "GetUserSPNs.py lab.local/user:pass -dc-ip 10.0.0.10 -request   # your lab DC only"
+      ],
+      "exercise": "In your lab, Kerberoast a service account with GetUserSPNs, crack the ticket offline with hashcat, then fix it by setting a long managed-service-account password. Attack then defend."
+    }
+  ],
+  "quiz": []
+}

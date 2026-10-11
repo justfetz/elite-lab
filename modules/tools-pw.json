@@ -1,0 +1,35 @@
+{
+  "key": "tools-pw",
+  "title": "Tools: password & hash cracking",
+  "order": 80,
+  "lessons": [
+    {
+      "title": "Why cracking teaches defense",
+      "body": "Cracking your own test hashes is the fastest way to internalise why slow salted hashing matters. Fast unsalted hashes (MD5, raw SHA-256) fall in seconds; bcrypt/scrypt/Argon2 with a good cost factor resist even GPUs. You learn the defense by feeling the attack."
+    }
+  ],
+  "tools": [
+    {
+      "name": "Hashcat",
+      "what": "The leading GPU password cracker. Takes a hash type and a wordlist or mask and tries candidates at enormous speed. Great for proving to yourself how weak fast hashes are.",
+      "legal": "Only run this against machines you own or have explicit written permission to test. Scanning or attacking other systems is illegal.",
+      "install": "`sudo apt install hashcat`; a GPU helps but CPU works for learning.",
+      "try": [
+        "hashcat -m 0 -a 0 your_md5_hashes.txt rockyou.txt    # hashes YOU generated"
+      ],
+      "exercise": "Hash a list of weak passwords you make up with MD5, crack them with hashcat, then re-hash the same list with bcrypt and try again. Time both. That contrast is the lesson."
+    },
+    {
+      "name": "John the Ripper",
+      "what": "The classic, format-rich cracker (jumbo edition handles hundreds of hash types). Its *2john helpers turn files (zip, pdf, shadow) into crackable hashes - useful for understanding where hashes hide.",
+      "legal": "Only run this against machines you own or have explicit written permission to test. Scanning or attacking other systems is illegal.",
+      "install": "`sudo apt install john` (get the 'jumbo' build for more formats).",
+      "try": [
+        "unshadow /etc/passwd /etc/shadow > mine.txt   # on your OWN machine",
+        "john --wordlist=rockyou.txt mine.txt"
+      ],
+      "exercise": "On a throwaway VM you control, add a user with a weak password and crack it from the shadow file. Then set a strong passphrase and watch the wordlist attack fail."
+    }
+  ],
+  "quiz": []
+}

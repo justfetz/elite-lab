@@ -1,0 +1,14 @@
+# Never commit copyrighted books or anything derived from them
+books/
+*.pdf
+*.epub
+book_index/
+.book_index.pkl
+
+# Progress and local junk
+.elite_lab_progress.json
+__pycache__/
+*.pyc
+.venv/
+venv/
+.DS_Store

@@ -1,0 +1,45 @@
+{
+  "key": "tools-web",
+  "title": "Tools: web app testing",
+  "order": 60,
+  "lessons": [
+    {
+      "title": "Why web is the biggest attack surface",
+      "body": "Most organisations expose far more web than anything else, and web bugs are where a database background pays off fastest. Set up a deliberately vulnerable target first (OWASP Juice Shop or DVWA in Docker) so every tool below has something legal to hit."
+    }
+  ],
+  "tools": [
+    {
+      "name": "Burp Suite (Community)",
+      "what": "An intercepting proxy: it sits between your browser and a site so you can read and modify every request. The free edition does manual testing and repeating requests; Pro adds an automated scanner. This is the center of most web testing.",
+      "legal": "Only run this against machines you own or have explicit written permission to test. Scanning or attacking other systems is illegal.",
+      "install": "Download from PortSwigger; bundled in Kali. Pair with PortSwigger's free Web Security Academy.",
+      "try": [
+        "# point your browser's proxy at 127.0.0.1:8080, then browse your local Juice Shop"
+      ],
+      "exercise": "Intercept a login on your local Juice Shop, change one field, and forward it. Watch how the server reacts - that is the whole game of web testing."
+    },
+    {
+      "name": "ffuf",
+      "what": "A fast web fuzzer: it requests many paths/parameters from a wordlist to discover hidden pages, directories, or parameters a site did not advertise.",
+      "legal": "Only run this against machines you own or have explicit written permission to test. Scanning or attacking other systems is illegal.",
+      "install": "`sudo apt install ffuf` or `go install`.",
+      "try": [
+        "ffuf -u http://localhost:3000/FUZZ -w /usr/share/wordlists/dirb/common.txt"
+      ],
+      "exercise": "Fuzz your local lab app for hidden directories. Compare what ffuf finds to what the site links to - the gap is attack surface."
+    },
+    {
+      "name": "sqlmap",
+      "what": "Automates finding and exploiting SQL injection: detects injectable parameters, fingerprints the DBMS, and can dump data. With ten years of SQL Server you will understand exactly what it does under the hood - and why parameterised queries stop it.",
+      "legal": "Only run this against machines you own or have explicit written permission to test. Scanning or attacking other systems is illegal.",
+      "install": "`sudo apt install sqlmap` or `pip install sqlmap`.",
+      "try": [
+        "sqlmap -u 'http://localhost/item?id=1' --batch        # your own lab app",
+        "sqlmap -u 'http://localhost/item?id=1' --dbs --batch"
+      ],
+      "exercise": "Stand up a tiny vulnerable PHP+SQL app (or DVWA) on localhost, let sqlmap find the injection, then rewrite the query with parameters and watch sqlmap fail. That before/after is a great blog post."
+    }
+  ],
+  "quiz": []
+}

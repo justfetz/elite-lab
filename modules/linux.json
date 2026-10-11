@@ -1,0 +1,54 @@
+{
+  "key": "linux",
+  "title": "Linux fundamentals",
+  "order": 40,
+  "lessons": [
+    {
+      "title": "Everything is a file; the shell",
+      "body": "Files, devices, even processes appear under the filesystem. The shell (bash/zsh) glues small tools with pipes: `cmd1 | cmd2` feeds one's output into the next. Core tools: ls, cd, cat, less, grep (search), find (locate files), awk/cut (columns), sort, uniq, wc. Learning to chain these is 80% of day-to-day Linux and log analysis."
+    },
+    {
+      "title": "Permissions and users",
+      "body": "Each file has an owner, a group, and rwx bits for owner/group/other (e.g. 0640). root (uid 0) can do anything. sudo runs one command as root. Least privilege on Linux = correct ownership and mode, plus not running as root. SUID binaries run as their owner regardless of who launches them - a classic privilege-escalation hunting ground."
+    },
+    {
+      "title": "Processes and networking from the shell",
+      "body": "ps/top show processes; kill sends signals. ss -tulpn shows listening sockets and the program behind each port - the Linux answer to 'what's exposed on this box'. systemctl manages services (the systemd equivalent of Windows services). Logs live in journalctl and /var/log."
+    }
+  ],
+  "quiz": [
+    {
+      "q": "Which command shows listening ports and their programs?",
+      "options": [
+        "ls -l",
+        "ss -tulpn",
+        "chmod 777",
+        "grep -r"
+      ],
+      "answer": 1,
+      "why": "ss -tulpn: TCP/UDP listening sockets with PID/program."
+    },
+    {
+      "q": "A SUID binary runs with...",
+      "options": [
+        "the caller's privileges",
+        "the file owner's privileges",
+        "no privileges",
+        "root always"
+      ],
+      "answer": 1,
+      "why": "It runs as its owner - why misconfigured SUID is a privesc path."
+    },
+    {
+      "q": "What does `grep error app.log | wc -l` do?",
+      "options": [
+        "Deletes errors",
+        "Counts lines containing 'error'",
+        "Sorts the log",
+        "Opens an editor"
+      ],
+      "answer": 1,
+      "why": "grep filters to matching lines, wc -l counts them."
+    }
+  ]
+}

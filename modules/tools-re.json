@@ -1,0 +1,47 @@
+{
+  "key": "tools-re",
+  "title": "Tools: reverse engineering & bare metal",
+  "order": 90,
+  "lessons": [
+    {
+      "title": "Reading what code really does",
+      "body": "The bare-metal track: compile your own small C programs, then read what they became. This is how you build the muscle that closed-source and exploitation work both need - and it never goes stale."
+    }
+  ],
+  "tools": [
+    {
+      "name": "gdb (with pwndbg/GEF)",
+      "what": "The GNU debugger: step through a program instruction by instruction, inspect registers and memory, set breakpoints. The pwndbg/GEF add-ons make it far friendlier for security work.",
+      "legal": "Only run this against machines you own or have explicit written permission to test. Scanning or attacking other systems is illegal.",
+      "install": "`sudo apt install gdb`; then install pwndbg or GEF.",
+      "try": [
+        "gcc -g -o hello hello.c",
+        "gdb ./hello",
+        "# break main ; run ; info registers ; x/8x $sp"
+      ],
+      "exercise": "Write a 10-line C program, compile with -g, and step through main in gdb. Watch the stack change as you call a function. That picture is the foundation of exploitation."
+    },
+    {
+      "name": "Ghidra",
+      "what": "The NSA's free reverse-engineering suite. Disassembles and decompiles a binary into readable C-like pseudocode, so you can study what a program does without source.",
+      "legal": "Only run this against machines you own or have explicit written permission to test. Scanning or attacking other systems is illegal.",
+      "install": "Download Ghidra (needs a JDK).",
+      "try": [
+        "# open a small binary YOU compiled and compare Ghidra's decompilation to your source"
+      ],
+      "exercise": "Compile a tiny program, open it in Ghidra, and match the decompiled output back to your own code. Doing this on code you wrote builds intuition fast."
+    },
+    {
+      "name": "AFL++",
+      "what": "A coverage-guided fuzzer: it mutates inputs by the millions and watches which ones reach new code or crash the target. Your optimization background fits here - a fuzzer is a search algorithm over the input space.",
+      "legal": "Only run this against machines you own or have explicit written permission to test. Scanning or attacking other systems is illegal.",
+      "install": "`sudo apt install afl++` or build from source.",
+      "try": [
+        "afl-cc -o target target.c",
+        "afl-fuzz -i seeds -o out -- ./target @@"
+      ],
+      "exercise": "Write a small C parser with a deliberate bug, fuzz it with AFL++, and catch the crash. Then fix it and confirm the crash is gone. That loop is real vulnerability research in miniature."
+    }
+  ],
+  "quiz": []
+}

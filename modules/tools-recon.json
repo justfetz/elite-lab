@@ -1,0 +1,36 @@
+{
+  "key": "tools-recon",
+  "title": "Tools: recon & scanning",
+  "order": 50,
+  "lessons": [
+    {
+      "title": "The recon mindset",
+      "body": "Before attacking anything you map it: which hosts are alive, which ports are open, what software and versions answer. Every open port is a service; every service is a version; every version may have known bugs. Recon is just disciplined curiosity, and it is the same whether you are attacking a lab or defending your own network."
+    }
+  ],
+  "tools": [
+    {
+      "name": "nmap",
+      "what": "The standard port scanner and service mapper. Finds live hosts, open ports, service versions, and OS guesses. Open = a program answers (SYN-ACK); closed = RST; filtered = no reply (firewall). A SYN scan (-sS) is fast and never completes the handshake.",
+      "legal": "Only run this against machines you own or have explicit written permission to test. Scanning or attacking other systems is illegal.",
+      "install": "Preinstalled on Kali; else `sudo apt install nmap` / `brew install nmap`.",
+      "try": [
+        "nmap localhost",
+        "nmap -sV 127.0.0.1",
+        "nmap -sS -p- 10.0.0.0/24   # your own lab subnet"
+      ],
+      "exercise": "Scan your own machine with -sV. For each open port, name the program and decide whether it should be open. That question is network hardening in one line."
+    },
+    {
+      "name": "masscan",
+      "what": "An internet-scale asynchronous scanner - like nmap but built for huge address ranges at high packet rates. Use it to find live ports fast, then hand those to nmap -sV for detail.",
+      "legal": "Only run this against machines you own or have explicit written permission to test. Scanning or attacking other systems is illegal.",
+      "install": "`sudo apt install masscan`.",
+      "try": [
+        "masscan 10.0.0.0/24 -p80,443 --rate 1000   # your own lab only"
+      ],
+      "exercise": "On your lab subnet, masscan for open 80/443, then re-scan just those hosts with nmap -sV. Notice the speed-vs-detail tradeoff."
+    }
+  ],
+  "quiz": []
+}

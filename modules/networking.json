@@ -1,0 +1,95 @@
+{
+  "key": "networking",
+  "title": "Networking fundamentals",
+  "order": 10,
+  "lessons": [
+    {
+      "title": "The OSI model",
+      "body": "Seven layers, bottom to top:\n  1 Physical     bits on wire, fibre or radio\n  2 Data Link    frames on one network (Ethernet, MAC, switches)\n  3 Network      packets between networks (IP, routers)\n  4 Transport    end-to-end delivery between programs (TCP, UDP, ports)\n  5 Session      managing conversations\n  6 Presentation encoding, compression, encryption formats\n  7 Application  what programs speak (HTTP, DNS, SMTP)\nMnemonic: Please Do Not Throw Sausage Pizza Away. Real networks use the simpler 4-layer TCP/IP model, but people still say 'layer 3' and 'layer 7' from OSI."
+    },
+    {
+      "title": "IP addresses and CIDR",
+      "body": "IPv4 is 32 bits as four 0-255 numbers. CIDR 192.168.1.0/24 means the first 24 bits are the network, the rest number hosts.\n  /24 = 256 addresses, 254 usable hosts\n  usable = 2^(32-prefix) - 2  (network + broadcast are reserved)\nPrivate ranges: 10.0.0.0/8, 172.16.0.0/12, 192.168.0.0/16. 127.0.0.1 is loopback."
+    },
+    {
+      "title": "TCP vs UDP",
+      "body": "TCP: connection-oriented, reliable, ordered. Handshake is SYN -> SYN-ACK -> ACK. Used by web, SSH, email.\nUDP: connectionless, no guarantees, low overhead. Used by DNS, video, games.\nTCP when every byte matters; UDP when speed matters more than perfection."
+    },
+    {
+      "title": "Ports",
+      "body": "IP finds the machine; the port (0-65535) finds the program. Memorise:\n  22 SSH   53 DNS   80 HTTP   443 HTTPS   445 SMB   3389 RDP\n  88 Kerberos   135 RPC   389 LDAP   5985 WinRM  (the Windows/AD cluster)\nEvery open port is a door. Telnet (23) and plain FTP (21) send passwords in clear text."
+    },
+    {
+      "title": "DNS",
+      "body": "Names to IPs. Your resolver walks root -> TLD -> authoritative servers. Records: A (IPv4), AAAA (IPv6), CNAME (alias), MX (mail), TXT (SPF/DKIM), NS. Runs on UDP 53 (TCP for big answers). Answers cache for their TTL."
+    }
+  ],
+  "quiz": [
+    {
+      "q": "Which OSI layer do routers and IP addresses operate at?",
+      "options": [
+        "Layer 2",
+        "Layer 3",
+        "Layer 4",
+        "Layer 7"
+      ],
+      "answer": 1,
+      "why": "Layer 3 (Network) routes packets between networks by IP."
+    },
+    {
+      "q": "Correct order of the TCP three-way handshake?",
+      "options": [
+        "SYN, ACK, SYN-ACK",
+        "SYN, SYN-ACK, ACK",
+        "ACK, SYN, SYN-ACK",
+        "SYN-ACK, SYN, ACK"
+      ],
+      "answer": 1,
+      "why": "Client SYN, server SYN-ACK, client ACK."
+    },
+    {
+      "q": "Usable hosts in a /24?",
+      "options": [
+        "256",
+        "255",
+        "254",
+        "128"
+      ],
+      "answer": 2,
+      "why": "256 addresses minus network and broadcast = 254."
+    },
+    {
+      "q": "Which is a private IP?",
+      "options": [
+        "8.8.8.8",
+        "172.20.4.1",
+        "172.32.0.1",
+        "11.0.0.5"
+      ],
+      "answer": 1,
+      "why": "172.16.0.0/12 spans 172.16-172.31, so 172.20.4.1 is private."
+    },
+    {
+      "q": "A live video call most likely uses...",
+      "options": [
+        "TCP",
+        "UDP",
+        "SMTP",
+        "ARP"
+      ],
+      "answer": 1,
+      "why": "Real-time media prefers UDP; a late packet is useless."
+    },
+    {
+      "q": "Which port is Kerberos?",
+      "options": [
+        "88",
+        "389",
+        "445",
+        "3389"
+      ],
+      "answer": 0,
+      "why": "Kerberos is TCP/UDP 88, central to Active Directory auth."
+    }
+  ]
+}

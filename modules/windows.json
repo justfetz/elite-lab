@@ -1,0 +1,88 @@
+{
+  "key": "windows",
+  "title": "Windows internals",
+  "order": 30,
+  "lessons": [
+    {
+      "title": "Processes",
+      "body": "A process is the container for a running program: private virtual memory, an image (.exe), a PID and a parent, an access TOKEN (its security identity), a handle table (open files/keys/objects), and one or more threads. Threads run code; the process just holds resources. A process can normally only do what its token's user can do."
+    },
+    {
+      "title": "Access tokens and privileges",
+      "body": "The token answers 'who is this and what may it do': the user SID, group SIDs, and privileges (e.g. SeDebugPrivilege, SeBackupPrivilege). SYSTEM is the most powerful local identity. Privilege escalation is almost always about getting a more powerful token - by abusing a service, a privilege, or a misconfiguration."
+    },
+    {
+      "title": "Services",
+      "body": "A service is a background process managed by the Service Control Manager (services.exe). It can start at boot with no user logged in, usually runs under LocalSystem/LocalService/NetworkService, and is configured under HKLM\\SYSTEM\\CurrentControlSet\\Services. Many share svchost.exe. Because they often run as SYSTEM and auto-start, misconfigured services (e.g. a binary users can overwrite, or an unquoted service path) are classic privilege-escalation paths and malware persistence."
+    },
+    {
+      "title": "The Windows API and system calls",
+      "body": "Programs can't touch hardware directly; they ask the OS through the Win32 API (kernel32/advapi32/user32.dll). Calls funnel down to ntdll.dll (the Native API) and then a syscall into the kernel, which does the work and checks permissions. A program's API calls reveal intent: OpenProcess + WriteProcessMemory + CreateRemoteThread together signal code injection, which is exactly what EDR watches for."
+    },
+    {
+      "title": "The registry and autostart",
+      "body": "The registry is Windows' central config database (hives like HKLM and HKCU). Attackers and admins both care about autostart extensibility points (ASEPs): Run/RunOnce keys, services, scheduled tasks, startup folders. Enumerating every place code can start is the core of both malware persistence and hunting for it (Autoruns lists them all)."
+    },
+    {
+      "title": "Objects, handles and securable resources",
+      "body": "The Object Manager tracks kernel objects (files, processes, registry keys, mutexes...). You get a HANDLE to one, and each access is checked against the object's security descriptor (its owner and ACL) using your token. 'Can this user open this file for write?' is an access check: token vs ACL. Most Windows privilege bugs are a wrong answer to that question."
+    }
+  ],
+  "quiz": [
+    {
+      "q": "What carries a process's security identity?",
+      "options": [
+        "Its PID",
+        "Its access token",
+        "Its handle table",
+        "Its parent process"
+      ],
+      "answer": 1,
+      "why": "The token holds the user SID, groups and privileges."
+    },
+    {
+      "q": "Most Windows services run under which kind of account?",
+      "options": [
+        "A normal user",
+        "Privileged accounts like LocalSystem",
+        "No account",
+        "The guest account"
+      ],
+      "answer": 1,
+      "why": "LocalSystem/LocalService/NetworkService - why services are a privesc target."
+    },
+    {
+      "q": "Which API combination suggests code injection?",
+      "options": [
+        "CreateFile + ReadFile",
+        "OpenProcess + WriteProcessMemory + CreateRemoteThread",
+        "RegOpenKey + RegCloseKey",
+        "GetSystemTime + Sleep"
+      ],
+      "answer": 1,
+      "why": "Open another process, write into it, run a thread there."
+    },
+    {
+      "q": "An 'access check' compares...",
+      "options": [
+        "two passwords",
+        "a token against an object's security descriptor",
+        "a hash against a salt",
+        "a port against a firewall rule"
+      ],
+      "answer": 1,
+      "why": "Your token's SIDs/privileges vs the object's owner and ACL."
+    },
+    {
+      "q": "Where do services and Run keys both matter for attackers?",
+      "options": [
+        "Encryption",
+        "Autostart / persistence",
+        "Networking",
+        "Compression"
+      ],
+      "answer": 1,
+      "why": "They are autostart extensibility points - ways to survive reboot."
+    }
+  ]
+}
