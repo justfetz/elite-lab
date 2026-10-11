@@ -97,7 +97,9 @@ See `CURRICULUM.md` for the full "how data moves" layer map and the mission road
 
 | Module | Covers |
 |--------|--------|
+| `threat-modeling` | the four questions, STRIDE, data-flow diagrams & trust boundaries — the method for finding every hit point |
 | `networking` | OSI model, IP addressing & CIDR, TCP vs UDP, ports, DNS |
+| `web-vulns` | how bug hunters work, IDOR, XSS, CSRF, SSRF, auth/logic flaws |
 | `security` | CIA triad, authentication vs authorization, hashing vs encryption, attack classes & defenses, rules of engagement |
 | `windows` | processes, access tokens & privileges, services, the Windows API & syscalls, the registry & autostart, objects/handles & access checks |
 | `linux` | the shell and pipes, permissions & SUID, processes and listening sockets |

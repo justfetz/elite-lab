@@ -1,0 +1,73 @@
+{
+  "key": "threat-modeling",
+  "title": "Threat modeling",
+  "order": 5,
+  "lessons": [
+    {
+      "title": "The four questions",
+      "body": "Threat modeling is just a disciplined way to ask, of anything you build:\n  1. What are we building?        (model the system)\n  2. What can go wrong?           (find the threats)\n  3. What are we going to do?     (mitigate them)\n  4. Did we do a good job?        (check your work)\nThat's the whole method. For Northwind AI it's how you derive the hit points BEFORE you start breaking things - instead of poking randomly, you model the system, enumerate what can go wrong at each part, and turn each threat into a mission. Threat modeling is the map; the missions are you walking it."
+    },
+    {
+      "title": "STRIDE - what can go wrong",
+      "body": "STRIDE is a checklist of the six things that go wrong, each the violation of one security property:\n  Spoofing                -> breaks Authentication   (pretending to be someone)\n  Tampering               -> breaks Integrity        (changing data/code)\n  Repudiation             -> breaks Non-repudiation   (denying you did it)\n  Information disclosure   -> breaks Confidentiality   (leaking data)\n  Denial of service       -> breaks Availability      (knocking it offline)\n  Elevation of privilege   -> breaks Authorization      (gaining rights)\nWalk each component and ask 'which of these apply?'. Our missions ARE STRIDE: crack-01 is Spoofing (stolen creds), app-01 SQLi is Tampering + Information disclosure + Elevation of privilege, bin-01 defeats a check (Tampering/EoP), wire-01 is about catching it so the attacker can't repudiate."
+    },
+    {
+      "title": "Data flow diagrams and trust boundaries",
+      "body": "To find threats you first draw the system as a data flow diagram with four shapes:\n  - external entities (users, other systems)   - squares\n  - processes (your code, the app, the agent)   - circles\n  - data stores (SQL Server, files, the index)  - parallel lines\n  - data flows (requests, queries, documents)   - arrows\nThen draw TRUST BOUNDARIES: lines where data crosses from less-trusted to more-trusted (browser -> app, app -> SQL Server, a customer's uploaded doc -> the RAG index). Threats cluster on those boundaries. Northwind's boundaries: the internet edge, the app-to-database link, the AD domain edge, and - the new one - untrusted content flowing into the AI agent."
+    },
+    {
+      "title": "What to do about a threat",
+      "body": "For every threat you have four responses:\n  Mitigate  - add a control that makes it hard (parameterize the query, add MFA)\n  Eliminate - remove the feature/asset entirely (don't store what you don't need)\n  Transfer  - make it someone else's job (managed service, insurance, a contract)\n  Accept    - decide the risk is tolerable and document that decision\nThe blue-team twin of each mission is you MITIGATING: break it, then add the control and prove it holds. 'Did we do a good job?' means every element of the diagram and every STRIDE category has an answer - that completeness is what a real assessment delivers."
+    },
+    {
+      "title": "Threat modeling the AI product",
+      "body": "The RAG agent is Northwind's crown jewel and its newest attack surface, so run STRIDE on it directly:\n  Tampering             -> prompt injection: untrusted text in a document becomes instructions the agent follows\n  Information disclosure -> the agent retrieves and reveals data the user wasn't allowed to see (oversharing / weak row-level security)\n  Elevation of privilege -> an over-permissioned agent identity does more than the user could (the text-to-SQL agent running as db_owner)\n  Spoofing / Repudiation -> who did the agent act as, and is it logged?\nThe trust boundary that matters most: the one between RETRIEVED CONTENT and the agent's INSTRUCTIONS. Treat retrieved text as data, never as commands - that single boundary is the heart of the capstone."
+    }
+  ],
+  "quiz": [
+    {
+      "q": "Which STRIDE category does SQL injection that dumps a secret table MOST represent?",
+      "options": [
+        "Denial of service",
+        "Information disclosure",
+        "Repudiation",
+        "Spoofing"
+      ],
+      "answer": 1,
+      "why": "Reading data you shouldn't is Information disclosure (it's also Tampering/EoP)."
+    },
+    {
+      "q": "Stolen or cracked credentials are which STRIDE threat?",
+      "options": [
+        "Tampering",
+        "Spoofing",
+        "Denial of service",
+        "Repudiation"
+      ],
+      "answer": 1,
+      "why": "Using someone's creds is impersonation = Spoofing (breaks authentication)."
+    },
+    {
+      "q": "Threats cluster where...",
+      "options": [
+        "the code is newest",
+        "data crosses a trust boundary",
+        "there are no comments",
+        "the database is largest"
+      ],
+      "answer": 1,
+      "why": "Trust boundaries - where data moves from less- to more-trusted - are where to look."
+    },
+    {
+      "q": "Prompt injection against the RAG agent is best described as...",
+      "options": [
+        "Denial of service",
+        "untrusted content becoming instructions (Tampering)",
+        "a hardware fault",
+        "a weak password"
+      ],
+      "answer": 1,
+      "why": "Retrieved/untrusted text crosses into the instruction flow and is obeyed - Tampering."
+    }
+  ]
+}

@@ -12,18 +12,26 @@ That last part is the twist, and it's the whole reason this is current: **the pr
 sell is also attack surface.** A RAG/agent that can read data and call tools is a new kind
 of door. Securing it is the skill companies are desperate for right now.
 
-## The attack surface (every hit point maps to a layer and a mission)
+## The method: threat-model first, then verify
 
-| Hit point | What's at risk | Layer | Mission(s) |
-|-----------|----------------|-------|------------|
-| **People / the wire** | exposed services, an intrusion in the logs | 1 Wire | `wire-01` (done) |
-| **The door** | weak/stolen credentials, crackable hashes | 2 Door | `crack-01` (done) |
-| **The app** | the product's web API: SQL injection, broken authz | 3 App | `app-01` + `app-01-fix` (done) |
-| **The data** | SQL Server backend: over-privileged service account, `xp_cmdshell`, row-level security bypass | 3 App / 4 Host | *live SQL Server lab (next)* |
-| **The host** | a suspicious binary on a server; privilege escalation | 4 Host | `bin-01` (done) |
-| **The domain** | Active Directory: one cred → Domain Admin | 5 Domain | *AD lab (planned)* |
-| **The product (AI)** | the RAG agent itself: prompt injection, data exfiltration via retrieval, an over-permissioned text-to-SQL agent leaking rows | AI | *capstone (planned)* |
-| **The hunt** | can you detect all of the above in the logs? | 6 Hunt | blue-team twin of each mission |
+You don't poke at Northwind randomly — you **threat-model** it (see the `threat-modeling`
+module). Draw the system, mark the trust boundaries, walk STRIDE at each one, and every
+threat you find becomes a hit point to prove with a mission. STRIDE =
+**S**poofing, **T**ampering, **R**epudiation, **I**nformation disclosure,
+**D**enial of service, **E**levation of privilege.
+
+## The attack surface (every hit point maps to a layer, a STRIDE threat, and a mission)
+
+| Hit point | STRIDE | Layer | Mission(s) |
+|-----------|--------|-------|------------|
+| **People / the wire** — exposed services, intrusion in the logs | R / D | 1 Wire | `wire-01` (done) |
+| **The door** — weak/stolen credentials, crackable hashes | **S** | 2 Door | `crack-01` (done) |
+| **The app** — the product's web API: SQL injection, broken authz | **T·I·E** | 3 App | `app-01` + `app-01-fix` (done) |
+| **The data** — SQL Server: over-privileged login, `xp_cmdshell`, RLS bypass | **I·E** | 3 App / 4 Host | *live SQL Server lab (next)* |
+| **The host** — a suspicious binary; privilege escalation | **T·E** | 4 Host | `bin-01` (done) |
+| **The domain** — Active Directory: one cred → Domain Admin | **S·E** | 5 Domain | *AD lab (planned)* |
+| **The product (AI)** — prompt injection, retrieval data leakage, over-permissioned agent | **T·I·E** | AI | *capstone (planned)* |
+| **The hunt** — can you detect all of the above in the logs? | **R** | 6 Hunt | blue-team twin of each mission |
 
 ## How you play it
 
