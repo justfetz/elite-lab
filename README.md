@@ -61,10 +61,27 @@ Common commands:
 | `elite tools <module>` | Show tool briefings: what it is, legal note, setup, commands to try, a drill |
 | `elite drill subnet` | Endless, randomly generated subnetting practice |
 | `elite drill ports` | Endless well-known-port practice |
+| `elite lab list` | HTB-style missions: a goal, a flag, a checker, hints |
+| `elite lab start <id>` | Set up a mission (generates the artifact to work on) |
+| `elite lab hint <id>` | Unlock the next hint |
+| `elite lab submit <id> <flag>` | Check your captured flag |
 | `elite progress` | Your best score and attempts per module |
 | `elite reset` | Clear saved progress |
 
 (`elite` above is shorthand for `python3 elite.py`.)
+
+## Missions (the training ground)
+
+`elite lab` is where it stops being a book. Each mission gives you a goal, a real
+artifact, and a flag to capture; a checker verifies it and hints unlock when you're
+stuck — the Hack The Box loop, offline and legal. Try the first one:
+
+```bash
+python3 elite.py lab start wire-01     # hunt a brute-force in an access log with grep/awk
+python3 elite.py lab start crack-01    # crack a weak MD5 with John/Hashcat
+```
+
+See `CURRICULUM.md` for the full "how data moves" layer map and the mission roadmap.
 
 ---
 
@@ -137,20 +154,30 @@ It appears in `elite list` immediately — no code changes. `_build_modules.py` 
 
 ## Studying from your own books (local only)
 
-`study_books.py` builds a **local** search index over PDFs *you legally own*,
-placed in a `books/` folder. Ask it a question and it returns the book, the page,
-and a short snippet, so you go read the full passage in your own copy.
+`study_books.py` runs entirely on your machine over books *you own* (PDF/TXT/MD in a
+`books/` folder). It retrieves the most relevant pages locally, then — if you've
+configured an LLM — turns them into an answer, a summary, or a full lesson, grounded
+in the text and citing `[book p.N]`. Because nothing is ever redistributed, any book
+you legally own is fair game for personal study.
 
 ```bash
 pip install pypdf scikit-learn
-# put PDFs you own in ./books/
+# put books you own in ./books/
 python3 study_books.py index
-python3 study_books.py search "how does an access check work"
+python3 study_books.py ask       "how does an access check work?"
+python3 study_books.py summarize "the object manager"
+python3 study_books.py lesson    "processes and threads"
+python3 study_books.py search    "access tokens"      # passages only, no LLM
 ```
 
-> `books/` and the generated index are **gitignored and must never be committed.**
-> This repository contains only original course content — never book text. The study
-> tool points you at a page in your own copy; it does not reproduce the material.
+LLM backend is auto-detected: **Anthropic API** (`ANTHROPIC_API_KEY`) or a **local
+Ollama** model (`OLLAMA_MODEL=llama3.1`, free/offline). With neither, every command
+falls back to showing you the passages to read.
+
+> `books/` and the index are **gitignored and must never be committed.** This repo
+> contains only original course content — never book text. For personal study you can
+> index anything you own; only open-licensed material (OWASP, NIST, OSTEP, RFCs, …)
+> may ever be baked into a shared/public build.
 
 ---
 

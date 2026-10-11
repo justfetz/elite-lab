@@ -26,3 +26,16 @@ def record_quiz(key, pct):
     entry["attempts"] = entry.get("attempts", 0) + 1
     save(p)
     return entry
+
+
+def lab_state(mission_id):
+    return load().get("labs", {}).get(mission_id, {"hints": 0, "solved": False, "tries": 0})
+
+
+def lab_update(mission_id, **changes):
+    p = load()
+    labs = p.setdefault("labs", {})
+    entry = labs.setdefault(mission_id, {"hints": 0, "solved": False, "tries": 0})
+    entry.update(changes)
+    save(p)
+    return entry

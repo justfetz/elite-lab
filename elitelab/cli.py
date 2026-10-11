@@ -5,6 +5,7 @@ import sys
 from . import __version__, progress
 from .content import load_modules, get_module
 from .drills import DRILLS
+from .lab import HANDLERS as LAB_HANDLERS
 from .ui import run_lessons, run_quiz, show_tools, ask
 
 
@@ -79,6 +80,18 @@ def build_parser(modules):
     sp.add_argument("kind", choices=list(DRILLS))
     sub.add_parser("progress", help="show quiz scores")
     sub.add_parser("reset", help="clear progress")
+
+    # lab: HTB-style missions
+    lab = sub.add_parser("lab", help="missions: goal, flag, hints, checker")
+    lsub = lab.add_subparsers(dest="lab_action")
+    lsub.add_parser("list", help="list missions")
+    lsub.add_parser("status", help="your mission progress")
+    for name in ("start", "hint"):
+        q = lsub.add_parser(name)
+        q.add_argument("mission")
+    q = lsub.add_parser("submit")
+    q.add_argument("mission")
+    q.add_argument("flag")
     return p
 
 
@@ -92,6 +105,10 @@ def main(argv=None):
     args = parser.parse_args(argv)
     if not args.command:
         cmd_list(modules, args)
-        print("Run 'elite learn networking' to begin, or 'elite -h' for help.")
+        print("Run 'elite learn networking' to begin, or 'elite lab list' for missions.")
+        return
+    if args.command == "lab":
+        action = args.lab_action or "list"
+        LAB_HANDLERS[action](args)
         return
     handlers[args.command](modules, args)
