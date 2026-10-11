@@ -47,9 +47,14 @@ No dependencies for the course itself — just **Python 3.8+**.
 ```bash
 git clone https://github.com/justfetz/elite-lab.git
 cd elite-lab
-python3 elite.py list          # see every module and your progress
-python3 elite.py learn networking
+python3 elite.py lab list                 # the hands-on missions (start here)
+python3 elite.py lab start app-01         # break a vulnerable app, then fix it
+python3 elite.py run nmap 127.0.0.1       # run a real tool, get a taught debrief
 ```
+
+**Hands-on first.** The core of elite-lab is `lab` (build/break missions) and `run`
+(command real tools). Lessons and quizzes are optional reinforcement — reach for
+`learn`/`quiz` when a mission exposes a gap, not the other way around.
 
 Common commands:
 

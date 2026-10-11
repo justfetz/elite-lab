@@ -26,11 +26,16 @@ class Mission:
     difficulty: str               # intro | easy | medium | hard
     goal: str                     # what the learner must achieve
     flag_format: str              # e.g. "flag{IP:PASSWORD}"
-    setup: Callable[[Path], None]     # write artifacts into the mission workdir
-    solution: Callable[[Path], str]   # return the correct flag (recomputed, not stored)
+    setup: Callable[[Path], None]            # write artifacts into the mission workdir
+    solution: Callable[[Path], str] = lambda wd: ""   # correct flag (unused if checker set)
     hints: List[str] = field(default_factory=list)
     tools: List[str] = field(default_factory=list)
-    debrief: str = ""             # shown after a correct flag: the lesson + the defense
+    debrief: str = ""             # shown after success: the lesson + the defense
+    # Optional custom checker for "fix it" / build missions: (workdir, submitted) -> bool.
+    # When set, it replaces the default flag comparison.
+    checker: Callable[[Path, str], bool] = None
 
     def check(self, workdir: Path, submitted: str) -> bool:
+        if self.checker is not None:
+            return self.checker(workdir, submitted)
         return normalize(submitted) == normalize(self.solution(workdir))

@@ -11,8 +11,9 @@ def load_missions():
         if info.name in ("base",):
             continue
         mod = importlib.import_module(f"{__name__}.{info.name}")
-        m = getattr(mod, "MISSION", None)
-        if isinstance(m, Mission):
-            missions[m.id] = m
+        found = getattr(mod, "MISSIONS", None) or [getattr(mod, "MISSION", None)]
+        for m in found:
+            if isinstance(m, Mission):
+                missions[m.id] = m
     # sort by layer label then id
     return dict(sorted(missions.items(), key=lambda kv: (kv[1].layer, kv[1].id)))
