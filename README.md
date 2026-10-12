@@ -25,6 +25,34 @@ ends in something you run at a prompt, not something you watch.
 
 ---
 
+## ★ Your own private AI tutor — free, offline, over *your* books
+
+The feature that makes this unusual: you can run a **free AI model on your own laptop**
+(no account, no internet, no bill) and ask questions straight out of **security books you
+own** — the answers come back grounded in the text, citing the page.
+
+```bash
+winget install Ollama.Ollama          # one-time (Windows); macOS/Linux: ollama.com
+ollama pull llama3.2:3b               # a real model on your machine (~2 GB)
+pip install pypdf scikit-learn        # the PDF reader + the search index
+#   put PDFs you own in ./books/  (gitignored — your library stays on your disk)
+python3 study_books.py index
+$env:OLLAMA_MODEL = "llama3.2:3b"     # PowerShell;  bash: export OLLAMA_MODEL=llama3.2:3b
+elite study ask "how does an access check work?"
+```
+
+```
+> An access check in Windows evaluates the object's DACL against the caller's access token:
+> a null DACL grants all; take-ownership is handled first; then each allow/deny ACE whose
+> SID matches the token adjusts the granted-access mask...  [Windows Internals Part 1 p.678]
+```
+
+That's a 3-billion-parameter model, running on your hardware, answering from *your* copy of
+Windows Internals — offline. Full setup, a reading list, and the dense-embeddings upgrade
+path are in **[`LIBRARY.md`](LIBRARY.md)**.
+
+---
+
 ## What you'll be able to do
 
 After working through it, you can:
