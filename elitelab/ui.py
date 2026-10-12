@@ -72,6 +72,22 @@ def run_quiz(mod, record_fn=None):
     print()
 
 
+def show_all_tools(modules):
+    """`elite tools` with no module: the whole arsenal at a glance."""
+    groups = [(k, m) for k, m in modules.items() if m.get("tools")]
+    print("\n  The toolkit  (elite tools <module> for the full briefing on any group)\n")
+    for key, mod in groups:
+        print(f"  {mod['title']}  [{key}]")
+        for t in mod["tools"]:
+            what = (t.get("what", "").split(". ")[0]).strip().rstrip(".")
+            print(f"    - {t['name']:<16} {what}")
+        print()
+    print("  Go deeper:")
+    print("    elite tools <module>     full briefing (what / legal / setup / try / drill)")
+    print("    elite run <tool> ...     run the real tool and get a taught debrief")
+    print("    elite doctor             which of these are installed on your machine\n")
+
+
 def show_tools(mod):
     tools = mod["tools"]
     if not tools:

@@ -6,7 +6,7 @@ from . import __version__, progress
 from .content import load_modules, get_module
 from .drills import DRILLS
 from .lab import HANDLERS as LAB_HANDLERS
-from .ui import run_lessons, run_quiz, show_tools, ask
+from .ui import run_lessons, run_quiz, show_tools, show_all_tools, ask
 
 
 def cmd_list(modules, args):
@@ -39,7 +39,10 @@ def cmd_quiz(modules, args):
 
 
 def cmd_tools(modules, args):
-    show_tools(get_module(modules, args.module))
+    if not args.module:
+        show_all_tools(modules)
+    else:
+        show_tools(get_module(modules, args.module))
 
 
 def cmd_drill(modules, args):
@@ -72,10 +75,13 @@ def build_parser(modules):
     sub = p.add_subparsers(dest="command")
     sub.add_parser("list", help="show all modules and progress")
     for name, help_ in [("learn", "read a module's lessons"),
-                        ("quiz", "quiz yourself on a module"),
-                        ("tools", "show a module's tool briefings")]:
+                        ("quiz", "quiz yourself on a module")]:
         sp = sub.add_parser(name, help=help_)
         sp.add_argument("module", choices=keys)
+    # tools: no module = the whole arsenal; a module = that group's full briefings
+    tp = sub.add_parser("tools", help="list every tool, or one module's briefings")
+    tp.add_argument("module", nargs="?", choices=keys,
+                    help="omit to list all tools; name a module for its full briefings")
     sp = sub.add_parser("drill", help="endless practice")
     sp.add_argument("kind", choices=list(DRILLS))
     sub.add_parser("progress", help="show quiz scores")
