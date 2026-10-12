@@ -39,14 +39,14 @@ and **drills it into muscle memory**. Hands-on first.
 | Break+fix pairs (blue-team twin) | 🟡 | 15% | only `app-01-fix`; every attack mission should get one |
 | Randomized per-user flags | ⬜ | 0% | flags are deterministic — memorizable/shareable |
 | **Command-drill mode** (type the real command) | ✅ | 90% | `elite drill commands`: 22 commands, spaced repetition; add more over time |
-| **`elite path`** (guided campaign up the layers) | ⬜ | 0% | not built |
+| **`elite path`** (guided campaign up the layers) | ✅ | 90% | `elite path`: ordered campaign by layer with your progress + NEXT |
 | **Live lab provisioner** (Docker SQL Server + app, AD) | ⬜ | 0% | the realism jump — not built |
 | Tool tutors beyond nmap (sqlmap/BloodHound/John/…) | ⬜ | 10% | framework ready; interpreters not written |
 | `study_books.py` (local RAG) | ✅ | 85% | works; LLM backend optional; not yet wired as `elite ask` |
 | Docs (SCENARIO/VISION/SPEC/CURRICULUM/ATLAS) | ✅ | 90% | the thinking is captured |
 | On GitHub, MIT, README | ✅ | 100% | justfetz/elite-lab |
 
-## Honest overall: ~55%
+## Honest overall: ~58%
 
 The **engine, the fundamentals, build/break, command drills, and missions on every
 layer (Wire → Door → App → Host → Domain → AI) are real** — the hard parts (checkers

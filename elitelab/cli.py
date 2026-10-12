@@ -81,6 +81,9 @@ def build_parser(modules):
     sub.add_parser("progress", help="show quiz scores")
     sub.add_parser("reset", help="clear progress")
 
+    # path: the guided campaign
+    sub.add_parser("path", help="guided campaign through the missions, with your progress")
+
     # run: command a real tool, learn the lesson
     rp = sub.add_parser("run", help="run a real security tool and get a taught debrief")
     rp.add_argument("toolargs", nargs=argparse.REMAINDER,
@@ -119,5 +122,8 @@ def main(argv=None):
     if args.command == "run":
         from .runner import run as run_tool
         run_tool(args)
+        return
+    if args.command == "path":
+        LAB_HANDLERS["campaign"](args)
         return
     handlers[args.command](modules, args)

@@ -98,5 +98,38 @@ def lab_status(args):
     print()
 
 
+# Recommended campaign order (layer by layer). Only real missions.
+CAMPAIGN = [
+    "wire-01", "build-01", "build-02",
+    "crack-01",
+    "app-01", "app-01-fix",
+    "bin-01", "build-03", "build-04",
+    "domain-01", "domain-01-fix",
+    "ai-01", "ai-01-fix",
+]
+
+
+def campaign(args):
+    missions = load_missions()
+    order = [m for m in CAMPAIGN if m in missions]
+    solved = {mid for mid in order if progress.lab_state(mid)["solved"]}
+    next_id = next((m for m in order if m not in solved), None)
+    print(f"\nNorthwind AI — your campaign   ({len(solved)}/{len(order)} solved)\n")
+    layer = None
+    for mid in order:
+        m = missions[mid]
+        if m.layer != layer:
+            layer = m.layer
+            print(f"  Layer {layer}")
+        mark = "[x]" if mid in solved else ("[>]" if mid == next_id else "[ ]")
+        tail = "   <- NEXT" if mid == next_id else ""
+        print(f"    {mark} {mid:<13} {m.title}{tail}")
+    print()
+    if next_id:
+        print(f"Next:  elite lab start {next_id}\n")
+    else:
+        print("Every mission cleared. You've worked the whole surface - nice.\n")
+
+
 HANDLERS = {"list": lab_list, "start": lab_start, "hint": lab_hint,
-            "submit": lab_submit, "status": lab_status}
+            "submit": lab_submit, "status": lab_status, "campaign": campaign}

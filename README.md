@@ -81,14 +81,29 @@ Common commands:
 
 `elite lab` is where it stops being a book. Each mission gives you a goal, a real
 artifact, and a flag to capture; a checker verifies it and hints unlock when you're
-stuck — the Hack The Box loop, offline and legal. Try the first one:
+stuck — the Hack The Box loop, offline and legal. Many come as **break + fix pairs**, and
+the checker runs *your* code. Run `elite path` for the guided campaign, or jump in:
+
+| Layer | Missions |
+|-------|----------|
+| 1 The Wire | `wire-01` (hunt a brute-force in logs), `build-01` (write a port scanner), `build-02` (write a packet parser) |
+| 2 The Door | `crack-01` (crack MD5 with John/Hashcat) |
+| 3 The App | `app-01` + `app-01-fix` (break then fix SQL injection) |
+| 4 The Host | `bin-01` (reverse a crackme), `build-03` (a debugger's breakpoint engine), `build-04` (a fuzzer that finds a crash) |
+| 5 The Domain | `domain-01` + `domain-01-fix` (path to Domain Admin, then cut it) |
+| AI product | `ai-01` + `ai-01-fix` (prompt-injection attack, then defend the RAG agent) |
 
 ```bash
-python3 elite.py lab start wire-01     # hunt a brute-force in an access log with grep/awk
-python3 elite.py lab start crack-01    # crack a weak MD5 with John/Hashcat
+python3 elite.py path                   # the guided campaign + your progress
+python3 elite.py lab start wire-01      # or jump straight to a mission
 ```
 
-See `CURRICULUM.md` for the full "how data moves" layer map and the mission roadmap.
+The **build-your-own-tools** missions (`build-01`…`build-04`) hand you a skeleton with
+`TODO`s; the checker runs your implementation against real targets (listeners it opens, a
+crackme it compiles, a vulnerable C program it fuzzes). You learn the tool by building it.
+
+See `CURRICULUM.md` for the "how data moves" layer map, `SCENARIO.md` for the Northwind AI
+story, and `ATLAS.md` for the live feature/completion status.
 
 ---
 
@@ -99,10 +114,12 @@ See `CURRICULUM.md` for the full "how data moves" layer map and the mission road
 | Module | Covers |
 |--------|--------|
 | `threat-modeling` | the four questions, STRIDE, data-flow diagrams & trust boundaries — the method for finding every hit point |
+| `shell-basics` | grep & curl, piping them, and how AI coding tools use them |
 | `networking` | OSI model, IP addressing & CIDR, TCP vs UDP, ports, DNS |
+| `security` | CIA triad, authn vs authz, hashing vs encryption, attack classes & defenses, rules of engagement |
 | `web-vulns` | how bug hunters work, IDOR, XSS, CSRF, SSRF, auth/logic flaws |
-| `security` | CIA triad, authentication vs authorization, hashing vs encryption, attack classes & defenses, rules of engagement |
-| `windows` | processes, access tokens & privileges, services, the Windows API & syscalls, the registry & autostart, objects/handles & access checks |
+| `windows` | processes, access tokens & privileges, services, the Windows API & syscalls, registry/autostart, access checks |
+| `windows-ps` | PowerShell as an object pipeline, local & domain enumeration, how permissions leak, living-off-the-land vs detection |
 | `linux` | the shell and pipes, permissions & SUID, processes and listening sockets |
 
 **Tooling** (each tool: what it is → legal note → setup → commands to try → a lab drill)
