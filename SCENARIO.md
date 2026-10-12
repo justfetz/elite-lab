@@ -1,8 +1,8 @@
-# The scenario: you are the security team at Northwind AI
+# The scenario: you are the security team at Vantaris AI
 
 Everything in elite-lab hangs on one fiction, so every mission has a reason to exist.
 
-**Northwind AI is a startup building and selling a RAG agent product** — an AI assistant
+**Vantaris AI is a startup building and selling a RAG agent product** — an AI assistant
 that answers customer questions over the customer's own documents and data. You are the
 **security team**. Your job is to find and fix every **hit point** across the company
 *before* an attacker (or a customer's auditor) does — across the org, the app, and the
@@ -14,7 +14,7 @@ of door. Securing it is the skill companies are desperate for right now.
 
 ## The method: threat-model first, then verify
 
-You don't poke at Northwind randomly — you **threat-model** it (see the `threat-modeling`
+You don't poke at Vantaris randomly — you **threat-model** it (see the `threat-modeling`
 module). Draw the system, mark the trust boundaries, walk STRIDE at each one, and every
 threat you find becomes a hit point to prove with a mission. STRIDE =
 **S**poofing, **T**ampering, **R**epudiation, **I**nformation disclosure,
@@ -43,13 +43,13 @@ You work the surface the way a real security team does an assessment:
 4. **Understand** it — `elite ask` pulls the mechanism from your books (Windows Internals
    for host/domain, OWASP for the app and the AI product).
 
-When you've cleared every hit point, you've done end-to-end what Northwind AI would pay a
+When you've cleared every hit point, you've done end-to-end what Vantaris AI would pay a
 consultant for — and you have the muscle memory to do it on a real engagement.
 
 ## Why the AI product is the keystone
 
-Northwind's product is a RAG agent — exactly the thing every company is now shipping and
-nobody knows how to secure. The capstone turns the product on itself: you attack Northwind's
+Vantaris's product is a RAG agent — exactly the thing every company is now shipping and
+nobody knows how to secure. The capstone turns the product on itself: you attack Vantaris's
 own agent (feed it a poisoned document, make its text-to-SQL agent leak rows it shouldn't,
 trick it into misusing a tool), then harden it (least-privilege identity, query allow-lists,
 treating retrieved text as data not instructions). Your SQL Server decade is the edge:

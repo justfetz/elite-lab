@@ -21,7 +21,7 @@ tm = {
           "  2. What can go wrong?           (find the threats)\n"
           "  3. What are we going to do?     (mitigate them)\n"
           "  4. Did we do a good job?        (check your work)\n"
-          "That's the whole method. For Northwind AI it's how you derive the hit points "
+          "That's the whole method. For Vantaris AI it's how you derive the hit points "
           "BEFORE you start breaking things - instead of poking randomly, you model the "
           "system, enumerate what can go wrong at each part, and turn each threat into a "
           "mission. Threat modeling is the map; the missions are you walking it."),
@@ -46,7 +46,7 @@ tm = {
           "  - data flows (requests, queries, documents)   - arrows\n"
           "Then draw TRUST BOUNDARIES: lines where data crosses from less-trusted to more-"
           "trusted (browser -> app, app -> SQL Server, a customer's uploaded doc -> the RAG "
-          "index). Threats cluster on those boundaries. Northwind's boundaries: the internet "
+          "index). Threats cluster on those boundaries. Vantaris's boundaries: the internet "
           "edge, the app-to-database link, the AD domain edge, and - the new one - untrusted "
           "content flowing into the AI agent."),
         L("What to do about a threat",
@@ -59,7 +59,7 @@ tm = {
           "and prove it holds. 'Did we do a good job?' means every element of the diagram and "
           "every STRIDE category has an answer - that completeness is what a real assessment delivers."),
         L("Threat modeling the AI product",
-          "The RAG agent is Northwind's crown jewel and its newest attack surface, so run STRIDE "
+          "The RAG agent is Vantaris's crown jewel and its newest attack surface, so run STRIDE "
           "on it directly:\n"
           "  Tampering             -> prompt injection: untrusted text in a document becomes "
           "instructions the agent follows\n"

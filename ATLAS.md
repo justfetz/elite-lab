@@ -5,7 +5,7 @@ Snapshot of where elite-lab is. Legend: ✅ done · 🟡 partial · ⬜ not star
 ## The goal (north star)
 
 A command-line cyber range where you **break and defend a small, real "company"
-(Northwind AI — a domain + an app on SQL Server + a RAG product)**, run the real tools
+(Vantaris AI — a domain + an app on SQL Server + a RAG product)**, run the real tools
 against it, and a **local AI tutor grounded in your security books** explains every step
 and **drills it into muscle memory**. Hands-on first.
 
@@ -40,13 +40,14 @@ and **drills it into muscle memory**. Hands-on first.
 | Randomized per-user flags | ⬜ | 0% | flags are deterministic — memorizable/shareable |
 | **Command-drill mode** (type the real command) | ✅ | 90% | `elite drill commands`: 22 commands, spaced repetition; add more over time |
 | **`elite path`** (guided campaign up the layers) | ✅ | 90% | `elite path`: ordered campaign by layer with your progress + NEXT |
+| **`elite engage`** (connected company, open sandbox + loot) | ✅ | 85% | recon reveals the surface; loot chains to unlock deeper targets, derived from mission progress |
 | **Live lab provisioner** (Docker SQL Server + app, AD) | ⬜ | 0% | the realism jump — not built |
 | Tool tutors beyond nmap (sqlmap/BloodHound/John/…) | ⬜ | 10% | framework ready; interpreters not written |
 | `study_books.py` + `elite ask` | ✅ | 90% | `elite ask` answers from course lessons instantly; study_books adds book-grounded answers |
 | Docs (SCENARIO/VISION/SPEC/CURRICULUM/ATLAS) | ✅ | 90% | the thinking is captured |
 | On GitHub, MIT, README | ✅ | 100% | justfetz/elite-lab |
 
-## Honest overall: ~65%
+## Honest overall: ~68%
 
 The **engine, the fundamentals, build/break, command drills, and missions on every
 layer (Wire → Door → App → Host → Domain → AI) are real** — the hard parts (checkers
@@ -56,7 +57,7 @@ tool tutors beyond nmap.
 
 ## Next three, in order
 
-1. **Live SQL Server lab + mission** — turns `app-01` into Northwind's real product (Docker
+1. **Live SQL Server lab + mission** — turns `app-01` into Vantaris's real product (Docker
    SQL Server Developer + the vulnerable app); the realism jump, and your turf.
 2. **`elite path`** — a guided campaign that sequences the missions up the layers, so there's
    one clear route from zero to competent.

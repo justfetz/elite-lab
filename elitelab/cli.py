@@ -88,6 +88,11 @@ def build_parser(modules):
     # path: the guided campaign
     sub.add_parser("path", help="guided campaign through the missions, with your progress")
 
+    # engage: the connected company engagement (open sandbox)
+    ep = sub.add_parser("engage", help="assess Vantaris AI as one connected engagement")
+    ep.add_argument("engage_action", nargs="?", choices=["recon"],
+                    help="'recon' to reveal the surface; omit for the target board")
+
     # run: command a real tool, learn the lesson
     rp = sub.add_parser("run", help="run a real security tool and get a taught debrief")
     rp.add_argument("toolargs", nargs=argparse.REMAINDER,
@@ -133,5 +138,9 @@ def main(argv=None):
     if args.command == "ask":
         from .ask import ask as ask_tutor
         ask_tutor(" ".join(args.query))
+        return
+    if args.command == "engage":
+        from .engage import engage
+        engage(args)
         return
     handlers[args.command](modules, args)

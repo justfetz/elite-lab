@@ -115,7 +115,7 @@ def campaign(args):
     order = [m for m in CAMPAIGN if m in missions]
     solved = {mid for mid in order if progress.lab_state(mid)["solved"]}
     next_id = next((m for m in order if m not in solved), None)
-    print(f"\nNorthwind AI — your campaign   ({len(solved)}/{len(order)} solved)\n")
+    print(f"\nVantaris AI — your campaign   ({len(solved)}/{len(order)} solved)\n")
     layer = None
     for mid in order:
         m = missions[mid]

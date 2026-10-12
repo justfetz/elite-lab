@@ -5,7 +5,7 @@
   "lessons": [
     {
       "title": "The four questions",
-      "body": "Threat modeling is just a disciplined way to ask, of anything you build:\n  1. What are we building?        (model the system)\n  2. What can go wrong?           (find the threats)\n  3. What are we going to do?     (mitigate them)\n  4. Did we do a good job?        (check your work)\nThat's the whole method. For Northwind AI it's how you derive the hit points BEFORE you start breaking things - instead of poking randomly, you model the system, enumerate what can go wrong at each part, and turn each threat into a mission. Threat modeling is the map; the missions are you walking it."
+      "body": "Threat modeling is just a disciplined way to ask, of anything you build:\n  1. What are we building?        (model the system)\n  2. What can go wrong?           (find the threats)\n  3. What are we going to do?     (mitigate them)\n  4. Did we do a good job?        (check your work)\nThat's the whole method. For Vantaris AI it's how you derive the hit points BEFORE you start breaking things - instead of poking randomly, you model the system, enumerate what can go wrong at each part, and turn each threat into a mission. Threat modeling is the map; the missions are you walking it."
     },
     {
       "title": "STRIDE - what can go wrong",
@@ -13,7 +13,7 @@
     },
     {
       "title": "Data flow diagrams and trust boundaries",
-      "body": "To find threats you first draw the system as a data flow diagram with four shapes:\n  - external entities (users, other systems)   - squares\n  - processes (your code, the app, the agent)   - circles\n  - data stores (SQL Server, files, the index)  - parallel lines\n  - data flows (requests, queries, documents)   - arrows\nThen draw TRUST BOUNDARIES: lines where data crosses from less-trusted to more-trusted (browser -> app, app -> SQL Server, a customer's uploaded doc -> the RAG index). Threats cluster on those boundaries. Northwind's boundaries: the internet edge, the app-to-database link, the AD domain edge, and - the new one - untrusted content flowing into the AI agent."
+      "body": "To find threats you first draw the system as a data flow diagram with four shapes:\n  - external entities (users, other systems)   - squares\n  - processes (your code, the app, the agent)   - circles\n  - data stores (SQL Server, files, the index)  - parallel lines\n  - data flows (requests, queries, documents)   - arrows\nThen draw TRUST BOUNDARIES: lines where data crosses from less-trusted to more-trusted (browser -> app, app -> SQL Server, a customer's uploaded doc -> the RAG index). Threats cluster on those boundaries. Vantaris's boundaries: the internet edge, the app-to-database link, the AD domain edge, and - the new one - untrusted content flowing into the AI agent."
     },
     {
       "title": "What to do about a threat",
@@ -21,7 +21,7 @@
     },
     {
       "title": "Threat modeling the AI product",
-      "body": "The RAG agent is Northwind's crown jewel and its newest attack surface, so run STRIDE on it directly:\n  Tampering             -> prompt injection: untrusted text in a document becomes instructions the agent follows\n  Information disclosure -> the agent retrieves and reveals data the user wasn't allowed to see (oversharing / weak row-level security)\n  Elevation of privilege -> an over-permissioned agent identity does more than the user could (the text-to-SQL agent running as db_owner)\n  Spoofing / Repudiation -> who did the agent act as, and is it logged?\nThe trust boundary that matters most: the one between RETRIEVED CONTENT and the agent's INSTRUCTIONS. Treat retrieved text as data, never as commands - that single boundary is the heart of the capstone."
+      "body": "The RAG agent is Vantaris's crown jewel and its newest attack surface, so run STRIDE on it directly:\n  Tampering             -> prompt injection: untrusted text in a document becomes instructions the agent follows\n  Information disclosure -> the agent retrieves and reveals data the user wasn't allowed to see (oversharing / weak row-level security)\n  Elevation of privilege -> an over-permissioned agent identity does more than the user could (the text-to-SQL agent running as db_owner)\n  Spoofing / Repudiation -> who did the agent act as, and is it logged?\nThe trust boundary that matters most: the one between RETRIEVED CONTENT and the agent's INSTRUCTIONS. Treat retrieved text as data, never as commands - that single boundary is the heart of the capstone."
     }
   ],
   "quiz": [

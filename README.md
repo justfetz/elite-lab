@@ -95,15 +95,21 @@ the checker runs *your* code. Run `elite path` for the guided campaign, or jump 
 | AI product | `ai-01` + `ai-01-fix` (prompt-injection attack, then defend the RAG agent) |
 
 ```bash
-python3 elite.py path                   # the guided campaign + your progress
-python3 elite.py lab start wire-01      # or jump straight to a mission
+python3 elite.py engage                 # assess Vantaris AI as one connected engagement
+python3 elite.py path                   # or a linear guided campaign + your progress
+python3 elite.py lab start wire-01      # or jump straight to a single mission
 ```
+
+In **engage** mode you recon the company, then attack its surface in any order — and the
+loot you capture (a credential from the web app, local root on a workstation) unlocks the
+deeper targets (the Domain Controller, the licensed binary). It's one connected assessment
+built from the same missions.
 
 The **build-your-own-tools** missions (`build-01`…`build-04`) hand you a skeleton with
 `TODO`s; the checker runs your implementation against real targets (listeners it opens, a
 crackme it compiles, a vulnerable C program it fuzzes). You learn the tool by building it.
 
-See `CURRICULUM.md` for the "how data moves" layer map, `SCENARIO.md` for the Northwind AI
+See `CURRICULUM.md` for the "how data moves" layer map, `SCENARIO.md` for the Vantaris AI
 story, and `ATLAS.md` for the live feature/completion status.
 
 ---
