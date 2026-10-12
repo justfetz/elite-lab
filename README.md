@@ -5,12 +5,23 @@ A terminal cyber range that teaches offensive **and** defensive security by maki
 Admin; poison an AI agent and then defend it. It's a coach, not a video course: it assigns
 real work on real files, checks your actual solution, and teaches the lesson behind it.
 
+## ▶ Start here
+
+```bash
+git clone https://github.com/justfetz/elite-lab.git
+cd elite-lab
+python3 elite.py
+```
+
+That's it. Running `python3 elite.py` greets you and tells you exactly what to do next
+(`elite doctor` to check your setup, then `elite engage` to begin). You need nothing but
+**Python 3.8+** to start.
+
+---
+
 **The bet:** knowing *about* security is cheap and getting cheaper. Being able to *do* it —
 and to explain why a system breaks and how to defend it — is what lasts. So every topic
 ends in something you run at a prompt, not something you watch.
-
-> **New here? Run `python3 elite.py engage` and follow its nose.** It maps a fake
-> company, tells you the next thing worth breaking, and checks your work.
 
 ---
 
