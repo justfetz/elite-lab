@@ -1,8 +1,9 @@
-<!doctype html>
-<html lang="en"><head>
+<!DOCTYPE html>
+<html lang="en">
+<head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<title>PM3 mill process - Lakefront Paper</title>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>PM3 process view — Lakefront Paper</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600&family=Barlow+Condensed:wght@500;600&display=swap" rel="stylesheet">
@@ -10,151 +11,365 @@
 :root{
   --bg:#E9EDEE;--panel:#F8FAFA;--ink:#18262B;--ink2:#4D5C61;--ink3:#7D8A8E;--line:#D3DADC;
   --felt:#2F6B5A;--felt-soft:#DCEAE4;--kraft:#9C7A4F;--wet:#2D6FA8;--warn:#B67A10;--warn-soft:#F6E9CC;--bad:#B4402C;--bad-soft:#F5DEDA;
+  --grid:rgba(24,38,43,.08);
+  box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);
 }
 @media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
   --bg:#101719;--panel:#182226;--ink:#E4EBEC;--ink2:#A9B6B9;--ink3:#76868A;--line:#2A373B;
-  --felt:#5DB394;--felt-soft:#1D3A31;--kraft:#C4A174;--wet:#6AA6DC;--warn:#E3A93A;--warn-soft:#3A2E14;--bad:#E57560;--bad-soft:#3D1F19;}}
+  --felt:#5DB394;--felt-soft:#1D3A31;--kraft:#C4A174;--wet:#6AA6DC;--warn:#E3A93A;--warn-soft:#3A2E14;--bad:#E57560;--bad-soft:#3D1F19;--grid:rgba(228,235,236,.08);}}
 :root[data-theme="dark"]{
   --bg:#101719;--panel:#182226;--ink:#E4EBEC;--ink2:#A9B6B9;--ink3:#76868A;--line:#2A373B;
-  --felt:#5DB394;--felt-soft:#1D3A31;--kraft:#C4A174;--wet:#6AA6DC;--warn:#E3A93A;--warn-soft:#3A2E14;--bad:#E57560;--bad-soft:#3D1F19;}
-*{box-sizing:border-box}
-body{margin:0;background:var(--bg);color:var(--ink);font-family:"Barlow",system-ui,sans-serif}
-header{background:var(--panel);border-bottom:3px solid var(--kraft);padding:12px 20px;display:flex;align-items:center;gap:14px;flex-wrap:wrap}
-header h1{font-family:"Barlow Condensed",sans-serif;font-size:20px;margin:0}
-.sp{flex:1}
-.pill{display:inline-flex;align-items:center;gap:6px;font-size:13px;padding:3px 11px;border-radius:20px;background:var(--felt-soft);color:var(--felt)}
-.pill.bad{background:var(--bad-soft);color:var(--bad)}
-.dot{width:8px;height:8px;border-radius:50%;background:currentColor}
-button{font-family:inherit;padding:7px 13px;border:1px solid var(--line);border-radius:7px;background:var(--bg);color:var(--ink);cursor:pointer;font-weight:500}
-.wrap{max-width:1000px;margin:18px auto;padding:0 16px}
-.grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
-.card{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:16px}
-.card.s2{grid-column:1/3}
-.card h2{font-family:"Barlow Condensed",sans-serif;font-size:16px;margin:0 0 10px;letter-spacing:.02em}
-.tiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(110px,1fr));gap:10px}
-.tile .n{font-family:"Barlow Condensed",sans-serif;font-size:27px;font-weight:600;line-height:1}
-.tile .l{color:var(--ink3);font-size:11px;text-transform:uppercase;letter-spacing:.05em;margin-top:3px}
-.scan{display:flex;flex-direction:column;gap:2px}
-.scanrow{display:flex;gap:2px;height:13px}
-.cell{flex:1;border-radius:1px}
-.ctl{margin:10px 0}
-.ctl label{display:flex;justify-content:space-between;font-size:14px;margin-bottom:4px}
-.ctl input[type=range]{width:100%}
-.muted{color:var(--ink3);font-size:13px}
-.legend{display:flex;gap:14px;font-size:12px;color:var(--ink3);margin-top:8px}
-.sw{display:inline-block;width:11px;height:11px;border-radius:2px;vertical-align:middle;margin-right:4px}
-@media(max-width:720px){.grid{grid-template-columns:1fr}.card.s2{grid-column:auto}}
-</style></head>
+  --felt:#5DB394;--felt-soft:#1D3A31;--kraft:#C4A174;--wet:#6AA6DC;--warn:#E3A93A;--warn-soft:#3A2E14;--bad:#E57560;--bad-soft:#3D1F19;--grid:rgba(228,235,236,.08);}
+*,*::before,*::after{box-sizing:inherit}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:"Barlow",system-ui,-apple-system,"Segoe UI",sans-serif;font-size:15px;line-height:1.5;font-variant-numeric:tabular-nums}
+.wrap{max-width:1240px;margin:0 auto;padding:20px 20px 40px}
+header{display:flex;flex-wrap:wrap;gap:12px 24px;align-items:flex-end;justify-content:space-between;margin-bottom:18px}
+h1{font-family:"Barlow Condensed","Arial Narrow",sans-serif;font-weight:600;font-size:34px;line-height:1;margin:0;letter-spacing:-.01em}
+.sub{color:var(--ink2);margin-top:4px}
+.hdr-r{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.pill{display:inline-flex;align-items:center;gap:6px;padding:5px 10px;border-radius:999px;background:var(--panel);border:1px solid var(--line);font-size:13px;color:var(--ink2)}
+.dot{width:8px;height:8px;border-radius:50%;background:var(--felt)}
+.pill.down .dot{background:var(--bad)}
+button,select{font:inherit;color:var(--ink);background:var(--panel);border:1px solid var(--line);border-radius:6px;padding:6px 12px;cursor:pointer}
+button:hover,select:hover{border-color:var(--ink3)}
+button:focus-visible,select:focus-visible,input:focus-visible{outline:2px solid var(--felt);outline-offset:2px}
+a.back{text-decoration:none}
+.grid{display:grid;gap:14px;grid-template-columns:repeat(12,minmax(0,1fr))}
+.p{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:16px 18px;min-width:0}
+.p h2{font-size:15px;font-weight:600;margin:0 0 2px}
+.p .note{font-size:13px;color:var(--ink3);margin:0 0 12px}
+.s12{grid-column:span 12}.s8{grid-column:span 8}.s4{grid-column:span 4}.s6{grid-column:span 6}
+@media (max-width:900px){.s8,.s4,.s6{grid-column:span 12}}
+.scanner{display:grid;grid-template-columns:minmax(0,1fr) 280px;gap:20px}
+@media (max-width:760px){.scanner{grid-template-columns:1fr}}
+.machine{position:relative}
+#heat{width:100%;height:260px;display:block;border-radius:6px;image-rendering:pixelated;background:var(--bg)}
+.axis{display:flex;justify-content:space-between;font-size:12px;color:var(--ink3);margin-top:6px}
+.scale{display:flex;align-items:center;gap:8px;font-size:12px;color:var(--ink2);margin-top:10px}
+.scale .bar{flex:1;max-width:240px;height:8px;border-radius:4px;background:linear-gradient(90deg,#9C7A4F,#C9B79C,#DDE1E2,#8EB7DB,#2D6FA8)}
+.breakveil{position:absolute;inset:0 0 auto 0;height:260px;display:none;align-items:center;justify-content:center;background:color-mix(in srgb,var(--bad-soft) 80%,transparent);border-radius:6px;color:var(--bad);font-weight:600;font-size:18px}
+.breakveil.on{display:flex}
+.ctl{margin-bottom:14px}
+.ctl label{display:flex;justify-content:space-between;font-size:14px;color:var(--ink2);margin-bottom:4px}
+.ctl label b{color:var(--ink);font-weight:500}
+input[type=range]{width:100%;accent-color:var(--felt)}
+.tog{display:flex;align-items:center;gap:8px;font-size:14px;color:var(--ink2)}
+.tog input{accent-color:var(--felt);width:16px;height:16px}
+.kpis{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:14px}
+@media (max-width:1000px){.kpis{grid-template-columns:repeat(3,minmax(0,1fr))}}
+@media (max-width:520px){.kpis{grid-template-columns:repeat(2,minmax(0,1fr))}}
+.k{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:12px 14px;border-left:4px solid var(--line)}
+.k.ok{border-left-color:var(--felt)}.k.warn{border-left-color:var(--warn)}.k.bad{border-left-color:var(--bad)}
+.k .l{font-size:13px;color:var(--ink2)}
+.k .v{font-family:"Barlow Condensed","Arial Narrow",sans-serif;font-size:34px;font-weight:600;line-height:1.1}
+.k .u{font-size:16px;font-weight:500;color:var(--ink2);margin-left:2px}
+.k .d{font-size:12px;color:var(--ink3)}
+.chart{position:relative;height:220px}
+.legend{display:flex;gap:14px;font-size:12px;color:var(--ink2);margin-bottom:8px;flex-wrap:wrap}
+.legend span{display:inline-flex;align-items:center;gap:5px}
+.sw{width:12px;height:3px;border-radius:2px;display:inline-block}
+.line{display:flex;align-items:stretch;gap:0;margin-bottom:14px;overflow-x:auto}
+.stage{flex:1;min-width:110px;padding:10px 12px;border:1px solid var(--line);border-right:none;background:var(--bg)}
+.stage:first-child{border-radius:8px 0 0 8px}.stage:last-child{border-radius:0 8px 8px 0;border-right:1px solid var(--line)}
+.stage .n{font-size:13px;color:var(--ink2)}.stage .m{font-family:"Barlow Condensed",sans-serif;font-size:22px;font-weight:600}
+.stage .t{font-size:12px;color:var(--ink3)}
+.costrow{display:grid;grid-template-columns:110px minmax(0,1fr) 70px;gap:10px;align-items:center;margin-bottom:9px;font-size:14px}
+.costrow .track{height:14px;background:var(--bg);border-radius:3px;overflow:hidden}
+.costrow .fill{height:100%;background:var(--kraft);border-radius:0 3px 3px 0;transition:width .3s}
+.costrow .val{text-align:right;font-weight:500}
+.total{display:flex;justify-content:space-between;border-top:1px solid var(--line);padding-top:10px;margin-top:6px;font-weight:600}
+.log{list-style:none;margin:0;padding:0;max-height:250px;overflow-y:auto;font-size:14px}
+.log li{display:grid;grid-template-columns:52px 74px minmax(0,1fr);gap:8px;padding:7px 0;border-bottom:1px solid var(--line)}
+.log .tm{color:var(--ink3)}
+.tag{font-size:12px;padding:1px 7px;border-radius:4px;justify-self:start;background:var(--felt-soft);color:var(--felt)}
+.tag.warn{background:var(--warn-soft);color:var(--warn)}.tag.bad{background:var(--bad-soft);color:var(--bad)}
+.report{white-space:pre-wrap;font-size:14px;background:var(--bg);border-radius:6px;padding:12px 14px;margin:0 0 10px;max-height:250px;overflow-y:auto}
+.foot{font-size:13px;color:var(--ink3);margin-top:18px}
+@media (prefers-reduced-motion:reduce){.costrow .fill{transition:none}}
+</style>
+</head>
 <body>
-<header>
-  <h1>&#9608; Lakefront Paper &mdash; Paper Machine 3</h1>
-  <span class="pill" id="status"><span class="dot"></span><span id="statusTxt">Running</span></span>
-  <span class="muted" id="clock">Day shift 06:00</span>
-  <span class="sp"></span>
-  <button id="play">Pause</button>
-  <button id="theme">Theme</button>
-  <a href="/"><button>&larr; OrderDesk</button></a>
-</header>
 <div class="wrap">
-  <div class="card s2"><div class="tiles">
-    <div class="tile"><div class="n" id="t_speed">1200</div><div class="l">Speed m/min</div></div>
-    <div class="tile"><div class="n" id="t_moist">7.0%</div><div class="l">Reel moisture</div></div>
-    <div class="tile"><div class="n" id="t_oee">—</div><div class="l">OEE</div></div>
-    <div class="tile"><div class="n" id="t_energy">—</div><div class="l">kWh / ton</div></div>
-    <div class="tile"><div class="n" id="t_breaks">0</div><div class="l">Sheet breaks</div></div>
-  </div></div>
+<header>
+  <div>
+    <h1>Lakefront Paper, paper machine 3</h1>
+    <div class="sub">Live process view, simulated data. One sim minute every half second.</div>
+  </div>
+  <div class="hdr-r">
+    <span class="pill" id="status"><span class="dot"></span><span id="statusTxt">Running</span></span>
+    <span class="pill" id="clock">Day shift 06:00</span>
+    <button id="play" aria-label="Pause simulation">Pause</button>
+    <button id="reset">Restart shift</button>
+    <button id="theme" aria-label="Toggle color theme">Theme</button>
+    <a class="back" href="/"><button>&larr; OrderDesk</button></a>
+  </div>
+</header>
 
-  <div class="card s2"><h2>Sheet moisture scanner</h2>
-    <p class="muted">The scanner traverses the sheet at the reel; each row is one pass, newest on top.
-      Target 6&ndash;8%. Turn off cross-direction control and the edges go wet.</p>
-    <div class="scan" id="scan"></div>
-    <div class="legend">
-      <span><span class="sw" style="background:var(--wet)"></span>too wet</span>
-      <span><span class="sw" style="background:var(--felt)"></span>in spec</span>
-      <span><span class="sw" style="background:var(--warn)"></span>too dry</span>
+<div class="grid">
+  <section class="p s12">
+    <h2>Sheet moisture scanner</h2>
+    <p class="note">The scanner traverses the sheet at the reel. Each row is one pass; newest at top. Brown runs dry, blue runs wet.</p>
+    <div class="scanner">
+      <div class="machine">
+        <canvas id="heat" width="64" height="90" role="img" aria-label="Scrolling heat map of sheet moisture across the machine width"></canvas>
+        <div class="breakveil" id="veil">Sheet break, rethreading</div>
+        <div class="axis"><span>Front side</span><span>Cross direction, 8.5 m</span><span>Back side</span></div>
+        <div class="scale"><span>4%</span><span class="bar"></span><span>10%</span><span style="margin-left:8px">target 7%</span></div>
+      </div>
+      <div>
+        <div class="ctl"><label for="grade">Grade</label>
+          <select id="grade" style="width:100%">
+            <option value="45">Newsprint, 45 g/m²</option>
+            <option value="80" selected>Copy paper, 80 g/m²</option>
+            <option value="150">Linerboard, 150 g/m²</option>
+          </select></div>
+        <div class="ctl"><label for="sp">Machine speed <b id="spV"></b></label><input type="range" id="sp" min="500" max="1500" step="10" value="1000"></div>
+        <div class="ctl"><label for="st">Dryer steam <b id="stV"></b></label><input type="range" id="st" min="20" max="100" step="1" value="55"></div>
+        <div class="ctl"><label for="kp">Kappa target <b id="kpV"></b></label><input type="range" id="kp" min="15" max="35" step="1" value="25"></div>
+        <label class="tog"><input type="checkbox" id="cd" checked> Automatic cross-direction control</label>
+      </div>
     </div>
-  </div>
+  </section>
 
-  <div class="card"><h2>Controls</h2>
-    <div class="ctl"><label>Machine speed <span id="v_speed">1200 m/min</span></label>
-      <input type="range" id="speed" min="1000" max="1450" value="1200"></div>
-    <div class="ctl"><label>Dryer steam <span id="v_steam">50%</span></label>
-      <input type="range" id="steam" min="20" max="90" value="50"></div>
-    <div class="ctl"><label><span>Cross-direction control</span>
-      <span><input type="checkbox" id="cd" checked> on</span></label></div>
-    <p class="muted">Push speed up and the sheet comes off wetter and break risk climbs. Add steam to
-      dry it back, and energy per ton rises. That tension is the job.</p>
-  </div>
+  <section class="s12 kpis" aria-label="Key indicators">
+    <div class="k" id="kProd"><div class="l">Production rate</div><div class="v"><span id="prod">0</span><span class="u">t/d</span></div><div class="d" id="prodD"></div></div>
+    <div class="k" id="kOee"><div class="l">OEE this shift</div><div class="v"><span id="oee">0</span><span class="u">%</span></div><div class="d" id="oeeD"></div></div>
+    <div class="k" id="kMo"><div class="l">Reel moisture</div><div class="v"><span id="mo">0</span><span class="u">%</span></div><div class="d" id="moD"></div></div>
+    <div class="k" id="kEn"><div class="l">Energy intensity</div><div class="v"><span id="en">0</span><span class="u">GJ/t</span></div><div class="d">Steam plus drives</div></div>
+    <div class="k" id="kCost"><div class="l">Cost per ton</div><div class="v"><span id="cost">0</span></div><div class="d">Variable plus fixed</div></div>
+    <div class="k" id="kBr"><div class="l">Sheet breaks</div><div class="v"><span id="br">0</span></div><div class="d" id="brD"></div></div>
+  </section>
 
-  <div class="card"><h2>Shift log</h2>
-    <ul id="log" style="list-style:none;margin:0;padding:0;max-height:230px;overflow:auto;font-size:14px"></ul>
-  </div>
+  <section class="p s8">
+    <h2>Quality trend</h2>
+    <p class="note">Reel moisture and its spread across the sheet, last two hours.</p>
+    <div class="legend"><span><i class="sw" style="background:var(--wet)"></i>Mean moisture</span><span><i class="sw" style="background:var(--kraft)"></i>CD spread (2σ)</span><span><i class="sw" style="background:var(--ink3)"></i>Spec 6 to 8%</span></div>
+    <div class="chart"><canvas id="qChart" role="img" aria-label="Line chart of reel moisture and cross-direction spread"></canvas></div>
+  </section>
+
+  <section class="p s4">
+    <h2>Shift production</h2>
+    <p class="note">Tons reeled versus plan.</p>
+    <div class="legend"><span><i class="sw" style="background:var(--felt)"></i>Actual</span><span><i class="sw" style="background:var(--ink3)"></i>Plan</span></div>
+    <div class="chart"><canvas id="pChart" role="img" aria-label="Cumulative tons produced versus plan this shift"></canvas></div>
+  </section>
+
+  <section class="p s8">
+    <h2>Fiber line</h2>
+    <p class="note">Upstream pulp quality feeding the machine.</p>
+    <div class="line">
+      <div class="stage"><div class="n">Chip feed</div><div class="m" id="fChip"></div><div class="t">bone-dry t/d</div></div>
+      <div class="stage"><div class="n">Digester</div><div class="m" id="fKappa"></div><div class="t">kappa out</div></div>
+      <div class="stage"><div class="n">Washing</div><div class="m" id="fWash"></div><div class="t">kg soda loss/t</div></div>
+      <div class="stage"><div class="n">Bleaching</div><div class="m" id="fBl"></div><div class="t">kg ClO₂/t</div></div>
+      <div class="stage"><div class="n">Pulp out</div><div class="m" id="fBr"></div><div class="t">% ISO brightness</div></div>
+    </div>
+    <div style="display:flex;gap:24px;flex-wrap:wrap;font-size:14px;color:var(--ink2)">
+      <span>Pulp yield <b id="fYield" style="color:var(--ink);font-weight:500"></b></span>
+      <span>Wood use <b id="fWood" style="color:var(--ink);font-weight:500"></b></span>
+    </div>
+  </section>
+
+  <section class="p s4">
+    <h2>Cost per ton</h2>
+    <p class="note">At current settings and run rate.</p>
+    <div id="costRows"></div>
+    <div class="total"><span>Total</span><span id="costT"></span></div>
+  </section>
+
+  <section class="p s6">
+    <h2>Event log</h2>
+    <p class="note">Breaks, alarms, and setpoint changes.</p>
+    <ul class="log" id="log"></ul>
+  </section>
+
+  <section class="p s6">
+    <h2>Shift report</h2>
+    <p class="note">Updates live. Copy it into your handover notes.</p>
+    <pre class="report" id="report"></pre>
+    <button id="copy">Copy report</button> <span id="copied" style="font-size:13px;color:var(--felt)"></span>
+  </section>
 </div>
+<p class="foot">All figures are simulated from simplified kraft mill relationships and are for illustration only.</p>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
 <script>
 const $=id=>document.getElementById(id);
-const COLS=26, ROWS=22;
-let speed=1200, steam=50, cd=true, run=true, moist=7.0, breaks=0, mins=360, broken=0, oee=88, energy=1180;
+const store={get(k){try{return localStorage.getItem(k)}catch(e){return null}},set(k,v){try{localStorage.setItem(k,v)}catch(e){}}};
+const ZONES=64,ROWS=90,WIDTH=8.5,SHIFT=480,HIST=120;
+let S;
+function fresh(){return{t:0,run:true,downUntil:-1,breaks:0,running:0,inSpec:0,samples:0,tons:0,speedSum:0,
+  rows:[],q:{m:[],hi:[],lo:[]},prodA:[],prodP:[],log:[],streak:Math.random()*ZONES,last:{}}}
+S=fresh();
+const saved=store.get('pm3-settings');
+if(saved){try{const o=JSON.parse(saved);['grade','sp','st','kp'].forEach(k=>{if(o[k]!=null)$(k).value=o[k]});if(o.cd!=null)$('cd').checked=o.cd}catch(e){}}
+const th=store.get('pm3-theme');if(th)document.documentElement.dataset.theme=th;
 
-function css(v){return getComputedStyle(document.documentElement).getPropertyValue(v).trim();}
-function cellColor(m){ // moisture -> color
-  if(m>8.2) return css('--wet');
-  if(m<5.8) return css('--warn');
-  return css('--felt');
+function cssv(n){return getComputedStyle(document.documentElement).getPropertyValue(n).trim()}
+function ctl(){return{g:+$('grade').value,sp:+$('sp').value,st:+$('st').value,kp:+$('kp').value,cd:$('cd').checked}}
+
+function model(c){
+  const gF=c.g/80;
+  const moist=7+(c.sp-1000)/100*0.9*Math.pow(gF,.6)-(c.st-55)/10*1.1;
+  const rate=c.sp*1440*WIDTH*c.g/1e6;
+  const yieldP=44+(c.kp-15)*0.3;
+  const clo2=12+(c.kp-15)*1.4;
+  const bright=Math.min(90,86.5+(clo2-12)*0.08-(c.kp>30?(c.kp-30)*0.4:0));
+  const risk=Math.pow(Math.max(0,c.sp-700)/800,2.4)*0.02*(c.g<60?1.6:c.g>120?0.7:1)+(moist<5?(5-moist)*0.004:0);
+  return{moist,rate,yieldP,clo2,bright,risk};
 }
-function scanRow(){
-  const base=moist;
-  const row=document.createElement('div'); row.className='scanrow';
-  for(let j=0;j<COLS;j++){
-    let m=base + (Math.random()-0.5)*0.5;
-    if(!cd){ const edge=Math.min(j,COLS-1-j); if(edge<4) m += (4-edge)*0.7; } // wet edges
-    const c=document.createElement('div'); c.className='cell';
-    c.style.background=cellColor(m); c.title=m.toFixed(1)+'%';
-    row.appendChild(c);
+function energy(c,m){return 4+c.st*0.038+Math.max(0,7-m)*0.25}
+function costs(c,m,rate){
+  const fiber=290*44/m.yieldP;
+  const chem=38+m.clo2*2.1;
+  const en=energy(c,m.moist)*8.5;
+  const fixed=rate>0?72000/rate:0;
+  return{Fiber:fiber,Chemicals:chem,Energy:en,'Fixed and labor':fixed};
+}
+const fmtTime=t=>{const m=360+t;return String(Math.floor(m/60)%24).padStart(2,'0')+':'+String(m%60).padStart(2,'0')};
+function addLog(type,msg){S.log.unshift({t:S.t,type,msg});if(S.log.length>60)S.log.pop();renderLog()}
+function renderLog(){
+  $('log').innerHTML=S.log.length?S.log.map(e=>`<li><span class="tm">${fmtTime(e.t)}</span><span class="tag ${e.type==='Break'?'bad':e.type==='Alarm'?'warn':''}">${e.type}</span><span>${e.msg}</span></li>`).join(''):'<li><span></span><span></span><span style="color:var(--ink3)">Shift started. Events will appear here.</span></li>';
+}
+
+const heat=$('heat'),hx=heat.getContext('2d'),img=hx.createImageData(ZONES,ROWS);
+const stops=[[4,[156,122,79]],[5.8,[201,183,156]],[7,[221,225,226]],[8.2,[142,183,219]],[10,[45,111,168]]];
+function col(v){if(v<=stops[0][0])return stops[0][1];for(let i=1;i<stops.length;i++){if(v<=stops[i][0]){const a=stops[i-1],b=stops[i],f=(v-a[0])/(b[0]-a[0]);return a[1].map((x,j)=>x+(b[1][j]-x)*f)}}return stops[stops.length-1][1]}
+function drawHeat(){
+  const bg=cssv('--bg')||'#E9EDEE';
+  for(let r=0;r<ROWS;r++){const row=S.rows[r];for(let z=0;z<ZONES;z++){const i=(r*ZONES+z)*4;let c;
+    if(row===null){c=[180,60,44]}else if(!row){c=[128,128,128];img.data[i+3]=30;img.data[i]=c[0];img.data[i+1]=c[1];img.data[i+2]=c[2];continue}else c=col(row[z]);
+    img.data[i]=c[0];img.data[i+1]=c[1];img.data[i+2]=c[2];img.data[i+3]=255}}
+  hx.putImageData(img,0,0);
+}
+
+const opts=(ymin,ymax,fmt)=>({responsive:true,maintainAspectRatio:false,animation:false,plugins:{legend:{display:false},tooltip:{mode:'index',intersect:false}},
+  interaction:{mode:'index',intersect:false},scales:{x:{display:false},y:{min:ymin,max:ymax,grid:{color:cssv('--grid')},border:{display:false},ticks:{color:cssv('--ink3'),callback:fmt}}}});
+const blank=n=>Array(n).fill('');
+const qChart=new Chart($('qChart'),{type:'line',data:{labels:blank(HIST),datasets:[
+  {label:'Mean moisture %',data:[],borderColor:'#2D6FA8',borderWidth:2,pointRadius:0,tension:.25},
+  {label:'Upper 2σ',data:[],borderColor:'#9C7A4F',borderWidth:1,pointRadius:0,tension:.25,borderDash:[2,3]},
+  {label:'Lower 2σ',data:[],borderColor:'#9C7A4F',borderWidth:1,pointRadius:0,tension:.25,borderDash:[2,3]},
+  {label:'Spec high',data:Array(HIST).fill(8),borderColor:'#7D8A8E',borderWidth:1,borderDash:[6,4],pointRadius:0},
+  {label:'Spec low',data:Array(HIST).fill(6),borderColor:'#7D8A8E',borderWidth:1,borderDash:[6,4],pointRadius:0}]},options:opts(3,11,v=>v+'%')});
+const pChart=new Chart($('pChart'),{type:'line',data:{labels:blank(SHIFT/5+1),datasets:[
+  {label:'Actual t',data:[],borderColor:'#2F6B5A',backgroundColor:'rgba(47,107,90,.12)',fill:true,borderWidth:2,pointRadius:0},
+  {label:'Plan t',data:[],borderColor:'#7D8A8E',borderWidth:1,borderDash:[6,4],pointRadius:0}]},options:opts(0,undefined,v=>Math.round(v)+' t')});
+pChart.options.scales.y.min=0;delete pChart.options.scales.y.max;
+
+let planRate=null;
+function step(){
+  const c=ctl(),m=model(c);
+  if(planRate===null)planRate=model({g:c.g,sp:1000,st:55,kp:25,cd:true}).rate*0.95;
+  S.t++;
+  const down=S.t<S.downUntil;
+  let row=null,mean=NaN,sd=0;
+  if(down){S.rows.unshift(null)}
+  else{
+    S.running++;S.speedSum+=c.sp;
+    S.streak+=(Math.random()-.5)*1.2;S.streak=(S.streak+ZONES)%ZONES;
+    const amp=c.cd?0.25:1;
+    row=[];for(let z=0;z<ZONES;z++){
+      const e=z/(ZONES-1),edge=(Math.pow(Math.abs(e-.5)*2,6))*1.6;
+      const s=Math.exp(-Math.pow((z-S.streak)/2.5,2))*1.4;
+      const wave=Math.sin(e*Math.PI*3+S.t/40)*0.4;
+      row.push(m.moist+(edge+s+wave)*amp+(Math.random()-.5)*0.5+Math.sin(S.t/9)*0.15)}
+    mean=row.reduce((a,b)=>a+b)/ZONES;sd=Math.sqrt(row.reduce((a,b)=>a+(b-mean)**2,0)/ZONES);
+    S.rows.unshift(row);S.samples++;if(mean>=6&&mean<=8&&sd<0.6)S.inSpec++;
+    S.tons+=m.rate/1440;
+    if(Math.random()<m.risk){S.breaks++;S.downUntil=S.t+8+Math.floor(Math.random()*10);
+      addLog('Break',`Sheet break at ${c.sp} m/min, moisture ${mean.toFixed(1)}%`)}
+    const prevBad=S.last.bad;const bad=mean<6||mean>8;
+    if(bad&&!prevBad)addLog('Alarm',`Reel moisture ${mean>8?'high':'low'} at ${mean.toFixed(1)}%`);
+    S.last.bad=bad;
   }
-  const s=$('scan'); s.insertBefore(row,s.firstChild);
-  while(s.children.length>ROWS) s.removeChild(s.lastChild);
+  if(S.rows.length>ROWS)S.rows.length=ROWS;
+  S.q.m.push(down?null:+mean.toFixed(2));S.q.hi.push(down?null:+(mean+2*sd).toFixed(2));S.q.lo.push(down?null:+(mean-2*sd).toFixed(2));
+  ['m','hi','lo'].forEach(k=>{if(S.q[k].length>HIST)S.q[k].shift()});
+  if(S.t%5===0){S.prodA.push(+S.tons.toFixed(1));S.prodP.push(+(planRate*S.t/1440).toFixed(1))}
+  S.last.mean=mean;S.last.sd=sd;S.last.down=down;
+  if(S.t>=SHIFT){addLog('Shift',`Shift complete, ${S.tons.toFixed(0)} t reeled`);S.run=false;syncPlay()}
+  render(c,m);
 }
-function log(msg,bad){ const li=document.createElement('li');
-  const hh=String(6+Math.floor(mins/60-6)).padStart(2,'0'), mm=String(mins%60).padStart(2,'0');
-  li.innerHTML=`<span class="muted">${hh}:${mm}</span> &nbsp;${msg}`;
-  if(bad) li.style.color=css('--bad');
-  $('log').insertBefore(li,$('log').firstChild);
-  while($('log').children.length>40) $('log').removeChild($('log').lastChild);
+
+function setK(id,cls){const el=$(id);el.classList.remove('ok','warn','bad');if(cls)el.classList.add(cls)}
+function render(c,m){
+  c=c||ctl();m=m||model(c);
+  $('spV').textContent=c.sp+' m/min';$('stV').textContent=c.st+'%';$('kpV').textContent=c.kp;
+  const down=S.last.down;
+  $('status').classList.toggle('down',!!down);$('statusTxt').textContent=down?'Sheet break':(S.run?'Running':'Paused');
+  $('veil').classList.toggle('on',!!down);
+  $('clock').textContent='Day shift '+fmtTime(S.t);
+  const rate=down?0:m.rate;
+  $('prod').textContent=Math.round(rate).toLocaleString();
+  $('prodD').textContent='Plan '+Math.round(planRate||0).toLocaleString()+' t/d';
+  setK('kProd',down?'bad':rate>=(planRate||0)?'ok':'warn');
+  const avail=S.t?S.running/S.t:1,perf=S.running?(S.speedSum/S.running)/1400:0,qual=S.samples?S.inSpec/S.samples:1;
+  const oee=avail*Math.min(1,perf)*qual*100;
+  $('oee').textContent=S.t?Math.round(oee):'–';
+  $('oeeD').textContent=`A ${Math.round(avail*100)} · P ${Math.round(Math.min(1,perf)*100)} · Q ${Math.round(qual*100)}`;
+  setK('kOee',!S.t?'':oee>=65?'ok':oee>=45?'warn':'bad');
+  const mean=S.last.mean;
+  $('mo').textContent=down||isNaN(mean)?'–':mean.toFixed(1);
+  $('moD').textContent=down||isNaN(mean)?'Machine down':`CD spread ±${(2*S.last.sd).toFixed(1)}%`;
+  setK('kMo',down||isNaN(mean)?'bad':(mean>=6&&mean<=8)?(S.last.sd<0.6?'ok':'warn'):'bad');
+  const en=energy(c,m.moist);$('en').textContent=en.toFixed(1);setK('kEn',en<6.5?'ok':en<7.5?'warn':'bad');
+  const co=costs(c,m,m.rate),tot=Object.values(co).reduce((a,b)=>a+b,0);
+  $('cost').textContent='$'+Math.round(tot);setK('kCost',tot<560?'ok':tot<640?'warn':'bad');
+  $('br').textContent=S.breaks;$('brD').textContent=`Risk ${(m.risk*60*100).toFixed(0)}% per hour`;
+  setK('kBr',S.breaks===0?'ok':S.breaks<3?'warn':'bad');
+  const mx=Math.max(...Object.values(co),1);
+  $('costRows').innerHTML=Object.entries(co).map(([k,v])=>`<div class="costrow"><span>${k}</span><div class="track"><div class="fill" style="width:${(v/mx*100).toFixed(0)}%"></div></div><span class="val">$${Math.round(v)}</span></div>`).join('');
+  $('costT').textContent='$'+Math.round(tot)+' / t';
+  const pulpTd=m.rate*0.92;
+  $('fChip').textContent=Math.round(pulpTd/(m.yieldP/100)).toLocaleString();
+  $('fKappa').textContent=(c.kp+(Math.sin(S.t/13)*0.6)).toFixed(1);
+  $('fWash').textContent=(8+Math.sin(S.t/17)*0.8).toFixed(1);
+  $('fBl').textContent=m.clo2.toFixed(1);
+  $('fBr').textContent=m.bright.toFixed(1);
+  $('fYield').textContent=m.yieldP.toFixed(1)+'%';
+  $('fWood').textContent=(100/m.yieldP*2.2).toFixed(2)+' m³ per ton pulp';
+  qChart.data.datasets[0].data=S.q.m;qChart.data.datasets[1].data=S.q.hi;qChart.data.datasets[2].data=S.q.lo;qChart.update('none');
+  pChart.data.datasets[0].data=S.prodA;pChart.data.datasets[1].data=S.prodP;pChart.update('none');
+  drawHeat();
+  $('report').textContent=
+`PM3 day shift report, ${fmtTime(0)} to ${fmtTime(S.t)}
+Grade: ${$('grade').selectedOptions[0].text}
+
+Production: ${S.tons.toFixed(0)} t reeled vs ${(planRate*S.t/1440).toFixed(0)} t plan
+OEE: ${S.t?Math.round(oee):0}% (availability ${Math.round(avail*100)}%, performance ${Math.round(Math.min(1,perf)*100)}%, quality ${Math.round(qual*100)}%)
+Sheet breaks: ${S.breaks}
+Current setpoints: ${c.sp} m/min, steam ${c.st}%, kappa ${c.kp}, CD control ${c.cd?'on':'off'}
+Reel moisture: ${isNaN(mean)?'n/a':mean.toFixed(1)+'%'}, energy ${en.toFixed(1)} GJ/t
+Cost: $${Math.round(tot)}/t
+
+Notable events:
+${S.log.filter(e=>e.type!=='Setpoint').slice(0,6).map(e=>`  ${fmtTime(e.t)} ${e.type}: ${e.msg}`).join('\n')||'  None'}`;
 }
-function tick(){
-  if(!run) return;
-  mins++;
-  if(broken>0){ broken--; if(broken===0){ $('status').className='pill'; $('statusTxt').textContent='Running'; log('Sheet re-threaded, back up to speed'); } }
-  else {
-    // moisture responds to speed (wetter) and steam (drier)
-    const target = 7.0 + (speed-1200)/100*0.75 - (steam-50)/40*2.0;
-    moist += (target-moist)*0.3 + (Math.random()-0.5)*0.15;
-    // break risk
-    const risk = Math.max(0,(speed-1300)/900) + Math.max(0,Math.abs(moist-7)-1.5)/8;
-    if(Math.random()<risk*0.08){ broken=8+Math.floor(Math.random()*8); breaks++; $('t_breaks').textContent=breaks;
-      $('status').className='pill bad'; $('statusTxt').textContent='SHEET BREAK'; log('Sheet break — production stopped',1); }
-  }
-  // derived
-  const q = Math.max(0,100-Math.abs(moist-7)*14), up = broken>0?0:100, sp=speed/1450*100;
-  oee += ((up*0.01*sp*0.01*q) - oee)*0.1;
-  energy += ((900 + steam*7 + Math.max(0,speed-1200)*0.4) - energy)*0.1;
-  // paint
-  $('t_speed').textContent=broken>0?0:speed;
-  $('t_moist').textContent=moist.toFixed(1)+'%';
-  $('t_moist').style.color=(moist>8||moist<6)?css('--bad'):css('--ink');
-  $('t_oee').textContent=oee.toFixed(0)+'%';
-  $('t_energy').textContent=energy.toFixed(0);
-  const hh=String(6+Math.floor((mins-360)/60)).padStart(2,'0'), mm=String(mins%60).padStart(2,'0');
-  $('clock').textContent=`Day shift ${hh}:${mm}`;
-  if(broken===0) scanRow();
-}
-$('speed').oninput=e=>{speed=+e.target.value; $('v_speed').textContent=speed+' m/min'; log('Speed setpoint &rarr; '+speed+' m/min');};
-$('steam').oninput=e=>{steam=+e.target.value; $('v_steam').textContent=steam+'%'; log('Dryer steam &rarr; '+steam+'%');};
-$('cd').onchange=e=>{cd=e.target.checked; log('Cross-direction control '+(cd?'ON':'OFF — watch the edges'), !cd);};
-$('play').onclick=()=>{run=!run; $('play').textContent=run?'Pause':'Play';};
-$('theme').onclick=()=>{const r=document.documentElement; const d=r.getAttribute('data-theme')==='dark'; r.setAttribute('data-theme',d?'light':'dark');};
-log('Shift start — PM3 running linerboard');
-setInterval(tick,420);
-for(let i=0;i<ROWS;i++) scanRow();
+
+let timer=null;
+function syncPlay(){$('play').textContent=S.run?'Pause':'Resume';$('play').setAttribute('aria-label',S.run?'Pause simulation':'Resume simulation');
+  clearInterval(timer);if(S.run)timer=setInterval(step,500);render()}
+$('play').onclick=()=>{if(S.t>=SHIFT)return;S.run=!S.run;syncPlay()};
+$('reset').onclick=()=>{S=fresh();planRate=null;for(let i=0;i<ROWS;i++)S.rows.push(undefined);addLog('Shift','New shift started');syncPlay()};
+$('theme').onclick=()=>{const cur=document.documentElement.dataset.theme||(matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light');
+  const nx=cur==='dark'?'light':'dark';document.documentElement.dataset.theme=nx;store.set('pm3-theme',nx);
+  [qChart,pChart].forEach(ch=>{ch.options.scales.y.grid.color=cssv('--grid');ch.options.scales.y.ticks.color=cssv('--ink3');ch.update('none')})};
+$('copy').onclick=async()=>{try{await navigator.clipboard.writeText($('report').textContent);$('copied').textContent='Copied'}catch(e){
+  const r=document.createRange();r.selectNodeContents($('report'));const s=getSelection();s.removeAllRanges();s.addRange(r);$('copied').textContent='Selected, press Ctrl+C to copy'}
+  setTimeout(()=>$('copied').textContent='',2500)};
+const names={grade:'Grade',sp:'Speed',st:'Dryer steam',kp:'Kappa target',cd:'CD control'};
+let debounce={};
+['grade','sp','st','kp','cd'].forEach(id=>{
+  $(id).addEventListener('input',()=>{render();store.set('pm3-settings',JSON.stringify({grade:$('grade').value,sp:$('sp').value,st:$('st').value,kp:$('kp').value,cd:$('cd').checked}))});
+  $(id).addEventListener('change',()=>{clearTimeout(debounce[id]);debounce[id]=setTimeout(()=>{
+    const el=$(id),v=id==='cd'?(el.checked?'on':'off'):id==='grade'?el.selectedOptions[0].text:el.value+(id==='sp'?' m/min':id==='st'?'%':'');
+    if(id==='grade')planRate=null;
+    addLog('Setpoint',`${names[id]} set to ${v}`)},250)})});
+for(let i=0;i<ROWS;i++)S.rows.push(undefined);
+renderLog();syncPlay();
 </script>
-</body></html>
+</body>
+</html>
