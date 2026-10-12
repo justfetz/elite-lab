@@ -26,7 +26,7 @@ and **drills it into muscle memory**. Hands-on first.
 | 2 The Door | 🟡 | 40% | `crack-01` (hash cracking); needs a live auth/brute mission |
 | 3 The App | 🟡 | 55% | `app-01`+`app-01-fix` (SQLi break+fix), `web-vulns` module; needs IDOR/XSS missions |
 | 4 The Host | 🟡 | 50% | `bin-01` crackme, `build-03` debugger, `build-04` fuzzer; needs a privesc mission |
-| 5 The Domain | ⬜ | 20% | `windows-ps` module only; **no AD mission or lab** |
+| 5 The Domain | 🟡 | 55% | `domain-01` + `domain-01-fix`: path-to-DA analysis & remediation; `windows-ps` module. Live AD lab still planned |
 | 6 The Hunt | ⬜ | 15% | `wire-01` touches detection; **no dedicated blue-team missions** |
 | AI product (capstone) | 🟡 | 55% | `ai-01` + `ai-01-fix`: prompt-injection attack & defend on a RAG agent; live text-to-SQL agent still planned |
 
@@ -46,7 +46,7 @@ and **drills it into muscle memory**. Hands-on first.
 | Docs (SCENARIO/VISION/SPEC/CURRICULUM/ATLAS) | ✅ | 90% | the thinking is captured |
 | On GitHub, MIT, README | ✅ | 100% | justfetz/elite-lab |
 
-## Honest overall: ~50%
+## Honest overall: ~55%
 
 The **engine, the fundamentals, build/break, command drills, and the AI capstone are
 real** — the hard parts (checkers that run and verify your actual code; a local book
