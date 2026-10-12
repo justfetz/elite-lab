@@ -28,6 +28,7 @@ Setup:
     # put PDFs/notes you own in ./books/
 """
 import json
+import logging
 import os
 import pickle
 import sys
@@ -71,6 +72,7 @@ def _read_file(path):
 
 
 def build():
+    logging.getLogger("pypdf").setLevel(logging.ERROR)   # hush font-encoding chatter
     try:
         from sklearn.feature_extraction.text import TfidfVectorizer  # noqa: F401
     except ImportError:

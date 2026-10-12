@@ -130,7 +130,8 @@ understanding exactly how they fall.
 | `elite review` | The coach: what to redo now — weak spots, barely-cleared missions, stale mastery |
 | `elite lab start/hint/submit <id>` | Set up a mission, unlock a hint, check your captured flag |
 | `elite run <tool> ...` | Run a real tool (nmap, sqlmap, john, gobuster) and get a taught debrief |
-| `elite ask "<question>"` | In-tool tutor — answers any term from the course (and your indexed books) |
+| `elite ask "<question>"` | In-tool tutor — answers any term from the course (and points at your indexed books) |
+| `elite study ask/summarize/lesson "<topic>"` | Cited answers from your *own* books via a free local model — see `LIBRARY.md` |
 | `elite learn / quiz <module>` | Read a module's lessons, or take a shuffled quiz (optional reinforcement) |
 | `elite drill commands / subnet / ports` | Reps: type the real command / subnet / port; spaced repetition |
 | `elite progress` / `elite reset` | Your scores / clear saved progress |
@@ -184,8 +185,8 @@ turns them into an answer, summary, or lesson, grounded in the text and citing `
 ```bash
 pip install pypdf scikit-learn markitdown
 # put books you own in ./books/
-python3 study_books.py index
-python3 study_books.py ask "how does an access check work?"
+python3 study_books.py index                 # or: elite study index
+elite study ask "how does an access check work?"
 ```
 
 LLM backend is auto-detected: Anthropic API (`ANTHROPIC_API_KEY`) or local Ollama

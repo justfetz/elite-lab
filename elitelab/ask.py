@@ -105,7 +105,7 @@ def ask(query):
 
     if not scored:
         print(f"\nNothing in the app matches that yet. Try different words, or index your "
-              f"books and run: python3 study_books.py ask \"{query}\"\n")
+              f"books and run: elite study ask \"{query}\"\n")
         return
 
     print(f"\nOn \"{query}\":\n")
@@ -118,7 +118,7 @@ def ask(query):
         print("Your books go deeper:")
         for b, p in books:
             print(f"  {b} {p}")
-        print(f"  (full answer: python3 study_books.py ask \"{query}\")")
+        print(f"  (full answer: elite study ask \"{query}\")")
     elif not BOOK_INDEX.exists():
-        print(f"For cited answers from your own books: study_books.py ask \"{query}\"")
+        print(f"For cited answers from your own books: elite study ask \"{query}\"  (see LIBRARY.md)")
     print()

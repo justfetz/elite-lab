@@ -89,7 +89,7 @@ Put the files you own in `books/` (PDF, TXT, or MD), then build the search index
 pip install pypdf scikit-learn        # one-time: the PDF reader + the search math
 mkdir books                           # if it doesn't exist yet
 #   ... copy your PDFs into books\ ...
-python study_books.py index
+python study_books.py index          # or:  elite study index
 ```
 
 It prints how many pages it indexed. Think of this exactly like a database index: you pay
@@ -104,17 +104,20 @@ Point it at your local model, then ask:
 
 ```powershell
 $env:OLLAMA_MODEL = "llama3.1"        # tell it to use your local AI (this terminal session)
-python study_books.py ask "how does an access check work?"
+elite study ask "how does an access check work?"
 ```
 
 Four ways to interrogate the shelf:
 
 ```powershell
-python study_books.py ask       "why is a SYN scan stealthier than a connect scan?"
-python study_books.py summarize "the Windows object manager"
-python study_books.py lesson    "processes and threads"      # explanation + key points + quiz
-python study_books.py search    "access token"               # just show the raw pages, no model
+elite study ask       "why is a SYN scan stealthier than a connect scan?"
+elite study summarize "the Windows object manager"
+elite study lesson    "processes and threads"      # explanation + key points + quiz
+elite study search    "access token"               # just show the raw pages, no model
 ```
+
+(`elite study ...` is the same as `python study_books.py ...` — use whichever you like.
+`elite study index` rebuilds the index after you add books.)
 
 Every answer cites the pages it used (`[book p.N]`) so you can jump to the source and read
 it yourself — the model points you *into* the book, it doesn't replace it.

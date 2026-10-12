@@ -85,6 +85,12 @@ def build_parser(modules):
     ap = sub.add_parser("ask", help="ask a question; answers from the course (and your books)")
     ap.add_argument("query", nargs="+", help='e.g. elite ask "how does an access check work"')
 
+    # study: your own books (local RAG via study_books.py)
+    stp = sub.add_parser("study", help='your own books: elite study ask "..." (see LIBRARY.md)')
+    stp.add_argument("study_action", choices=["ask", "summarize", "lesson", "search", "index"],
+                     help="ask / summarize / lesson / search your indexed books, or (re)index")
+    stp.add_argument("text", nargs="*", help="the question or topic")
+
     # path: the guided campaign
     sub.add_parser("path", help="guided campaign through the missions, with your progress")
 
@@ -168,6 +174,10 @@ def main(argv=None):
     if args.command == "engage":
         from .engage import engage
         engage(args)
+        return
+    if args.command == "study":
+        from .study import study
+        study(args)
         return
     if args.command == "review":
         from .review import review
