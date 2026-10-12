@@ -52,6 +52,25 @@ networking = {
           "Names to IPs. Your resolver walks root -> TLD -> authoritative servers. Records: "
           "A (IPv4), AAAA (IPv6), CNAME (alias), MX (mail), TXT (SPF/DKIM), NS. Runs on UDP 53 "
           "(TCP for big answers). Answers cache for their TTL."),
+        L("Tor and onion routing",
+          "Normally a web request is one hop you can trace: your IP talks straight to the server,\n"
+          "and anyone watching either end (your ISP, the site) sees who is talking to whom.\n"
+          "Tor breaks that link by routing you through THREE volunteer relays, with layered\n"
+          "('onion') encryption so no single relay knows both who you are and where you're going:\n\n"
+          "  you -> [Guard] -> [Middle] -> [Exit] -> website\n\n"
+          "  - Guard (entry): knows your IP, but NOT the site - the payload is still encrypted.\n"
+          "  - Middle: knows only 'traffic from Guard goes to Exit'. Neither end.\n"
+          "  - Exit: talks to the site and knows the destination, but NOT your IP.\n\n"
+          "The onion: your client encrypts the request in three layers - Exit's key inside\n"
+          "Middle's key inside Guard's key. Each relay peels ONE layer (the only one it can\n"
+          "decrypt) and passes the rest on. So the link between 'who' and 'where' is never held\n"
+          "in one place. The path (a 'circuit') rotates every few minutes.\n\n"
+          "Key limits to understand: the EXIT sees your traffic in whatever form you sent it - if\n"
+          "it isn't HTTPS, the exit can read it, so HTTPS still matters on Tor. Tor hides WHO is\n"
+          "talking, not WHAT is said. Defenders care about Tor two ways: as a privacy tool for\n"
+          "at-risk users (journalists, activists), and as something to recognise in logs (traffic\n"
+          "from known exit-node IPs). '.onion' hidden services go a step further - the server is\n"
+          "reached THROUGH the network too, so neither side learns the other's IP."),
     ],
     "quiz": [
         Q("Which OSI layer do routers and IP addresses operate at?",
@@ -68,6 +87,13 @@ networking = {
           "Real-time media prefers UDP; a late packet is useless."),
         Q("Which port is Kerberos?", ["88", "389", "445", "3389"], 0,
           "Kerberos is TCP/UDP 88, central to Active Directory auth."),
+        Q("In a Tor circuit, which relay knows the website you're visiting?",
+          ["the Guard (entry)", "the Middle", "the Exit", "all three"], 2,
+          "The Exit talks to the site, so it knows the destination - but not your IP."),
+        Q("Why does HTTPS still matter when using Tor?",
+          ["Tor is slower without it", "the Exit node can read non-HTTPS traffic",
+           "it hides your IP", "it rotates the circuit"], 1,
+          "Tor hides WHO is talking, not WHAT is said; the exit sees unencrypted traffic in clear."),
     ],
 }
 

@@ -22,6 +22,10 @@
     {
       "title": "DNS",
       "body": "Names to IPs. Your resolver walks root -> TLD -> authoritative servers. Records: A (IPv4), AAAA (IPv6), CNAME (alias), MX (mail), TXT (SPF/DKIM), NS. Runs on UDP 53 (TCP for big answers). Answers cache for their TTL."
+    },
+    {
+      "title": "Tor and onion routing",
+      "body": "Normally a web request is one hop you can trace: your IP talks straight to the server,\nand anyone watching either end (your ISP, the site) sees who is talking to whom.\nTor breaks that link by routing you through THREE volunteer relays, with layered\n('onion') encryption so no single relay knows both who you are and where you're going:\n\n  you -> [Guard] -> [Middle] -> [Exit] -> website\n\n  - Guard (entry): knows your IP, but NOT the site - the payload is still encrypted.\n  - Middle: knows only 'traffic from Guard goes to Exit'. Neither end.\n  - Exit: talks to the site and knows the destination, but NOT your IP.\n\nThe onion: your client encrypts the request in three layers - Exit's key inside\nMiddle's key inside Guard's key. Each relay peels ONE layer (the only one it can\ndecrypt) and passes the rest on. So the link between 'who' and 'where' is never held\nin one place. The path (a 'circuit') rotates every few minutes.\n\nKey limits to understand: the EXIT sees your traffic in whatever form you sent it - if\nit isn't HTTPS, the exit can read it, so HTTPS still matters on Tor. Tor hides WHO is\ntalking, not WHAT is said. Defenders care about Tor two ways: as a privacy tool for\nat-risk users (journalists, activists), and as something to recognise in logs (traffic\nfrom known exit-node IPs). '.onion' hidden services go a step further - the server is\nreached THROUGH the network too, so neither side learns the other's IP."
     }
   ],
   "quiz": [
@@ -90,6 +94,28 @@
       ],
       "answer": 0,
       "why": "Kerberos is TCP/UDP 88, central to Active Directory auth."
+    },
+    {
+      "q": "In a Tor circuit, which relay knows the website you're visiting?",
+      "options": [
+        "the Guard (entry)",
+        "the Middle",
+        "the Exit",
+        "all three"
+      ],
+      "answer": 2,
+      "why": "The Exit talks to the site, so it knows the destination - but not your IP."
+    },
+    {
+      "q": "Why does HTTPS still matter when using Tor?",
+      "options": [
+        "Tor is slower without it",
+        "the Exit node can read non-HTTPS traffic",
+        "it hides your IP",
+        "it rotates the circuit"
+      ],
+      "answer": 1,
+      "why": "Tor hides WHO is talking, not WHAT is said; the exit sees unencrypted traffic in clear."
     }
   ]
 }
