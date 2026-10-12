@@ -39,3 +39,21 @@ def lab_update(mission_id, **changes):
     entry.update(changes)
     save(p)
     return entry
+
+
+def cmd_stats():
+    return load().get("cmddrill", {})
+
+
+def cmd_record(cid, correct):
+    p = load()
+    d = p.setdefault("cmddrill", {})
+    e = d.setdefault(cid, {"seen": 0, "correct": 0, "streak": 0})
+    e["seen"] += 1
+    if correct:
+        e["correct"] += 1
+        e["streak"] = e.get("streak", 0) + 1
+    else:
+        e["streak"] = 0
+    save(p)
+    return e

@@ -1,0 +1,216 @@
+[
+  {
+    "id": "nmap-default",
+    "platform": "nmap",
+    "prompt": "Scan the default top-1000 TCP ports of 10.0.0.5",
+    "answer": "nmap 10.0.0.5",
+    "why": "Bare nmap = top 1000 TCP ports.",
+    "accept": [
+      "nmap (?!.*-p)10\\.0\\.0\\.5"
+    ]
+  },
+  {
+    "id": "nmap-allports",
+    "platform": "nmap",
+    "prompt": "Scan ALL 65535 TCP ports of 10.0.0.5",
+    "answer": "nmap -p- 10.0.0.5",
+    "why": "-p- means every TCP port.",
+    "accept": [
+      "nmap .*-p-.*10\\.0\\.0\\.5",
+      "nmap 10\\.0\\.0\\.5 -p-"
+    ]
+  },
+  {
+    "id": "nmap-sv",
+    "platform": "nmap",
+    "prompt": "Detect service versions on 10.0.0.5",
+    "answer": "nmap -sV 10.0.0.5",
+    "why": "-sV fingerprints the software/version behind each port.",
+    "accept": [
+      "nmap .*-sv.*10\\.0\\.0\\.5"
+    ]
+  },
+  {
+    "id": "nmap-syn",
+    "platform": "nmap",
+    "prompt": "Fast SYN (half-open) scan of the 10.0.0.0/24 subnet",
+    "answer": "nmap -sS 10.0.0.0/24",
+    "why": "-sS never finishes the handshake: faster, quieter.",
+    "accept": [
+      "nmap .*-ss.*10\\.0\\.0\\.0/24"
+    ]
+  },
+  {
+    "id": "ss-listen",
+    "platform": "linux",
+    "prompt": "List listening TCP/UDP sockets with the owning program",
+    "answer": "ss -tulpn",
+    "why": "t=tcp u=udp l=listening p=process n=numeric.",
+    "accept": [
+      "ss -[a-z]*"
+    ]
+  },
+  {
+    "id": "sudo-l",
+    "platform": "linux",
+    "prompt": "Show what the current user may run via sudo",
+    "answer": "sudo -l",
+    "why": "First thing to check for Linux privesc.",
+    "accept": []
+  },
+  {
+    "id": "find-suid",
+    "platform": "linux",
+    "prompt": "Find SUID binaries anywhere on the filesystem",
+    "answer": "find / -perm -4000 2>/dev/null",
+    "why": "SUID binaries run as their owner - a privesc hunt.",
+    "accept": [
+      "find / -perm -4000.*"
+    ]
+  },
+  {
+    "id": "ps-aux",
+    "platform": "linux",
+    "prompt": "List all running processes (full detail)",
+    "answer": "ps aux",
+    "why": "Classic full process listing.",
+    "accept": []
+  },
+  {
+    "id": "ad-computers",
+    "platform": "powershell",
+    "prompt": "List every computer in the domain",
+    "answer": "Get-ADComputer -Filter *",
+    "why": "Enumerates all domain-joined machines.",
+    "accept": [
+      "get-adcomputer -filter \\*"
+    ]
+  },
+  {
+    "id": "ad-dcs",
+    "platform": "powershell",
+    "prompt": "List all domain controllers",
+    "answer": "Get-ADDomainController -Filter *",
+    "why": "DCs are the crown jewels of AD.",
+    "accept": [
+      "get-addomaincontroller -filter \\*"
+    ]
+  },
+  {
+    "id": "ad-dadmins",
+    "platform": "powershell",
+    "prompt": "Show the members of Domain Admins",
+    "answer": "Get-ADGroupMember 'Domain Admins'",
+    "why": "Who holds the keys to the domain.",
+    "accept": [
+      "get-adgroupmember ['\\\"]?domain admins['\\\"]?"
+    ]
+  },
+  {
+    "id": "local-admins",
+    "platform": "powershell",
+    "prompt": "List members of the local Administrators group",
+    "answer": "Get-LocalGroupMember Administrators",
+    "why": "Who is admin on THIS box.",
+    "accept": [
+      "get-localgroupmember administrators"
+    ]
+  },
+  {
+    "id": "net-listen",
+    "platform": "powershell",
+    "prompt": "Show listening TCP connections (PowerShell)",
+    "answer": "Get-NetTCPConnection -State Listen",
+    "why": "PowerShell's answer to 'what's exposed here'.",
+    "accept": [
+      "get-nettcpconnection -state listen"
+    ]
+  },
+  {
+    "id": "whoami-priv",
+    "platform": "windows",
+    "prompt": "Show your token's privileges (cmd/PowerShell)",
+    "answer": "whoami /priv",
+    "why": "SeImpersonate/SeBackup/SeDebug here are privesc gold.",
+    "accept": []
+  },
+  {
+    "id": "failed-logons",
+    "platform": "powershell",
+    "prompt": "Find failed-logon events in the Security log",
+    "answer": "Get-WinEvent -FilterHashtable @{LogName='Security';Id=4625}",
+    "why": "Event 4625 = failed logon: spot brute force.",
+    "accept": [
+      "get-winevent -filterhashtable @\\{logname=['\\\"]security['\\\"];id=4625\\}"
+    ]
+  },
+  {
+    "id": "john-md5",
+    "platform": "john",
+    "prompt": "Crack raw-MD5 hashes in hashes.txt with John and rockyou.txt",
+    "answer": "john --format=raw-md5 --wordlist=rockyou.txt hashes.txt",
+    "why": "Tell John the hash format and give it a wordlist.",
+    "accept": [
+      "john --format=raw-md5 --wordlist=\\S*rockyou\\S* hashes\\.txt"
+    ]
+  },
+  {
+    "id": "hashcat-md5",
+    "platform": "hashcat",
+    "prompt": "Crack MD5 hashes in hashes.txt with hashcat and rockyou.txt",
+    "answer": "hashcat -m 0 -a 0 hashes.txt rockyou.txt",
+    "why": "-m 0 = MD5, -a 0 = straight wordlist attack.",
+    "accept": [
+      "hashcat -m 0 -a 0 hashes\\.txt \\S*rockyou\\S*"
+    ]
+  },
+  {
+    "id": "john-show",
+    "platform": "john",
+    "prompt": "Show the passwords John has already cracked for hashes.txt",
+    "answer": "john --show hashes.txt",
+    "why": "Reads cracked results from the pot file.",
+    "accept": []
+  },
+  {
+    "id": "curl-head",
+    "platform": "curl",
+    "prompt": "Fetch only the response headers of http://10.0.0.5",
+    "answer": "curl -I http://10.0.0.5",
+    "why": "-I = HEAD request: headers only.",
+    "accept": [
+      "curl -i http://10\\.0\\.0\\.5"
+    ]
+  },
+  {
+    "id": "curl-verbose",
+    "platform": "curl",
+    "prompt": "Make a verbose request to http://10.0.0.5 (show the exchange)",
+    "answer": "curl -v http://10.0.0.5",
+    "why": "-v shows the full request/response, TLS and all.",
+    "accept": [
+      "curl -v http://10\\.0\\.0\\.5"
+    ]
+  },
+  {
+    "id": "dig-mx",
+    "platform": "dig",
+    "prompt": "Look up the MX (mail) records for example.com",
+    "answer": "dig MX example.com",
+    "why": "MX = which server receives the domain's mail.",
+    "accept": [
+      "dig mx example\\.com",
+      "dig example\\.com mx"
+    ]
+  },
+  {
+    "id": "sqlmap-basic",
+    "platform": "sqlmap",
+    "prompt": "Test the id param of http://10.0.0.5/item?id=1 for SQLi, no prompts",
+    "answer": "sqlmap -u 'http://10.0.0.5/item?id=1' --batch",
+    "why": "--batch takes defaults so it runs unattended.",
+    "accept": [
+      "sqlmap -u ['\\\"]?http://10\\.0\\.0\\.5/item\\?id=1['\\\"]? --batch"
+    ]
+  }
+]

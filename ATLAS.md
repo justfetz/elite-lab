@@ -38,7 +38,7 @@ and **drills it into muscle memory**. Hands-on first.
 | Build-missions (checker runs your code) | ✅ | 100% | scanner, sniffer, debugger, fuzzer all verify real implementations |
 | Break+fix pairs (blue-team twin) | 🟡 | 15% | only `app-01-fix`; every attack mission should get one |
 | Randomized per-user flags | ⬜ | 0% | flags are deterministic — memorizable/shareable |
-| **Command-drill mode** (type the real command) | ⬜ | 0% | the muscle-memory engine (RTFM-seeded) — not built |
+| **Command-drill mode** (type the real command) | ✅ | 90% | `elite drill commands`: 22 commands, spaced repetition; add more over time |
 | **`elite path`** (guided campaign up the layers) | ⬜ | 0% | not built |
 | **Live lab provisioner** (Docker SQL Server + app, AD) | ⬜ | 0% | the realism jump — not built |
 | Tool tutors beyond nmap (sqlmap/BloodHound/John/…) | ⬜ | 10% | framework ready; interpreters not written |
@@ -46,7 +46,7 @@ and **drills it into muscle memory**. Hands-on first.
 | Docs (SCENARIO/VISION/SPEC/CURRICULUM/ATLAS) | ✅ | 90% | the thinking is captured |
 | On GitHub, MIT, README | ✅ | 100% | justfetz/elite-lab |
 
-## Honest overall: ~40%
+## Honest overall: ~45%
 
 The **engine and the fundamentals are real** — the hard parts (a mission system whose
 checkers run and verify your actual code; build/break; a local book tutor) work. What's

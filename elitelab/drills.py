@@ -72,4 +72,6 @@ def drill_subnet():
         print(f"\nSubnet drill: {score}/{total}\n")
 
 
-DRILLS = {"ports": drill_ports, "subnet": drill_subnet}
+from .commands import drill_commands  # noqa: E402  (after defs to avoid import cycle)
+
+DRILLS = {"ports": drill_ports, "subnet": drill_subnet, "commands": drill_commands}
