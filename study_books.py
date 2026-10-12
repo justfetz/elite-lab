@@ -32,6 +32,7 @@ import logging
 import os
 import pickle
 import sys
+import urllib.error
 import urllib.request
 from pathlib import Path
 
@@ -130,15 +131,25 @@ def _llm(prompt, system):
     model = os.environ.get("OLLAMA_MODEL")
     if model:
         host = os.environ.get("OLLAMA_HOST", "http://localhost:11434")
+        # Local CPU inference is slow to START (the model loads into RAM on the first call)
+        # and to GENERATE. 120s was too tight cold; default to 10 min, override via env.
+        timeout = int(os.environ.get("OLLAMA_TIMEOUT", "600"))
         body = json.dumps({"model": model, "system": system, "prompt": prompt,
-                           "stream": False}).encode()
+                           "stream": False, "keep_alive": "30m"}).encode()
         try:
             req = urllib.request.Request(f"{host}/api/generate", data=body,
                                          headers={"Content-Type": "application/json"})
-            with urllib.request.urlopen(req, timeout=120) as resp:
+            with urllib.request.urlopen(req, timeout=timeout) as resp:
                 return json.loads(resp.read())["response"]
+        except urllib.error.URLError as e:
+            reason = getattr(e, "reason", e)
+            if "timed out" in str(reason).lower():
+                sys.exit(f"Ollama didn't answer within {timeout}s. First call on CPU can be "
+                         f"slow while the model loads - try again (it stays warm), or set a "
+                         f"bigger OLLAMA_TIMEOUT, or use a smaller model (ollama pull llama3.2:3b).")
+            sys.exit(f"Couldn't reach Ollama at {host} ({reason}). Is Ollama running?")
         except Exception as e:
-            sys.exit(f"Ollama call failed ({e}). Is `ollama serve` running?")
+            sys.exit(f"Ollama call failed ({e}).")
     return None
 
 
