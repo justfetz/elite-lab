@@ -36,7 +36,7 @@ and **drills it into muscle memory**. Hands-on first.
 |---|---|---|---|
 | Mission engine (goal/flag/checker/hints) | ✅ | 95% | solid; custom checkers + multi-mission modules supported |
 | Build-missions (checker runs your code) | ✅ | 100% | scanner, sniffer, debugger, fuzzer all verify real implementations |
-| Break+fix pairs (blue-team twin) | 🟡 | 15% | only `app-01-fix`; every attack mission should get one |
+| Break+fix pairs (blue-team twin) | 🟡 | 40% | `app-01-fix`, `ai-01-fix`, `domain-01-fix`; remaining attack missions still need twins |
 | Randomized per-user flags | ⬜ | 0% | flags are deterministic — memorizable/shareable |
 | **Command-drill mode** (type the real command) | ✅ | 90% | `elite drill commands`: 22 commands, spaced repetition; add more over time |
 | **`elite path`** (guided campaign up the layers) | ✅ | 90% | `elite path`: ordered campaign by layer with your progress + NEXT |
@@ -51,8 +51,8 @@ and **drills it into muscle memory**. Hands-on first.
 The **engine, the fundamentals, build/break, command drills, and missions on every
 layer (Wire → Door → App → Host → Domain → AI) are real** — the hard parts (checkers
 that run and verify your actual code; a local book tutor) work. What's still thin is
-**realism and connective tissue**: the live Docker/SQL-Server/AD lab, the `elite path`
-campaign, dedicated Hunt (blue-team) missions, and tool tutors beyond nmap.
+**realism**: the live Docker/SQL-Server/AD lab, dedicated Hunt (blue-team) missions, and
+tool tutors beyond nmap.
 
 ## Next three, in order
 
