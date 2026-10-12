@@ -115,6 +115,26 @@ def build_parser(modules):
     return p
 
 
+def _welcome():
+    """The front door is the story, not a table of contents."""
+    from . import progress
+    from .missions import load_missions
+    missions = load_missions()
+    solved = sum(1 for mid in missions if progress.lab_state(mid)["solved"])
+    reconned = progress.load().get("engagement", {}).get("reconned", False)
+    print("\n  elite-lab -- you're the security team at Vantaris AI.")
+    print("  Your job: find and fix every way the company can be broken.\n")
+    if not reconned:
+        print("  First time? Map the company and start:")
+        print("      elite engage\n")
+    else:
+        print(f"  Progress: {solved}/{len(missions)} targets cleared.")
+        print("  Pick up where you left off:")
+        print("      elite review     # what to redo / do next")
+        print("      elite engage     # the target board\n")
+    print("  Everything else (lessons, drills, tools, the full command list):  elite -h\n")
+
+
 def main(argv=None):
     argv = sys.argv[1:] if argv is None else argv
     modules = load_modules()
@@ -124,8 +144,7 @@ def main(argv=None):
                 "progress": cmd_progress, "reset": cmd_reset}
     args = parser.parse_args(argv)
     if not args.command:
-        cmd_list(modules, args)
-        print("Run 'elite learn networking' to begin, or 'elite lab list' for missions.")
+        _welcome()
         return
     if args.command == "lab":
         action = args.lab_action or "list"
