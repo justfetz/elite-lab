@@ -41,10 +41,16 @@ No dependencies for the core — just **Python 3.8+**.
 ```bash
 git clone https://github.com/justfetz/elite-lab.git
 cd elite-lab
+python3 elite.py doctor                 # check your setup — what's installed, what (if anything) to get
 python3 elite.py engage                 # assess the fake company as one connected job
 python3 elite.py lab start app-01       # or jump into a single mission (break SQLi, then fix it)
 python3 elite.py ask "what is idor"     # hit a term you don't know? ask the app
 ```
+
+**You need almost nothing to start.** The core runs on Python 3.8+ alone, and most missions
+are playable immediately. A handful want an external tool (a C compiler for the reversing/
+fuzzing missions; John/Hashcat for cracking) — `elite doctor` tells you which, with the exact
+install command, so you only get what you'll actually use.
 
 Prefer a real command everywhere? Install it (optional):
 

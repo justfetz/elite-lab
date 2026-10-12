@@ -88,6 +88,9 @@ def build_parser(modules):
     # path: the guided campaign
     sub.add_parser("path", help="guided campaign through the missions, with your progress")
 
+    # doctor: environment check
+    sub.add_parser("doctor", help="check what tools/libraries are installed and what's needed")
+
     # review: the spaced-repetition coach
     sub.add_parser("review", help="what to redo now: weak spots + stale mastery")
 
@@ -125,8 +128,9 @@ def _welcome():
     print("\n  elite-lab -- you're the security team at Vantaris AI.")
     print("  Your job: find and fix every way the company can be broken.\n")
     if not reconned:
-        print("  First time? Map the company and start:")
-        print("      elite engage\n")
+        print("  First time? Check your setup, then map the company and start:")
+        print("      elite doctor     # what's installed / what (if anything) to download")
+        print("      elite engage     # begin the assessment\n")
     else:
         print(f"  Progress: {solved}/{len(missions)} targets cleared.")
         print("  Pick up where you left off:")
@@ -168,5 +172,9 @@ def main(argv=None):
     if args.command == "review":
         from .review import review
         review(args)
+        return
+    if args.command == "doctor":
+        from .doctor import doctor
+        doctor(args)
         return
     handlers[args.command](modules, args)
