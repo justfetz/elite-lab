@@ -48,14 +48,17 @@ and **drills it into muscle memory**. Hands-on first.
 
 ## Honest overall: ~55%
 
-The **engine, the fundamentals, build/break, command drills, and the AI capstone are
-real** — the hard parts (checkers that run and verify your actual code; a local book
-tutor) work. What's still thin is **realism and the enterprise layers**: the live
-Docker/SQL-Server/AD lab, a Domain (Active Directory) mission, the `elite path` campaign,
-and tool tutors beyond nmap.
+The **engine, the fundamentals, build/break, command drills, and missions on every
+layer (Wire → Door → App → Host → Domain → AI) are real** — the hard parts (checkers
+that run and verify your actual code; a local book tutor) work. What's still thin is
+**realism and connective tissue**: the live Docker/SQL-Server/AD lab, the `elite path`
+campaign, dedicated Hunt (blue-team) missions, and tool tutors beyond nmap.
 
 ## Next three, in order
 
-1. **Command-drill mode** — the muscle memory you keep asking for; bounded, high-impact.
-2. **Live SQL Server lab + mission** — turns `app-01` into Northwind's real product; your turf.
-3. **AD lab + a Domain mission** — the enterprise battleground (Layer 5), currently the biggest gap.
+1. **Live SQL Server lab + mission** — turns `app-01` into Northwind's real product (Docker
+   SQL Server Developer + the vulnerable app); the realism jump, and your turf.
+2. **`elite path`** — a guided campaign that sequences the missions up the layers, so there's
+   one clear route from zero to competent.
+3. **A Hunt (blue-team) mission + more tool tutors** — detect an attack in logs; add sqlmap/
+   BloodHound/John tutors to `elite run`.
