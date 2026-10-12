@@ -24,18 +24,29 @@ WELL_KNOWN = {
 }
 
 
+def _hosts_in(args):
+    hosts = []
+    for a in args:
+        m = re.match(r"^\w+://([^/:]+)", a)        # URL -> host
+        if m:
+            hosts.append(m.group(1))
+        elif re.match(r"^[\d.]+$", a) or a == "localhost":
+            hosts.append(a)
+    return hosts
+
+
 def _target_is_lab(args):
     """True if every host-looking arg is localhost or RFC1918 (your own lab)."""
-    hosts = [a for a in args if re.match(r"^[\d.]+$", a) or a in ("localhost",)]
+    hosts = _hosts_in(args)
     if not hosts:
         return True  # no explicit target (e.g. --help); let the tool decide
     for h in hosts:
-        if h == "localhost":
+        if h in ("localhost", "127.0.0.1") or h.endswith(".local"):
             continue
         try:
             ip = ipaddress.ip_address(h)
         except ValueError:
-            return False
+            return False   # a real hostname/domain -> not your lab
         if not (ip.is_private or ip.is_loopback):
             return False
     return True
@@ -73,13 +84,85 @@ PORT     STATE SERVICE
 Nmap done: 1 IP address (1 host up) scanned
 """
 
+def interpret_sqlmap(output):
+    low = output.lower()
+    lines = ["LESSON - reading sqlmap:"]
+    if "is vulnerable" in low or "injectable" in low or "parameter" in low and "vulnerab" in low:
+        params = re.findall(r"parameter '([^']+)'", output)
+        dbms = re.findall(r"back-end DBMS: ([^\n]+)", output)
+        lines.append("  Injectable parameter found" + (f": {params[0]}" if params else "") + ".")
+        if dbms:
+            lines.append(f"  Back-end DBMS identified: {dbms[0].strip()}.")
+        lines.append("  That means user input is reaching the SQL engine as CODE. From here an "
+                     "attacker dumps tables, reads files, sometimes runs commands.")
+    else:
+        lines.append("  No injection reported here. A well-parameterized app gives sqlmap nothing.")
+    lines.append("  DEFENSE: parameterized queries / prepared statements. See the app-01 mission.")
+    return "\n".join(lines)
+
+
+def interpret_john(output):
+    cracked = re.findall(r"^(\S+):(\S+)", output, re.MULTILINE)
+    # john --show prints user:password lines
+    lines = ["LESSON - reading John the Ripper:"]
+    real = [(u, p) for u, p in cracked if p and ":" not in p]
+    if real:
+        lines.append(f"  {len(real)} hash(es) cracked. Each one was a weak/common password a "
+                     "wordlist guessed, because the hashing was fast and/or unsalted.")
+    else:
+        lines.append("  Nothing cracked from this output. Strong, slow, salted hashing resists "
+                     "wordlist attacks - which is exactly the point.")
+    lines.append("  DEFENSE: store passwords with bcrypt/scrypt/Argon2 at a high cost. See crack-01.")
+    return "\n".join(lines)
+
+
+def interpret_gobuster(output):
+    found = re.findall(r"^(/\S+)\s+\(Status:\s*(\d+)", output, re.MULTILINE)
+    lines = ["LESSON - reading gobuster/ffuf:"]
+    if found:
+        lines.append(f"  {len(found)} path(s) discovered that weren't linked anywhere:")
+        for path, status in found[:8]:
+            lines.append(f"    {status}  {path}")
+        lines.append("  Hidden endpoints = attack surface the developer forgot about (admin "
+                     "panels, backups, .git). Always map before you test.")
+    else:
+        lines.append("  No hidden paths found with this wordlist. Try a bigger/different list.")
+    lines.append("  DEFENSE: don't rely on secrecy of URLs; protect every endpoint, remove "
+                 "backups and .git from web roots.")
+    return "\n".join(lines)
+
+
+SAMPLE_SQLMAP = """\
+[*] starting @ 12:00:00
+[12:00:01] [INFO] testing connection to the target URL
+[12:00:03] [INFO] GET parameter 'id' is 'MySQL >= 5.0 boolean-based blind' injectable
+[12:00:04] [INFO] the back-end DBMS is MySQL
+GET parameter 'id' is vulnerable.
+back-end DBMS: MySQL
+"""
+SAMPLE_JOHN = """\
+ceo:superman
+reception:shadow
+2 password hashes cracked, 3 left
+"""
+SAMPLE_GOBUSTER = """\
+/admin                (Status: 301)
+/backup               (Status: 200)
+/.git/config          (Status: 200)
+/login                (Status: 200)
+"""
+
 TOOLS = {
-    "nmap": {
-        "needs_target": True,
-        "interpret": interpret_nmap,
-        "sample": SAMPLE_NMAP,
-        "study": "what do open ports tell an attacker",
-    },
+    "nmap": {"needs_target": True, "interpret": interpret_nmap, "sample": SAMPLE_NMAP,
+             "study": "what do open ports tell an attacker"},
+    "sqlmap": {"needs_target": True, "interpret": interpret_sqlmap, "sample": SAMPLE_SQLMAP,
+               "study": "how does SQL injection work"},
+    "john": {"needs_target": False, "interpret": interpret_john, "sample": SAMPLE_JOHN,
+             "study": "why is fast unsalted hashing dangerous"},
+    "gobuster": {"needs_target": True, "interpret": interpret_gobuster, "sample": SAMPLE_GOBUSTER,
+                 "study": "how bug hunters map an app"},
+    "ffuf": {"needs_target": True, "interpret": interpret_gobuster, "sample": SAMPLE_GOBUSTER,
+             "study": "how bug hunters map an app"},
 }
 
 
