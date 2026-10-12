@@ -102,10 +102,11 @@ def lab_status(args):
 CAMPAIGN = [
     "wire-01", "build-01", "build-02",
     "crack-01",
-    "app-01", "app-01-fix",
-    "bin-01", "build-03", "build-04",
+    "app-01", "app-01-fix", "idor-01", "idor-01-fix",
+    "bin-01", "priv-01", "build-03", "build-04",
     "domain-01", "domain-01-fix",
     "ai-01", "ai-01-fix",
+    "hunt-01",
 ]
 
 

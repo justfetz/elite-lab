@@ -24,10 +24,10 @@ and **drills it into muscle memory**. Hands-on first.
 |---|---|---|---|
 | 1 The Wire | 🟡 | 60% | `wire-01` (log hunt), `build-01` scanner, `build-02` sniffer, nmap tutor |
 | 2 The Door | 🟡 | 40% | `crack-01` (hash cracking); needs a live auth/brute mission |
-| 3 The App | 🟡 | 55% | `app-01`+`app-01-fix` (SQLi break+fix), `web-vulns` module; needs IDOR/XSS missions |
-| 4 The Host | 🟡 | 50% | `bin-01` crackme, `build-03` debugger, `build-04` fuzzer; needs a privesc mission |
+| 3 The App | 🟡 | 70% | `app-01`+`app-01-fix` (SQLi), `idor-01`+`idor-01-fix` (access control), `web-vulns`; XSS/SSRF still to add |
+| 4 The Host | 🟡 | 65% | `bin-01` crackme, `priv-01` Linux privesc, `build-03` debugger, `build-04` fuzzer |
 | 5 The Domain | 🟡 | 55% | `domain-01` + `domain-01-fix`: path-to-DA analysis & remediation; `windows-ps` module. Live AD lab still planned |
-| 6 The Hunt | ⬜ | 15% | `wire-01` touches detection; **no dedicated blue-team missions** |
+| 6 The Hunt | 🟡 | 55% | `hunt-01`: correlate auth + process logs to find the breach and the C2; more detections to add |
 | AI product (capstone) | 🟡 | 55% | `ai-01` + `ai-01-fix`: prompt-injection attack & defend on a RAG agent; live text-to-SQL agent still planned |
 
 ## Systems & infrastructure
@@ -36,7 +36,7 @@ and **drills it into muscle memory**. Hands-on first.
 |---|---|---|---|
 | Mission engine (goal/flag/checker/hints) | ✅ | 95% | solid; custom checkers + multi-mission modules supported |
 | Build-missions (checker runs your code) | ✅ | 100% | scanner, sniffer, debugger, fuzzer all verify real implementations |
-| Break+fix pairs (blue-team twin) | 🟡 | 40% | `app-01-fix`, `ai-01-fix`, `domain-01-fix`; remaining attack missions still need twins |
+| Break+fix pairs (blue-team twin) | 🟡 | 50% | `app-01-fix`, `idor-01-fix`, `ai-01-fix`, `domain-01-fix`; a few attack missions still need twins |
 | Randomized per-user flags | ⬜ | 0% | flags are deterministic — memorizable/shareable |
 | **Command-drill mode** (type the real command) | ✅ | 90% | `elite drill commands`: 22 commands, spaced repetition; add more over time |
 | **`elite path`** (guided campaign up the layers) | ✅ | 90% | `elite path`: ordered campaign by layer with your progress + NEXT |
@@ -46,7 +46,7 @@ and **drills it into muscle memory**. Hands-on first.
 | Docs (SCENARIO/VISION/SPEC/CURRICULUM/ATLAS) | ✅ | 90% | the thinking is captured |
 | On GitHub, MIT, README | ✅ | 100% | justfetz/elite-lab |
 
-## Honest overall: ~58%
+## Honest overall: ~62%
 
 The **engine, the fundamentals, build/break, command drills, and missions on every
 layer (Wire → Door → App → Host → Domain → AI) are real** — the hard parts (checkers
