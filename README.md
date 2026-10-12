@@ -227,7 +227,8 @@ Extend it by dropping a JSON file in `modules/` (a new lesson/quiz) or a mission
 
 See `CURRICULUM.md` (the layer map), `SCENARIO.md` (the company story), `PRINCIPLES.md`
 (the design rules), `LIBRARY.md` (set up your own book shelf + a free local AI tutor),
-`SPEC.md` (the build brief), and `ATLAS.md` (live status / what's next).
+`TOOLS.md` (the libraries behind it, and what to reach for when), `SPEC.md` (the build
+brief), and `ATLAS.md` (live status / what's next).
 
 ---
 
