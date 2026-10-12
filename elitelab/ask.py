@@ -63,48 +63,62 @@ def _book_hits(query):
         return []
 
 
+def _corpus():
+    """Every askable thing in the app: lessons, tool briefings, and missions.
+    Each entry: (tag_to_show, title, text_to_search, how_to_go_deeper)."""
+    entries = []
+    for key, mod in load_modules().items():
+        for lesson in mod["lessons"]:
+            entries.append((f"[{key}] {lesson['title']}", lesson["title"],
+                            lesson["title"] + " " + lesson["body"], f"elite learn {key}"))
+        for t in mod["tools"]:
+            txt = " ".join(t.get(f, "") for f in ("name", "what", "exercise"))
+            entries.append((f"[{key}] tool: {t['name']}", t["name"], txt, f"elite tools {key}"))
+    try:
+        from .missions import load_missions
+        for mid, m in load_missions().items():
+            entries.append((f"[mission {mid}] {m.title}", m.title,
+                            m.title + " " + m.goal + " " + m.debrief, f"elite lab start {mid}"))
+    except Exception:
+        pass
+    return entries
+
+
 def ask(query):
     query_words = {w for w in _words(query) if w not in STOP and len(w) > 1}
     if not query_words:
         print("Ask a question, e.g.:  elite ask \"how does an access check work\"")
         return
-    modules = load_modules()
-    lessons = [(key, lesson) for key, mod in modules.items() for lesson in mod["lessons"]]
-    # IDF over the lesson corpus: rare words (IDOR, token, injection) outweigh common ones
-    n = len(lessons)
+    entries = _corpus()
+    n = len(entries)
     df = Counter()
-    for _, lesson in lessons:
-        for w in set(_words(lesson["title"] + " " + lesson["body"])):
+    for _, _, text, _ in entries:
+        for w in set(_words(text)):
             df[w] += 1
     idf = {w: math.log((n + 1) / (df.get(w, 0) + 1)) + 1 for w in query_words}
-    # title matches count extra
     scored = []
-    for key, lesson in lessons:
-        s = _score(query_words, lesson["body"], idf) + 3 * _score(query_words, lesson["title"], idf)
+    for tag, title, text, deeper in entries:
+        s = _score(query_words, text, idf) + 3 * _score(query_words, title, idf)
         if s > 0:
-            scored.append((s, key, lesson))
+            scored.append((s, tag, text, deeper))
     scored.sort(key=lambda t: t[0], reverse=True)
 
     if not scored:
-        print(f"\nNothing in the course lessons matches that yet. Try different words, or "
-              f"index your books and run: python3 study_books.py ask \"{query}\"\n")
+        print(f"\nNothing in the app matches that yet. Try different words, or index your "
+              f"books and run: python3 study_books.py ask \"{query}\"\n")
         return
 
-    print(f"\nFrom the course, on \"{query}\":\n")
-    seen_modules = []
-    for s, key, lesson in scored[:3]:
-        seen_modules.append(key)
-        print(f"  [{key}] {lesson['title']}")
-        print("  " + _snippet(lesson["body"], query_words) + "\n")
+    print(f"\nOn \"{query}\":\n")
+    for s, tag, text, deeper in scored[:3]:
+        print(f"  {tag}")
+        print("  " + _snippet(text, query_words) + f"\n  -> {deeper}\n")
 
     books = _book_hits(query)
     if books:
-        print("Your books go deeper - see:")
+        print("Your books go deeper:")
         for b, p in books:
             print(f"  {b} {p}")
         print(f"  (full answer: python3 study_books.py ask \"{query}\")")
-    else:
-        print(f"Go deeper:  elite learn {seen_modules[0]}"
-              + (f"   |   index your books for cited answers: study_books.py ask \"{query}\""
-                 if not BOOK_INDEX.exists() else ""))
+    elif not BOOK_INDEX.exists():
+        print(f"For cited answers from your own books: study_books.py ask \"{query}\"")
     print()
