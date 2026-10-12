@@ -1,9 +1,9 @@
-"""Mission build-01: Build your own port scanner (Layer 1 - The Wire / build-your-own-tools).
+"""Mission build-01: Build your own port scanner (Layer 1 - The Wire).
 
-You implement the core of a TCP port scanner in Python. The checker opens real
-listeners on localhost and runs YOUR scanner against them - it passes only if your
-code finds exactly the open ports (all of them, no false positives). You learn nmap
-by building a tiny one.
+Taught as a staircase so a beginner never faces a blank function: SEE a worked example
+run, POKE it, then BUILD the real thing. The checker opens real listeners on localhost
+and runs YOUR scanner against them - it passes only when your code finds exactly the
+open ports. You learn nmap by building a tiny one.
 """
 import random
 import socket
@@ -13,24 +13,37 @@ from pathlib import Path
 
 from .base import Mission
 
-SKELETON = '''\
-#!/usr/bin/env python3
-"""A tiny TCP port scanner - fill in scan_port(). Usage: python3 scanner.py <host> <ports>
-   <ports> can be "80,443" or a range "20000-20010"."""
+# Rung 2: a runnable worked example the learner sees FIRST (not graded; just to learn from).
+SCAN_ONE = '''#!/usr/bin/env python3
+"""A WORKED EXAMPLE. Run it first:   python3 scan_one.py
+It checks whether ONE port on your own machine is open. Read every line, then change the
+port number near the top and run it again. A port scanner is just this, repeated."""
+import socket
+
+host = "127.0.0.1"   # your own machine ("localhost") - always safe to scan
+port = 80            # <-- change this (try 22, 443, 9999) and re-run to see it change
+
+s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)   # make a TCP socket (like a phone)
+s.settimeout(0.5)                                       # give up after 0.5s if nobody answers
+result = s.connect_ex((host, port))                     # try to connect; 0 means SUCCESS = open
+s.close()                                               # hang up
+
+print(f"port {port} is", "OPEN" if result == 0 else "closed")
+'''
+
+# Rung 5: the real mission file. Only scan_port is yours to write.
+SKELETON = '''#!/usr/bin/env python3
+"""A tiny TCP port scanner. Fill in scan_port().  Usage: python3 scanner.py <host> <ports>
+   <ports> can be "80,443" or a range "20-25"."""
 import socket
 import sys
 
 
 def scan_port(host, port, timeout=0.5):
-    # TODO: return True if a TCP connection to (host, port) succeeds, else False.
-    #
-    #   s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    #   s.settimeout(timeout)
-    #   result = s.connect_ex((host, port))   # 0 means the port is open
-    #   s.close()
-    #   return result == 0
-    #
-    # Write those lines yourself - that connect_ex call IS a port scan.
+    # You already did this in scan_one.py - it printed whether a port was open.
+    # Here, do the SAME thing, but RETURN True if the port is open and False if not.
+    # (Make a socket, set the timeout, call connect_ex((host, port)), and return whether
+    #  the result was 0. Don't forget to close the socket.)
     raise NotImplementedError("implement scan_port")
 
 
@@ -61,20 +74,26 @@ if __name__ == "__main__":
 
 
 def setup(workdir: Path):
+    (workdir / "scan_one.py").write_text(SCAN_ONE)
     (workdir / "scanner.py").write_text(SKELETON)
     (workdir / "START_HERE.txt").write_text(
-        "Open scanner.py and implement scan_port() so it returns True for an open TCP port.\n"
-        "Contract the checker relies on:\n"
-        "  python3 scanner.py <host> <ports>   prints one line '<port> open' per open port.\n"
-        "Test it yourself against something you're running (e.g. python3 -m http.server):\n"
-        "  python3 scanner.py 127.0.0.1 8000-8005\n"
-        "When it works, submit BUILT and the checker will run your scanner against real\n"
-        "listeners it opens on localhost.\n")
+        "GOAL: write scan_port() in scanner.py so it finds open TCP ports.\n\n"
+        "Never written one? Do these in order - each step is tiny:\n\n"
+        "  1. SEE IT    python3 scan_one.py\n"
+        "               A worked example. It checks ONE port and says open/closed.\n\n"
+        "  2. POKE IT   Edit scan_one.py, change `port` to 22, then 443, then 9999, and\n"
+        "               run it again each time. Notice: connect_ex returns 0 when OPEN.\n\n"
+        "  3. BUILD IT  Open scanner.py and write scan_port(). It's exactly what scan_one.py\n"
+        "               does - just wrapped in a function that RETURNS True (open) / False (closed)\n"
+        "               instead of printing.\n\n"
+        "  4. CHECK IT  python3 scanner.py 127.0.0.1 20-25     (try it yourself)\n"
+        "               then:  elite lab submit build-01 BUILT\n\n"
+        "Stuck on a step?  elite lab hint build-01   (it asks questions; it won't hand you code).\n")
 
 
 def check_build(workdir: Path, submitted: str) -> bool:
     base = random.randint(20000, 40000)
-    open_ports = [base, base + 2, base + 5]      # leave gaps (base+1,3,4,6 stay closed)
+    open_ports = [base, base + 2, base + 5]       # leave gaps (base+1,3,4,6 stay closed)
     listeners = []
     try:
         for p in open_ports:
@@ -96,7 +115,7 @@ def check_build(workdir: Path, submitted: str) -> bool:
     finally:
         for s in listeners:
             s.close()
-    return reported == set(open_ports)   # found all open, no false positives
+    return reported == set(open_ports)
 
 
 MISSION = Mission(
@@ -104,23 +123,26 @@ MISSION = Mission(
     layer="1 The Wire",
     title="Build your own port scanner",
     difficulty="easy",
-    goal="Implement scan_port() in scanner.py so it correctly finds open TCP ports, then submit BUILT.",
+    goal="Implement scan_port() in scanner.py so it finds open TCP ports, then submit BUILT. "
+         "New to this? Run scan_one.py first - the mission walks you up from there.",
     flag_format="BUILT (after scanner.py works)",
     setup=setup,
     checker=check_build,
     tools=["python3", "sockets"],
     hints=[
-        "A TCP 'scan' of one port is just trying to connect to it. Open a socket: "
-        "socket.socket(socket.AF_INET, socket.SOCK_STREAM).",
-        "Set a short timeout (s.settimeout(0.5)) so closed/filtered ports don't hang, then use "
-        "s.connect_ex((host, port)) - it returns 0 when the port is open (no exception needed).",
-        "Return (connect_ex(...) == 0) and close the socket. That's the whole scanner - the same "
-        "idea nmap's connect scan uses, just without nmap's speed and stealth.",
+        "Did you run `python3 scan_one.py` and change the port a few times? scan_port does the "
+        "SAME thing - just copy what scan_one.py does into the function to start, then make it "
+        "RETURN a value instead of printing.",
+        "The key line is connect_ex((host, port)). You saw what it returns when a port is open: "
+        "0. So your function should end by returning whether that result == 0.",
+        "The whole body is four lines: make the socket, set the timeout, call connect_ex, close "
+        "the socket, and `return result == 0`. If you look at the exact lines in scan_one.py to "
+        "do it, retype them here from memory once afterward so it actually sticks.",
     ],
     debrief=(
-        "You built a working TCP port scanner. Now you understand what nmap does under the hood: "
-        "a connect scan completes the TCP handshake (gets logged), while nmap's default SYN scan "
-        "sends SYN and never finishes - faster and quieter. Next builds in this track: a raw-socket "
-        "packet sniffer, then a ptrace mini-debugger (Gray Hat Python), then a fuzzer against your "
-        "own crackme. Building the tool is how you truly learn it."),
+        "You built a working TCP port scanner - and if you climbed the rungs, you UNDERSTOOD "
+        "every line instead of pasting it. That's the difference the whole tool is built on. "
+        "Under the hood you now know what nmap does: a connect scan completes the TCP handshake "
+        "(and gets logged), while nmap's default SYN scan sends SYN and never finishes - faster "
+        "and quieter. Next builds: a packet sniffer, a debugger, a fuzzer."),
 )
