@@ -1,0 +1,74 @@
+{
+  "key": "basics",
+  "title": "Getting started (what the words mean)",
+  "order": 1,
+  "lessons": [
+    {
+      "title": "What a flag is",
+      "body": "A flag is a secret token you can only get by actually pulling off the challenge -\nproof you did the thing, not just read about it. It's a capture-the-flag (CTF)\nconvention. In this tool a flag looks like  flag{sqli_ab12cd34}. When a mission says\n'submit flag{...}', it means: complete the hack, read the secret token it exposes,\nand hand it back with  elite lab submit <mission> 'flag{...}'. You can't guess it -\nyou have to earn it, which is the whole point."
+    },
+    {
+      "title": "What a mission is",
+      "body": "A mission is one hands-on task: a goal, some real files it drops in a working folder,\nand a checker that verifies your actual work. Missions are the core of the tool -\nyou learn by DOING one, not by reading. Start one with  elite lab start <id>,\nwork in the folder it names, then submit. See them all with  elite lab list."
+    },
+    {
+      "title": "Break and fix pairs",
+      "body": "Many missions come in two halves. The BREAK half (e.g. app-01) has you exploit a\nflaw so you understand the risk in your own hands. The FIX half (app-01-fix) has you\npatch it and proves the patch holds. Breaking teaches the danger; fixing teaches the\ndefense - and the defense is the real job. Always do both."
+    },
+    {
+      "title": "What a checker is",
+      "body": "The checker is the program that runs YOUR solution to decide if you passed - it runs\nyour code, opens the sockets, re-reads the file. That's why you can't fake a mission:\nit checks what you actually did, not what you claim. For a break mission it confirms\nyou captured the real flag; for a fix mission it runs your patched file to confirm\nthe hole is closed and normal use still works."
+    },
+    {
+      "title": "What a hint is",
+      "body": "Stuck on a mission? Unlock a hint with  elite lab hint <id>. Hints escalate: the\nfirst is a gentle nudge, the last usually spells out the answer. They're there so you\nwrestle first and only get the answer after - that's when it sticks. Using a hint is\nnever cheating; charging straight to the last one before thinking just skips the rep."
+    },
+    {
+      "title": "Capture the flag (CTF)",
+      "body": "CTF is the format this borrows: a safe, legal challenge where success is proven by\ncapturing a hidden 'flag' token. Real CTF platforms (picoCTF, Hack The Box, TryHackMe)\nrun the same loop against bigger targets. Here it's offline and self-contained, so\nevery mission is something you're fully allowed to attack."
+    },
+    {
+      "title": "Layers and engage",
+      "body": "The missions are grouped into LAYERS that follow how data moves through a company:\nthe Wire (network), the Door (credentials), the App (web), the Host (a machine), the\nDomain (Active Directory), the Hunt (detection), and the AI product.  elite engage\nturns those into one connected assessment of the company - recon the surface, then\nattack any target. Think of layers as the map and engage as walking it."
+    },
+    {
+      "title": "Which tool answers which question",
+      "body": "Two tutors, different jobs.  elite ask \"...\"  answers from THIS course - concepts,\ntools, what a mission or term means (instant, no setup).  elite study ask \"...\"\nanswers from YOUR OWN books (the PDFs you indexed), using a local AI. So 'what is a\nflag' or 'explain this mission' -> elite ask. 'What does Windows Internals say about\naccess tokens' -> elite study ask. Course question vs book question."
+    }
+  ],
+  "quiz": [
+    {
+      "q": "What is a 'flag' in a mission?",
+      "options": [
+        "your username",
+        "a secret token you capture by completing the challenge",
+        "a command-line option",
+        "an error message"
+      ],
+      "answer": 1,
+      "why": "The flag proves you actually did the task; you submit it to pass."
+    },
+    {
+      "q": "Why can't you fake completing a mission?",
+      "options": [
+        "an instructor watches",
+        "the checker runs your actual work",
+        "you sign a pledge",
+        "you can - it's honor-based"
+      ],
+      "answer": 1,
+      "why": "The checker executes your real solution, so only genuine work passes."
+    },
+    {
+      "q": "You want to know what YOUR Windows Internals PDF says. Which command?",
+      "options": [
+        "elite ask",
+        "elite study ask",
+        "elite learn",
+        "elite drill"
+      ],
+      "answer": 1,
+      "why": "elite study searches your own indexed books; elite ask answers from the course."
+    }
+  ]
+}
