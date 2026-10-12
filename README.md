@@ -63,6 +63,13 @@ are playable immediately. A handful want an external tool (a C compiler for the 
 fuzzing missions; John/Hashcat for cracking) — `elite doctor` tells you which, with the exact
 install command, so you only get what you'll actually use.
 
+**bash or PowerShell?** The tool itself (`python3 elite.py`) runs the same on any OS. The
+hands-on *mission* commands are bash/Unix (grep, nmap, john, sudo…), so use a Unix shell:
+macOS Terminal, any Linux terminal, or **WSL on Windows** (`wsl --install` once). PowerShell
+has its own module (`windows-ps`) for the Windows/AD material. New to the terminal? Start
+with **`python3 elite.py learn shell-basics`** — it covers the shell, paths, flags, pipes,
+grep, and curl from zero.
+
 Prefer a real command everywhere? Install it (optional):
 
 ```bash
