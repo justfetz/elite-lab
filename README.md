@@ -56,6 +56,14 @@ python3 elite.py run nmap 127.0.0.1       # run a real tool, get a taught debrie
 (command real tools). Lessons and quizzes are optional reinforcement — reach for
 `learn`/`quiz` when a mission exposes a gap, not the other way around.
 
+Prefer a real command? Install it (optional):
+
+```bash
+pip install -e .          # now `elite ...` works anywhere
+pip install -e ".[books]" # also enables study_books.py (local RAG over your own PDFs)
+pytest -q                 # run the suite: proves every mission is solvable
+```
+
 Common commands:
 
 | Command | What it does |
