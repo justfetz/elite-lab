@@ -191,6 +191,10 @@ python3 study_books.py ask "how does an access check work?"
 LLM backend is auto-detected: Anthropic API (`ANTHROPIC_API_KEY`) or local Ollama
 (`OLLAMA_MODEL=llama3.1`, free/offline). With neither, it shows you the passages to read.
 
+**New to this?** See **[`LIBRARY.md`](LIBRARY.md)** — a full walkthrough: what books to put on
+the shelf, how to run a **free AI model on your own laptop** (Ollama), how to index your
+library, and how to ask it questions from the terminal.
+
 > `books/` and its index are **gitignored and never committed.** This repo contains only
 > original content — never book text. Index anything you own for personal study; only
 > open-licensed material (OWASP, NIST, OSTEP, RFCs…) may go in a shared build.
@@ -221,7 +225,8 @@ Extend it by dropping a JSON file in `modules/` (a new lesson/quiz) or a mission
 `elitelab/missions/` — the test suite will tell you if a mission isn't solvable.
 
 See `CURRICULUM.md` (the layer map), `SCENARIO.md` (the company story), `PRINCIPLES.md`
-(the design rules), `SPEC.md` (the build brief), and `ATLAS.md` (live status / what's next).
+(the design rules), `LIBRARY.md` (set up your own book shelf + a free local AI tutor),
+`SPEC.md` (the build brief), and `ATLAS.md` (live status / what's next).
 
 ---
 
