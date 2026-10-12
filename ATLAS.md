@@ -47,8 +47,9 @@ and **drills it into muscle memory**. Hands-on first.
 | `study_books.py` + `elite ask` | ✅ | 90% | `elite ask` answers from course lessons instantly; study_books adds book-grounded answers |
 | Docs (SCENARIO/VISION/SPEC/CURRICULUM/ATLAS) | ✅ | 90% | the thinking is captured |
 | On GitHub, MIT, README | ✅ | 100% | justfetz/elite-lab |
+| Packaging + test suite | ✅ | 90% | `pip install -e .` gives the `elite` command; 25 pytest checks prove every mission solvable + CLI runs |
 
-## Honest overall: ~72%
+## Honest overall: ~74%
 
 The **engine, the fundamentals, build/break, command drills, and missions on every
 layer (Wire → Door → App → Host → Domain → AI) are real** — the hard parts (checkers

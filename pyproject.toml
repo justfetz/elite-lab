@@ -1,0 +1,29 @@
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "elite-lab"
+version = "0.1.0"
+description = "A terminal cyber range: learn networking, Windows internals, and security by breaking and fixing things."
+readme = "README.md"
+requires-python = ">=3.8"
+license = { text = "MIT" }
+authors = [{ name = "Jason Fetzer" }]
+dependencies = []   # the course runs on the standard library alone
+
+[project.optional-dependencies]
+books = ["pypdf", "scikit-learn", "markitdown"]   # for study_books.py (local RAG)
+dev = ["pytest"]
+
+[project.scripts]
+elite = "elitelab.cli:main"
+
+[tool.setuptools]
+packages = ["elitelab", "elitelab.missions"]
+
+[tool.setuptools.package-data]
+"elitelab" = []
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
