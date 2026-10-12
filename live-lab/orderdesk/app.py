@@ -132,11 +132,16 @@ input{padding:9px;border-radius:7px;border:1px solid var(--line);background:var(
 button{padding:9px 16px;border:0;border-radius:7px;background:var(--felt);color:#fff;font-weight:600;cursor:pointer;font-family:inherit}
 a{color:var(--felt)} .muted{color:var(--ink3);font-size:13px}
 #map{height:300px;border-radius:10px;border:1px solid var(--line);margin-top:6px}
+.reels{display:flex;flex-direction:column;gap:7px;margin-top:4px}
+.reel{display:flex;height:28px;border-radius:5px;overflow:hidden;border:1px solid var(--line)}
+.slit{display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:600;color:#fff;white-space:nowrap;min-width:0}
+.slit.trim{background:repeating-linear-gradient(45deg,var(--line),var(--line) 4px,transparent 4px,transparent 9px);color:var(--ink3)}
+.reel-cap{display:flex;justify-content:space-between;font-size:12px;color:var(--ink3);margin:2px 2px 0}
 </style></head><body>
 <header><span class="mark">&#9608;</span>
   <h1>Lakefront Paper &amp; Container Co.</h1>
   <span class="sub">OrderDesk</span><span class="sp"></span>
-  <span class="muted">{{ who }}</span></header>
+  <span class="muted">{{ who|safe }}</span></header>
 <div class="wrap">{{ body|safe }}</div>
 <!-- [VULN] live-key: legacy Google Maps key ships to every visitor in the source -->
 <script>const MAPS_KEY = "{{ maps_key }}"; /* legacy delivery-map key */</script>
@@ -152,6 +157,32 @@ def render(body, head="", tail="", who="not signed in"):
 def _who():
     return f"signed in: {session['user']}" if "user" in session else \
            '<a href="/login">sign in</a>'
+
+
+# today's run: a few slitting patterns of the 200" reel (from LoadMaster).
+# each = list of (width, color-var) segments; trim is the leftover.
+RUN = [
+    [(88, "felt"), (62, "wet"), (44, "kraft")],      # trim 6
+    [(70, "kraft"), (70, "kraft"), (55, "wet")],     # trim 5
+    [(88, "felt"), (70, "wet"), (40, "kraft")],      # trim 2
+    [(88, "felt"), (88, "felt")],                    # trim 24
+]
+
+
+def reel_bars():
+    out = []
+    for i, pat in enumerate(RUN, 1):
+        used = sum(w for w, _ in pat)
+        trim = 200 - used
+        segs = "".join(
+            f'<div class="slit" style="width:{w/200*100:.2f}%;background:var(--{c})">{w}&Prime;</div>'
+            for w, c in pat)
+        if trim:
+            segs += f'<div class="slit trim" style="width:{trim/200*100:.2f}%">{trim}&Prime;</div>'
+        out.append(f'<div class="reel">{segs}</div>'
+                   f'<div class="reel-cap"><span>Reel {i}</span>'
+                   f'<span>{used}&Prime; cut &middot; {trim}&Prime; trim</span></div>')
+    return '<div class="reels">' + "".join(out) + "</div>"
 
 
 @app.route("/")
@@ -175,6 +206,11 @@ def dashboard():
           <div class="tile"><div class="n">3</div><div class="l">Plants served</div></div>
         </div>
         <p class="muted">Chicago mill &rarr; corrugator plants. Trucks loaded by weight.</p>
+      </div>
+      <div class="card"><h2>Today's slitting &mdash; 200&Prime; parent reel</h2>
+        <p class="muted">How LoadMaster cut each reel into order widths. Hatched = trim waste.</p>
+        {reel_bars()}</div>
+      <div class="card"><h2>Orders</h2>
         <table><tr><th>Order</th><th>Grade</th><th>Rolls</th><th>Weight (lbs)</th><th>Status</th></tr>
         {trs}</table></div>
       <div class="card"><h2>Track an order</h2>
