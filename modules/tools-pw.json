@@ -29,6 +29,18 @@
         "john --wordlist=rockyou.txt mine.txt"
       ],
       "exercise": "On a throwaway VM you control, add a user with a weak password and crack it from the shadow file. Then set a strong passphrase and watch the wordlist attack fail."
+    },
+    {
+      "name": "Hydra (THC-Hydra)",
+      "what": "The ONLINE password guesser - and the key contrast to John/Hashcat. John and Hashcat are OFFLINE: you already HAVE the hash and crack it on your own machine (fast, silent, unlimited tries). Hydra is ONLINE: it throws guesses at a LIVE service (SSH, FTP, a web login) that answers yes/no. Use Hydra only when you have a login prompt but no hash. It is slow, LOUD (every try hits real logs), and can lock accounts - the opposite trade-off from offline cracking.",
+      "legal": "Only run this against machines you own or have explicit written permission to test. Scanning or attacking other systems is illegal.",
+      "install": "`sudo apt install hydra` (Kali: preinstalled).",
+      "try": [
+        "# against YOUR OWN lab service only (e.g. OrderDesk's login on localhost):",
+        "hydra -l millops_admin -P small_wordlist.txt 127.0.0.1 http-post-form \\",
+        "  \"/login:username=^USER^&password=^PASS^:Bad credentials\""
+      ],
+      "exercise": "Decide offline vs online first: do you have the hash, or just a login box? If OrderDesk leaks its hashes, that's OFFLINE (John). If you only had the login form, that's where Hydra fits. Run it against your own local lab, watch it trip the logs, and feel why online cracking is noisy."
     }
   ],
   "quiz": []
