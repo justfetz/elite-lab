@@ -205,7 +205,8 @@ def dashboard():
           <div class="tile"><div class="n">200&Prime;</div><div class="l">Parent reel</div></div>
           <div class="tile"><div class="n">3</div><div class="l">Plants served</div></div>
         </div>
-        <p class="muted">Chicago mill &rarr; corrugator plants. Trucks loaded by weight.</p>
+        <p class="muted">Chicago mill &rarr; corrugator plants. Trucks loaded by weight.
+          &nbsp;<a href="/mill">Open PM3 process view &rarr;</a></p>
       </div>
       <div class="card"><h2>Today's slitting &mdash; 200&Prime; parent reel</h2>
         <p class="muted">How LoadMaster cut each reel into order widths. Hatched = trim waste.</p>
@@ -293,6 +294,12 @@ def login():
         <p><input name="username" placeholder="username"></p>
         <p><input name="password" type="password" placeholder="password"></p>
         <button>Sign in</button></form></div>""", who=_who())
+
+
+@app.route("/mill")
+def mill():
+    # the PM3 live process view (moisture scanner + speed/steam controls)
+    return (Path(__file__).with_name("mill.html")).read_text()
 
 
 @app.route("/debug/hashes")
