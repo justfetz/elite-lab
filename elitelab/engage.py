@@ -103,11 +103,14 @@ def engage(args):
             area = t["area"]
             print(f"  {area}")
         st = _status(t, solved, loot)
-        need = ""
-        if st == "locked":
-            need = "   needs: " + " or ".join(t["requires"])
-        act = f"   elite lab start {t['mission']}" if st == "open" else ""
-        print(f"    {marks[st]} {t['mission']:<13} {t['desc']}{need}{act}")
+        print(f"    {marks[st]} {t['mission']:<13} {t['desc']}")
+        if st == "open":
+            m = missions.get(t["mission"])
+            goal = (m.goal.split(". ")[0] if m else "")[:88]
+            print(f"          goal: {goal}")
+            print(f"          ->    elite lab start {t['mission']}")
+        elif st == "locked":
+            print(f"          locked - need: " + " or ".join(t["requires"]))
 
     openset = [t for t in ENGAGEMENT if _status(t, solved, loot) == "open"]
     print("\n  Your toolkit (build these any time): " + ", ".join(TOOLKIT))
