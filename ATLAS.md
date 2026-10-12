@@ -48,10 +48,11 @@ and **drills it into muscle memory**. Hands-on first.
 
 ## Honest overall: ~50%
 
-The **engine and the fundamentals are real** — the hard parts (a mission system whose
-checkers run and verify your actual code; build/break; a local book tutor) work. What's
-thin is **breadth and realism**: more missions per layer, the live Docker/AD lab, the
-muscle-memory drills, and the AI capstone.
+The **engine, the fundamentals, build/break, command drills, and the AI capstone are
+real** — the hard parts (checkers that run and verify your actual code; a local book
+tutor) work. What's still thin is **realism and the enterprise layers**: the live
+Docker/SQL-Server/AD lab, a Domain (Active Directory) mission, the `elite path` campaign,
+and tool tutors beyond nmap.
 
 ## Next three, in order
 
