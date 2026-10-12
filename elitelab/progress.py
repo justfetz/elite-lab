@@ -1,5 +1,6 @@
 """Tiny JSON progress store in the user's home directory."""
 import json
+import time
 from pathlib import Path
 
 PROGRESS_FILE = Path.home() / ".elite_lab_progress.json"
@@ -23,7 +24,9 @@ def record_quiz(key, pct):
     p = load()
     entry = p.setdefault(key, {})
     entry["best"] = max(pct, entry.get("best", 0))
+    entry["last_pct"] = pct
     entry["attempts"] = entry.get("attempts", 0) + 1
+    entry["last"] = time.time()
     save(p)
     return entry
 
@@ -37,6 +40,7 @@ def lab_update(mission_id, **changes):
     labs = p.setdefault("labs", {})
     entry = labs.setdefault(mission_id, {"hints": 0, "solved": False, "tries": 0})
     entry.update(changes)
+    entry["last"] = time.time()
     save(p)
     return entry
 
@@ -55,5 +59,6 @@ def cmd_record(cid, correct):
         e["streak"] = e.get("streak", 0) + 1
     else:
         e["streak"] = 0
+    e["last"] = time.time()
     save(p)
     return e

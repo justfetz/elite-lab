@@ -88,6 +88,9 @@ def build_parser(modules):
     # path: the guided campaign
     sub.add_parser("path", help="guided campaign through the missions, with your progress")
 
+    # review: the spaced-repetition coach
+    sub.add_parser("review", help="what to redo now: weak spots + stale mastery")
+
     # engage: the connected company engagement (open sandbox)
     ep = sub.add_parser("engage", help="assess Vantaris AI as one connected engagement")
     ep.add_argument("engage_action", nargs="?", choices=["recon"],
@@ -142,5 +145,9 @@ def main(argv=None):
     if args.command == "engage":
         from .engage import engage
         engage(args)
+        return
+    if args.command == "review":
+        from .review import review
+        review(args)
         return
     handlers[args.command](modules, args)

@@ -7,6 +7,7 @@ resurface until they stick.
 import json
 import random
 import re
+import time
 from pathlib import Path
 
 from . import progress
@@ -40,7 +41,12 @@ def _weight(cid, stats):
     e = stats.get(cid)
     if not e:
         return 5                      # never seen -> show it
-    return max(1, 4 - e.get("streak", 0))  # mastered (high streak) -> show less
+    w = max(1, 4 - e.get("streak", 0))  # mastered (high streak) -> show less
+    # spaced repetition: a mastered item becomes "due" again after 2^streak days
+    last = e.get("last")
+    if last and (time.time() - last) / 86400 >= 2 ** e.get("streak", 0):
+        w += 3                        # overdue -> resurface it
+    return w
 
 
 def drill_commands():

@@ -37,6 +37,7 @@ and **drills it into muscle memory**. Hands-on first.
 | Mission engine (goal/flag/checker/hints) | ✅ | 95% | solid; custom checkers + multi-mission modules supported |
 | Build-missions (checker runs your code) | ✅ | 100% | scanner, sniffer, debugger, fuzzer all verify real implementations |
 | Break+fix pairs (blue-team twin) | 🟡 | 50% | `app-01-fix`, `idor-01-fix`, `ai-01-fix`, `domain-01-fix`; a few attack missions still need twins |
+| Spaced repetition + review coach | ✅ | 85% | `elite review` ranks weak/stale/unfinished; drills resurface overdue items |
 | Randomized per-user flags | ⬜ | 0% | flags are deterministic — memorizable/shareable |
 | **Command-drill mode** (type the real command) | ✅ | 90% | `elite drill commands`: 22 commands, spaced repetition; add more over time |
 | **`elite path`** (guided campaign up the layers) | ✅ | 90% | `elite path`: ordered campaign by layer with your progress + NEXT |
@@ -47,7 +48,7 @@ and **drills it into muscle memory**. Hands-on first.
 | Docs (SCENARIO/VISION/SPEC/CURRICULUM/ATLAS) | ✅ | 90% | the thinking is captured |
 | On GitHub, MIT, README | ✅ | 100% | justfetz/elite-lab |
 
-## Honest overall: ~68%
+## Honest overall: ~72%
 
 The **engine, the fundamentals, build/break, command drills, and missions on every
 layer (Wire → Door → App → Host → Domain → AI) are real** — the hard parts (checkers
