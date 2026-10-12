@@ -42,11 +42,11 @@ and **drills it into muscle memory**. Hands-on first.
 | **`elite path`** (guided campaign up the layers) | ✅ | 90% | `elite path`: ordered campaign by layer with your progress + NEXT |
 | **Live lab provisioner** (Docker SQL Server + app, AD) | ⬜ | 0% | the realism jump — not built |
 | Tool tutors beyond nmap (sqlmap/BloodHound/John/…) | ⬜ | 10% | framework ready; interpreters not written |
-| `study_books.py` (local RAG) | ✅ | 85% | works; LLM backend optional; not yet wired as `elite ask` |
+| `study_books.py` + `elite ask` | ✅ | 90% | `elite ask` answers from course lessons instantly; study_books adds book-grounded answers |
 | Docs (SCENARIO/VISION/SPEC/CURRICULUM/ATLAS) | ✅ | 90% | the thinking is captured |
 | On GitHub, MIT, README | ✅ | 100% | justfetz/elite-lab |
 
-## Honest overall: ~62%
+## Honest overall: ~65%
 
 The **engine, the fundamentals, build/break, command drills, and missions on every
 layer (Wire → Door → App → Host → Domain → AI) are real** — the hard parts (checkers

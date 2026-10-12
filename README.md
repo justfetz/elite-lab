@@ -67,6 +67,7 @@ Common commands:
 | `elite drill subnet` | Endless, randomly generated subnetting practice |
 | `elite drill ports` | Endless well-known-port practice |
 | `elite drill commands` | Type the real command for a task; spaced repetition (muscle memory) |
+| `elite ask "<question>"` | In-tool tutor: answers from the course lessons (and your indexed books) |
 | `elite lab list` | HTB-style missions: a goal, a flag, a checker, hints |
 | `elite lab start <id>` | Set up a mission (generates the artifact to work on) |
 | `elite lab hint <id>` | Unlock the next hint |

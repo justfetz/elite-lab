@@ -81,6 +81,10 @@ def build_parser(modules):
     sub.add_parser("progress", help="show quiz scores")
     sub.add_parser("reset", help="clear progress")
 
+    # ask: the in-tool tutor
+    ap = sub.add_parser("ask", help="ask a question; answers from the course (and your books)")
+    ap.add_argument("query", nargs="+", help='e.g. elite ask "how does an access check work"')
+
     # path: the guided campaign
     sub.add_parser("path", help="guided campaign through the missions, with your progress")
 
@@ -125,5 +129,9 @@ def main(argv=None):
         return
     if args.command == "path":
         LAB_HANDLERS["campaign"](args)
+        return
+    if args.command == "ask":
+        from .ask import ask as ask_tutor
+        ask_tutor(" ".join(args.query))
         return
     handlers[args.command](modules, args)
