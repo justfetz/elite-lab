@@ -1,56 +1,90 @@
-# The scenario: you are the security team at Vantaris AI
+# The scenario: you are the security team at Lakefront Paper & Container Co.
 
-Everything in elite-lab hangs on one fiction, so every mission has a reason to exist.
+Everything in elite-lab hangs on one fiction, so every mission has a reason to exist. The
+company is a real-feeling one on purpose — a manufacturer, not a vague "tech startup" —
+because the interesting security lives in the seams of a business that actually makes and
+ships something.
 
-**Vantaris AI is a startup building and selling a RAG agent product** — an AI assistant
-that answers customer questions over the customer's own documents and data. You are the
-**security team**. Your job is to find and fix every **hit point** across the company
-*before* an attacker (or a customer's auditor) does — across the org, the app, and the
-product itself.
+## The company
 
-That last part is the twist, and it's the whole reason this is current: **the product you
-sell is also attack surface.** A RAG/agent that can read data and call tools is a new kind
-of door. Securing it is the skill companies are desperate for right now.
+**Lakefront Paper & Container Co.** runs a paper mill on the Chicago River. It takes orders
+from **corrugator plants** (the factories that turn paper rolls into cardboard), makes the
+product, **loads trucks by weight**, and delivers. Two systems run the business, and the
+split between them is the whole point:
+
+```
+        HQ / cloud (IT)                              the mill floor (OT)
+  ┌──────────────────────────┐                ┌────────────────────────────────┐
+  │ OrderDesk  customer portal│   order        │  FIREWALL                      │
+  │ LoadMaster truck loading  │   release       │   └─ mill-agent: receives the  │
+  │ "Millie"   AI order agent │ ──TCP/IP──────▶ │        release, runs the order │
+  │ SQL Server (millops DB)   │ ◀─UDP status──  │        on the machine          │
+  └──────────────────────────┘                 └────────────────────────────────┘
+          ▲
+          │  corrugator-plant customers log in to "see my orders"
+       customer
+```
+
+- **OrderDesk** — the public web portal. Customers log in and track orders and shipments.
+- **LoadMaster** — schedules and loads trucks by weight (your optimization background lives here).
+- **Millie** — an AI assistant bolted on last year: a RAG + data agent that answers
+  "where's my order?" by reading the docs *and* querying the database.
+- **mill-agent** — the on-site service behind the plant firewall that receives an order
+  release over TCP and reports machine status back as UDP datagrams.
+- **millops** — the SQL Server database: customers, orders, trucks, shipments, routes, users.
+
+**You are the security team.** Your job: find and fix every way Lakefront can be broken —
+across the office IT, the public app, the mill floor, and the AI product — before an
+attacker (or a customer's auditor) does. You work it from the CLI, with your own tools
+(`elite tools`) and your own bookshelf (`elite study`) as your kit.
+
+## Why two components
+
+A single app has no interesting trust boundary. The moment HQ and the mill talk across the
+firewall, you get the thing security is actually about: **the seam.** Is that order-release
+link authenticated? Encrypted? Replay-protected? Can someone on the wire forge a release to
+the machine? That IT→OT boundary is exactly where real manufacturing attacks happen
+(ransomware's favorite target, because mill downtime is enormously expensive).
 
 ## The method: threat-model first, then verify
 
-You don't poke at Vantaris randomly — you **threat-model** it (see the `threat-modeling`
-module). Draw the system, mark the trust boundaries, walk STRIDE at each one, and every
-threat you find becomes a hit point to prove with a mission. STRIDE =
-**S**poofing, **T**ampering, **R**epudiation, **I**nformation disclosure,
-**D**enial of service, **E**levation of privilege.
+You don't poke at Lakefront randomly — you **threat-model** it (`elite learn threat-modeling`).
+Draw the system, mark the trust boundaries, walk **STRIDE** at each one, and every threat you
+find becomes a hit point to prove with a mission. STRIDE = **S**poofing, **T**ampering,
+**R**epudiation, **I**nformation disclosure, **D**enial of service, **E**levation of privilege.
 
-## The attack surface (every hit point maps to a layer, a STRIDE threat, and a mission)
+## The attack surface — every hit point maps to a layer, a STRIDE threat, and a mission
 
 | Hit point | STRIDE | Layer | Mission(s) |
 |-----------|--------|-------|------------|
-| **People / the wire** — exposed services, intrusion in the logs | R / D | 1 Wire | `wire-01` (done) |
-| **The door** — weak/stolen credentials, crackable hashes | **S** | 2 Door | `crack-01` (done) |
-| **The app** — the product's web API: SQL injection, broken authz | **T·I·E** | 3 App | `app-01` + `app-01-fix` (done) |
-| **The data** — SQL Server: over-privileged login, `xp_cmdshell`, RLS bypass | **I·E** | 3 App / 4 Host | *live SQL Server lab (next)* |
-| **The host** — a suspicious binary; privilege escalation | **T·E** | 4 Host | `bin-01` (done) |
-| **The domain** — Active Directory: one cred → Domain Admin | **S·E** | 5 Domain | *AD lab (planned)* |
-| **The product (AI)** — prompt injection, retrieval data leakage, over-permissioned agent | **T·I·E** | AI | *capstone (planned)* |
-| **The hunt** — can you detect all of the above in the logs? | **R** | 6 Hunt | blue-team twin of each mission |
+| **The wire** — exposed services, an intrusion in the logs | R / D | 1 Wire | `wire-01` |
+| **The HQ↔mill link** — forge/replay an order release across the seam | **S·T** | 1 Wire | *live-lab (building)* |
+| **The door** — weak/stolen credentials, crackable hashes | **S** | 2 Door | `crack-01` |
+| **OrderDesk (the app)** — SQL injection, broken access control (see other plants' orders) | **T·I·E** | 3 App | `app-01`/`-fix`, `idor-01`/`-fix` |
+| **The DOM / client** — a leaked API key in the page's JavaScript, client-side trust | **I** | 3 App | *live-lab (building)* |
+| **millops (the data)** — over-privileged login, dynamic-SQL proc, `xp_cmdshell` | **I·E** | 3 App / 4 Host | *live-lab (building)* |
+| **The host** — a suspicious binary; privilege escalation | **T·E** | 4 Host | `bin-01`, `priv-01` |
+| **The domain** — Active Directory: one cred → Domain Admin | **S·E** | 5 Domain | `domain-01`/`-fix` |
+| **Millie (the AI product)** — prompt injection, cross-customer data leak, over-permissioned agent | **T·I·E** | AI | `ai-01`/`-fix`, *live agent (building)* |
+| **The hunt** — can you detect all of the above: brute force, phishing, a Tor exit node in the logs? | **R** | 6 Hunt | `hunt-01`, *Tor/phishing (planned)* |
 
 ## How you play it
 
-You work the surface the way a real security team does an assessment:
+1. **Recon** the company (`elite engage recon`) — what's exposed?
+2. **Threat-model** a surface — what could go wrong here, and which STRIDE threat is it?
+3. **Prove it** — run the mission; the checker runs *your* work, so you can't fake it.
+4. **Fix it** — most missions have a break→fix pair; you write the patch that closes the hole.
+5. **Hunt it** — then find the same attack in the logs, from the defender's chair.
 
-1. **Recon** the org (`elite run nmap …` against the lab) — what's exposed?
-2. **Break** each hit point in its mission — prove the risk with a captured flag.
-3. **Fix** it in the blue-team twin — and have the checker confirm the hole is closed.
-4. **Understand** it — `elite ask` pulls the mechanism from your books (Windows Internals
-   for host/domain, OWASP for the app and the AI product).
+## The live lab (being built)
 
-When you've cleared every hit point, you've done end-to-end what Vantaris AI would pay a
-consultant for — and you have the muscle memory to do it on a real engagement.
+The offline missions stay zero-setup. On top of them, `live-lab/` is an *optional* real
+version of Lakefront you host on your own machine (Docker + SQL Server), so you attack a
+**real running app with real tools** — the `millops` database, the OrderDesk portal (with
+its mill dashboard), the mill-agent link, and Millie the AI agent. It's a "Northwind for
+security": a reproducible sample company whose schema, data, and procs ship in the repo —
+some of them *intentionally* vulnerable, clearly labeled, for you to find and fix.
 
-## Why the AI product is the keystone
-
-Vantaris's product is a RAG agent — exactly the thing every company is now shipping and
-nobody knows how to secure. The capstone turns the product on itself: you attack Vantaris's
-own agent (feed it a poisoned document, make its text-to-SQL agent leak rows it shouldn't,
-trick it into misusing a tool), then harden it (least-privilege identity, query allow-lists,
-treating retrieved text as data not instructions). Your SQL Server decade is the edge:
-you already know how the data tier leaks; now you learn how the AI on top of it leaks too.
+> **Legal & local, always.** Every bit of this runs on hardware you own, against a fictional
+> company. `elite run` refuses active tools aimed outside your lab. The rule never changes:
+> test only what you own or have written permission to test.
