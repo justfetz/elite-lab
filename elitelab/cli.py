@@ -101,6 +101,7 @@ def build_parser(modules):
     sub.add_parser("status", help="home screen: your progress, next move, and what's available")
     sub.add_parser("help", help="same as 'status' - your 'you are here' home screen")
     sub.add_parser("map", help="the territory: the company, its surface, and how it all connects")
+    sub.add_parser("catalog", help="the full list of materials: modules, missions, tools, books, docs")
 
     # path: the guided campaign
     sub.add_parser("path", help="guided campaign through the missions, with your progress")
@@ -193,6 +194,10 @@ def main(argv=None):
     if args.command == "map":
         from .map import status_map
         status_map(args)
+        return
+    if args.command == "catalog":
+        from .catalog import catalog
+        catalog(args)
         return
     if args.command == "study":
         from .study import study

@@ -81,6 +81,7 @@ def status(args=None):
     # the map
     print("\n  THE MAP")
     print("    elite map         the company + how it all connects  <- new to this? start here")
+    print("    elite catalog     the full list of everything available to you")
     print("    elite status      this screen            elite path        full campaign")
     print("    elite lab ...     start/hint/submit      elite review      what to redo")
     print("    elite learn ...   read a topic           elite quiz ...    test yourself")
