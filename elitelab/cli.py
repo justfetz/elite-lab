@@ -102,6 +102,8 @@ def build_parser(modules):
     sub.add_parser("help", help="same as 'status' - your 'you are here' home screen")
     sub.add_parser("map", help="the territory: the company, its surface, and how it all connects")
     sub.add_parser("catalog", help="the full list of materials: modules, missions, tools, books, docs")
+    cp = sub.add_parser("cheat", help="instant command reference for a tool (e.g. elite cheat grep)")
+    cp.add_argument("tool", nargs="?", help="grep, curl, awk, find, john, nmap ... (omit to list)")
 
     # path: the guided campaign
     sub.add_parser("path", help="guided campaign through the missions, with your progress")
@@ -198,6 +200,10 @@ def main(argv=None):
     if args.command == "catalog":
         from .catalog import catalog
         catalog(args)
+        return
+    if args.command == "cheat":
+        from .cheat import cheat
+        cheat(args)
         return
     if args.command == "study":
         from .study import study

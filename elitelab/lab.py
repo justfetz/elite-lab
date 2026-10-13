@@ -47,6 +47,15 @@ def lab_start(args):
     say("GOAL   " + m.goal)
     if m.tools:
         say("TOOLS  " + ", ".join(m.tools))
+        from .cheat import CHEATS, ALIASES
+        refs = []
+        for t in m.tools:
+            for word in t.lower().replace("/", " ").split():
+                key = ALIASES.get(word, word)
+                if key in CHEATS and key not in refs:
+                    refs.append(key)
+        if refs:
+            say("CHEAT  need the commands? " + "  ".join(f"elite cheat {r}" for r in refs))
     say("FILES  " + str(wd))
     for f in sorted(wd.iterdir()):
         print(f"         - {f.name}")

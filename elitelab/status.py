@@ -86,5 +86,6 @@ def status(args=None):
     print("    elite lab ...     start/hint/submit      elite review      what to redo")
     print("    elite learn ...   read a topic           elite quiz ...    test yourself")
     print("    elite ask \"..\"    course tutor           elite study ask   your own books")
+    print("    elite cheat <tool>  instant command reference (grep, curl, john, nmap ...)")
     print("    elite tools       the toolkit            elite doctor      setup check")
     print("    elite drill ...   muscle-memory reps     elite engage      the connected job\n")

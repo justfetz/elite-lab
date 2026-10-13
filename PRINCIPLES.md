@@ -15,6 +15,14 @@ Decisions that are settled. Build toward these; don't re-litigate them.
    command. No blank-page "now what?". `engage` names available targets; `path` shows NEXT;
    `ask` links where to go deeper. This is the thing that makes it a product.
 
+3a. **The learner is never stranded: direction AND resources are always one command away.**
+   Two questions must always have an answer within reach. *Direction* — "what do I do now?"
+   — is served by `status` / `map` / the mission goal. *Resources* — "how do I do it?" — is
+   served by `elite cheat <tool>` (instant command reference) and `elite learn` / `ask`.
+   Every mission surfaces the exact tool it needs inline (its START_HERE) and auto-suggests
+   the relevant `elite cheat` on start. Knowing *what* without knowing *how* is a dead end;
+   we close it on every screen.
+
 4. **Checkers run the user's actual work.** A mission passes because the user's code/analysis
    really works (we open listeners and scan them, compile and fuzz, recompute the AD graph,
    run the agent and confirm the leak) — not because they typed a remembered string.
