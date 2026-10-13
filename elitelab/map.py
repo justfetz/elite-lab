@@ -13,6 +13,7 @@ LAYERS = [
     ("5 The Domain", "the Windows Active Directory",        "windows-ps"),
     ("AI product",  "Millie, the AI order agent",           "threat-modeling"),
     ("6 The Hunt",  "spotting all of it in the logs",       "web-vulns"),
+    ("People",      "phishing + the human (the #1 way in)",  "people"),
 ]
 
 
