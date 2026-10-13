@@ -100,6 +100,7 @@ def build_parser(modules):
     # status / help: the home screen - where am I, what's next, what's available
     sub.add_parser("status", help="home screen: your progress, next move, and what's available")
     sub.add_parser("help", help="same as 'status' - your 'you are here' home screen")
+    sub.add_parser("map", help="the territory: the company, its surface, and how it all connects")
 
     # path: the guided campaign
     sub.add_parser("path", help="guided campaign through the missions, with your progress")
@@ -188,6 +189,10 @@ def main(argv=None):
     if args.command in ("status", "help"):
         from .status import status
         status(args)
+        return
+    if args.command == "map":
+        from .map import status_map
+        status_map(args)
         return
     if args.command == "study":
         from .study import study
