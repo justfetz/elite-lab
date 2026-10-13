@@ -36,6 +36,13 @@ ENGAGEMENT = [
      "desc": "BLUE: stop the injection", "grants": ["hardened_agent"], "requires": ["admin_api_key"]},
     {"id": "soc-hunt", "area": "SOC / log pipeline", "mission": "hunt-01",
      "desc": "auth + process logs from the breach", "grants": ["incident_report"], "requires": []},
+    {"id": "mill-forge", "area": "Mill-floor agent  (10.20.0.5, behind the OT firewall)",
+     "mission": "mill-01",
+     "desc": "the HQ->mill release link -- forge a release and down PM3 (the killswitch)",
+     "grants": ["mill_control"], "requires": []},
+    {"id": "mill-verify", "area": "Mill-floor agent  (10.20.0.5)", "mission": "mill-01-fix",
+     "desc": "BLUE: verify releases (HMAC + freshness + no-replay + bounds)",
+     "grants": ["hardened_mill"], "requires": ["mill_control"]},
 ]
 TOOLKIT = ["build-01", "build-02", "build-03", "build-04"]
 
@@ -46,6 +53,7 @@ Recon complete. Lakefront Paper's surface:
   10.10.0.20  app01     Customer Portal - public web app on SQL Server
   10.10.0.31  ws01      an employee workstation
   10.10.0.50  agent01   Millie, the AI order agent (RAG)
+  10.20.0.5   mill01    mill-floor agent, behind the OT firewall (receives order releases)
               soc       log pipeline (auth + process telemetry)
 
 Everything is open - hit it in any order. But the deepest targets need loot you only get

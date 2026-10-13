@@ -44,11 +44,11 @@ def _msg(d):
     return _canon(d) + ";sig=" + _sign(d)
 
 
-def _valid_release(setpoint=1200, ts=None):
-    d = {"order": "1001", "grade": "26kraft", "rolls": "40", "weight": "48000",
-         "setpoint": str(setpoint), "ts": str(ts if ts is not None else int(time.time())),
-         "nonce": "a1b2c3"}
-    return d
+def _valid_release(setpoint=1200, ts=None, nonce="a1b2c3",
+                   grade="26kraft", rolls="40", weight="48000"):
+    return {"order": "1001", "grade": grade, "rolls": rolls, "weight": weight,
+            "setpoint": str(setpoint),
+            "ts": str(ts if ts is not None else int(time.time())), "nonce": nonce}
 
 
 # ---------- the vulnerable mill-agent (dropped for the learner) ----------
@@ -153,8 +153,12 @@ def setup_fix(workdir: Path):
         f"       (order;grade;rolls;weight;setpoint;ts;nonce) with the shared key\n"
         f"       {SHARED_KEY!r}\n"
         "       and compare to the message's sig (use hmac.compare_digest). No match -> reject.\n"
-        "  2. FRESHNESS (anti-replay)  -- reject if ts is more than 120 seconds old.\n"
-        "  3. BOUNDS  -- reject if setpoint > 1450, grade not in\n"
+        "  2. FRESHNESS  -- reject if ts is more than 120 seconds old OR in the future\n"
+        "       (abs(now - ts) > 120). A timestamp window alone isn't enough, though...\n"
+        "  3. NO REPLAY  -- the same signed release can be resent inside that window. Keep a\n"
+        "       record of nonces you've ACCEPTED (persist it to a file next to the agent) and\n"
+        "       reject any nonce you've seen before.\n"
+        "  4. BOUNDS  -- reject if setpoint > 1450, grade not in\n"
         f"       {sorted(VALID_GRADES)}, or rolls/weight not positive.\n\n"
         "The signing is exactly what send_release.py does -- read it. Then submit FIXED; the\n"
         "checker runs YOUR agent against a forged, a replayed, an unsafe, and a genuine\n"
@@ -173,43 +177,55 @@ def _run_agent(workdir: Path, message: str):
 
 
 def _accepted(out):
-    return "RELEASE ACCEPTED" in out and "REJECTED" not in out
+    return "RELEASE ACCEPTED" in out
+
+
+def _rejected(out):
+    return "REJECTED" in out
 
 
 def check_fix(workdir: Path, submitted: str) -> bool:
+    # start clean: forget nonces a previous attempt recorded
+    seen = workdir / ".seen_nonces"
+    if seen.exists():
+        seen.unlink()
     now = int(time.time())
-    forged = _canon(_valid_release(setpoint=9999)) + ";sig=deadbeef"      # wrong sig + unsafe
-    replayed = _msg(_valid_release(ts=now - 600))                        # valid sig, 10 min old
-    unsafe = _msg(_valid_release(setpoint=9999))                         # valid+fresh, unsafe
-    genuine = _msg(_valid_release(setpoint=1200))                        # valid+fresh+safe
+    uid = str(now)
+    # EACH reject case is otherwise VALID, FRESH, and SAFE - so it can only be caught
+    # by the ONE defense it targets. A patch that skips a check will accept its case.
+    bad_sig = _canon(_valid_release(nonce="s-" + uid)) + ";sig=deadbeef"   # only HMAC catches it
+    future  = _msg(_valid_release(ts=now + 9999, nonce="f-" + uid))        # only freshness
+    stale   = _msg(_valid_release(ts=now - 600,  nonce="o-" + uid))        # only freshness
+    unsafe  = _msg(_valid_release(setpoint=9999, nonce="u-" + uid))        # only bounds
+    badgrade = _msg(_valid_release(grade="99zzz", nonce="g-" + uid))       # only bounds
+    badqty  = _msg(_valid_release(rolls="-5",    nonce="q-" + uid))        # only bounds
+    genuine = _msg(_valid_release(nonce="ok-" + uid))                      # must ACCEPT
 
-    out_f, ok_f = _run_agent(workdir, forged)
-    out_r, ok_r = _run_agent(workdir, replayed)
-    out_u, ok_u = _run_agent(workdir, unsafe)
-    out_g, ok_g = _run_agent(workdir, genuine)
+    cases = []
+    og, okg = _run_agent(workdir, genuine)                    # run genuine -> records nonce
+    cases.append(("genuine (signed, fresh, safe)", okg and _accepted(og), "accept"))
+    orp, okrp = _run_agent(workdir, genuine)                  # same message again -> replay
+    cases.append(("replayed (duplicate nonce)",
+                  okrp and _rejected(orp) and not _accepted(orp), "reject"))
+    for name, msg in [("forged (bad signature, else valid)", bad_sig),
+                      ("future timestamp", future),
+                      ("stale timestamp", stale),
+                      ("unsafe setpoint", unsafe),
+                      ("invalid grade", badgrade),
+                      ("invalid quantity", badqty)]:
+        o, ok = _run_agent(workdir, msg)
+        cases.append((name, ok and _rejected(o) and not _accepted(o), "reject"))
+    if seen.exists():
+        seen.unlink()
 
-    def verdict(out, ok, want_accept):
-        if not ok:
-            return None  # crashed
-        return _accepted(out) == want_accept
-
-    rows = [
-        ("forged (bad signature)",  verdict(out_f, ok_f, False), "reject"),
-        ("replayed (stale, 10m old)", verdict(out_r, ok_r, False), "reject"),
-        ("unsafe (setpoint 9999)",  verdict(out_u, ok_u, False), "reject"),
-        ("genuine (signed, fresh, safe)", verdict(out_g, ok_g, True), "accept"),
-    ]
-    print("\n  Mill-link check -- four releases sent to your agent:")
+    print("\n  Mill-link check -- releases sent to your agent:")
     allgood = True
-    for name, passed, expect in rows:
-        if passed is None:
-            mark, allgood = "[CRASHED]", False
-        elif passed:
-            mark = f"[{expect}ed] ok"
-        else:
-            mark, allgood = f"[did NOT {expect}]", False
-        print(f"    {name:<34} {mark}")
-    print(f"  Verdict: {'PASS - only a genuine release runs.' if allgood else 'FAIL - see above.'}\n")
+    for name, passed, expect in cases:
+        mark = f"[{expect}ed] ok" if passed else f"[did NOT {expect} / crashed]"
+        if not passed:
+            allgood = False
+        print(f"    {name:<36} {mark}")
+    print(f"  Verdict: {'PASS - only a genuine, fresh release runs.' if allgood else 'FAIL - see above.'}\n")
     return allgood
 
 
@@ -255,12 +271,14 @@ MISSION_FIX = Mission(
     hints=[
         "send_release.py shows the signing exactly: HMAC-SHA256 over "
         "'order;grade;rolls;weight;setpoint;ts;nonce' with the shared key. Recompute it and "
-        "compare to d['sig'] with hmac.compare_digest.",
-        "Freshness: import time; reject if time.time() - int(d['ts']) > 120. That kills replays "
-        "of a captured message.",
+        "compare to d['sig'] with hmac.compare_digest. (A valid-looking but wrongly-signed "
+        "message must be rejected on the signature ALONE.)",
+        "Freshness both ways: reject if abs(time.time() - int(d['ts'])) > 120 (too old OR in "
+        "the future). Then stop replays WITHIN that window: save accepted nonces to a file "
+        "next to the agent and reject any nonce you've already seen.",
         "Bounds: reject if int(d['setpoint']) > 1450, d['grade'] not in the valid set, or "
         "int(d['rolls'])<=0 / int(d['weight'])<=0. Print a line starting 'REJECTED' on any "
-        "failure; print 'RELEASE ACCEPTED' only if all checks pass.",
+        "failure; print 'RELEASE ACCEPTED' (and record the nonce) only if ALL checks pass.",
     ],
     debrief=(
         "This is defense-in-depth on a control channel: AUTHENTICATE (HMAC proves it came from "

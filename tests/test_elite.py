@@ -126,38 +126,69 @@ def _solve_mill01(wd):
     (wd / "attack.txt").write_text("order=1001;setpoint=9999\n")
 
 
+_MILL_FIXED_AGENT = '''import sys, os, hmac, hashlib, time
+KEY = b"lakefront-mill-hq-shared-key-2026"
+FIELDS = ("order","grade","rolls","weight","setpoint","ts","nonce")
+VALID = {"26kraft","42medium","35liner","33liner"}
+SEEN = os.path.join(os.path.dirname(os.path.abspath(__file__)), ".seen_nonces")
+def parse(m):
+    d={}
+    for p in m.split(";"):
+        if "=" in p:
+            k,v=p.split("=",1); d[k]=v
+    return d
+def canon(d): return ";".join(f"{k}={d.get(k,'')}" for k in FIELDS)
+def seen_nonces():
+    try: return set(open(SEEN).read().split())
+    except OSError: return set()
+def handle(d):
+    exp = hmac.new(KEY, canon(d).encode(), hashlib.sha256).hexdigest()
+    if not hmac.compare_digest(exp, d.get("sig","")):
+        print("REJECTED: bad signature"); return
+    try:
+        if abs(time.time() - int(d.get("ts","0"))) > 120:
+            print("REJECTED: stale or future timestamp"); return
+        if d.get("nonce","") in seen_nonces():
+            print("REJECTED: duplicate nonce (replay)"); return
+        if int(d["setpoint"]) > 1450:
+            print("REJECTED: unsafe setpoint"); return
+        if d.get("grade") not in VALID:
+            print("REJECTED: invalid grade"); return
+        if int(d["rolls"])<=0 or int(d["weight"])<=0:
+            print("REJECTED: invalid quantity"); return
+    except (ValueError, KeyError):
+        print("REJECTED: malformed"); return
+    open(SEEN,"a").write(d.get("nonce","")+"\\n")
+    print(f"RELEASE ACCEPTED: order {d.get('order')}, setpoint {d['setpoint']} -> PM3")
+if __name__ == "__main__":
+    handle(parse(sys.argv[1] if len(sys.argv)>1 else ""))
+'''
+
+# a PLAUSIBLE-BUT-DEFECTIVE patch: checks only bounds + age, NOT the signature or
+# replay. It must FAIL the checker - that's what the negative test proves.
+_MILL_DEFECTIVE_AGENT = '''import sys, time
+def parse(m):
+    d={}
+    for p in m.split(";"):
+        if "=" in p:
+            k,v=p.split("=",1); d[k]=v
+    return d
+def handle(d):
+    try:
+        if time.time() - int(d.get("ts","0")) > 120:
+            print("REJECTED: stale"); return
+        if int(d.get("setpoint","0")) > 1450:
+            print("REJECTED: unsafe setpoint"); return
+    except ValueError:
+        print("REJECTED: malformed"); return
+    print(f"RELEASE ACCEPTED: order {d.get('order')}, setpoint {d.get('setpoint')} -> PM3")
+if __name__ == "__main__":
+    handle(parse(sys.argv[1] if len(sys.argv)>1 else ""))
+'''
+
+
 def _solve_mill01fix(wd):
-    # a correct verifying agent: HMAC + freshness + bounds
-    (wd / "mill_agent.py").write_text(
-        'import sys, hmac, hashlib, time\n'
-        'KEY = b"lakefront-mill-hq-shared-key-2026"\n'
-        'FIELDS = ("order","grade","rolls","weight","setpoint","ts","nonce")\n'
-        'VALID = {"26kraft","42medium","35liner","33liner"}\n'
-        'def parse(m):\n'
-        '    d={}\n'
-        '    for p in m.split(";"):\n'
-        '        if "=" in p:\n'
-        '            k,v=p.split("=",1); d[k]=v\n'
-        '    return d\n'
-        'def canon(d): return ";".join(f"{k}={d.get(k,\'\')}" for k in FIELDS)\n'
-        'def handle(d):\n'
-        '    exp = hmac.new(KEY, canon(d).encode(), hashlib.sha256).hexdigest()\n'
-        '    if not hmac.compare_digest(exp, d.get("sig","")):\n'
-        '        print("REJECTED: bad signature"); return\n'
-        '    try:\n'
-        '        if time.time() - int(d.get("ts","0")) > 120:\n'
-        '            print("REJECTED: stale (replay)"); return\n'
-        '        if int(d["setpoint"]) > 1450:\n'
-        '            print("REJECTED: unsafe setpoint"); return\n'
-        '        if d.get("grade") not in VALID:\n'
-        '            print("REJECTED: invalid grade"); return\n'
-        '        if int(d["rolls"])<=0 or int(d["weight"])<=0:\n'
-        '            print("REJECTED: invalid quantity"); return\n'
-        '    except (ValueError, KeyError):\n'
-        '        print("REJECTED: malformed"); return\n'
-        '    print(f"RELEASE ACCEPTED: order {d.get(\'order\')}, setpoint {d[\'setpoint\']} -> PM3")\n'
-        'if __name__ == "__main__":\n'
-        '    handle(parse(sys.argv[1] if len(sys.argv)>1 else ""))\n')
+    (wd / "mill_agent.py").write_text(_MILL_FIXED_AGENT)
 
 
 SOLVERS = {
@@ -176,6 +207,15 @@ def test_checker_mission_solvable(mid, tmp_path):
     assert not m.check(tmp_path, "GO"), f"{mid}: checker passed the UNSOLVED state"
     SOLVERS[mid](tmp_path)
     assert m.check(tmp_path, "GO"), f"{mid}: checker rejected a correct solve"
+
+
+def test_mill_fix_rejects_defective_patch(tmp_path):
+    """A plausible patch that checks bounds+age but NOT the signature/replay must FAIL -
+    proving the checker catches an incomplete defense, not just the reference solution."""
+    m = MISSIONS["mill-01-fix"]
+    m.setup(tmp_path)
+    (tmp_path / "mill_agent.py").write_text(_MILL_DEFECTIVE_AGENT)
+    assert not m.check(tmp_path, "FIXED"), "checker PASSED a defective (no-HMAC) patch"
 
 
 # ---------- CLI smoke tests ----------
