@@ -45,6 +45,15 @@ def lab_update(mission_id, **changes):
     return entry
 
 
+def lab_reset(mission_id):
+    """Forget a single mission's state (hints/tries/solved) so it can be redone clean."""
+    p = load()
+    labs = p.get("labs", {})
+    if mission_id in labs:
+        del labs[mission_id]
+        save(p)
+
+
 def cmd_stats():
     return load().get("cmddrill", {})
 

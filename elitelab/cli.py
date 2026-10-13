@@ -127,7 +127,7 @@ def build_parser(modules):
     lsub = lab.add_subparsers(dest="lab_action")
     lsub.add_parser("list", help="list missions")
     lsub.add_parser("status", help="your mission progress")
-    for name in ("start", "hint"):
+    for name in ("start", "hint", "restart"):
         q = lsub.add_parser(name)
         q.add_argument("mission")
     q = lsub.add_parser("submit")

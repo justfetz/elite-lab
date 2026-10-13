@@ -1,4 +1,5 @@
 """The 'elite lab' command: HTB-style missions with goals, flags, hints, checkers."""
+import shutil
 from pathlib import Path
 
 from . import progress
@@ -53,7 +54,19 @@ def lab_start(args):
     say("Work in that folder, then submit:  elite lab submit "
         f"{m.id} '{m.flag_format}'")
     say(f"Stuck? Unlock a hint:  elite lab hint {m.id}")
+    say(f"Want a clean slate?  elite lab restart {m.id}")
     print()
+
+
+def lab_restart(args):
+    """Wipe a mission's working files AND its saved state, then set it up fresh."""
+    m = _get(load_missions(), args.mission)
+    wd = _workdir(m.id)
+    if wd.exists():
+        shutil.rmtree(wd)                 # throw away any edits/files you made
+    progress.lab_reset(m.id)              # forget hints/tries/solved for this one
+    print(f"\n  Restarted {m.id}: fresh files, and its hints/tries/solved cleared.")
+    lab_start(args)                       # rebuild and show it like a first start
 
 
 def lab_hint(args):
@@ -133,4 +146,5 @@ def campaign(args):
 
 
 HANDLERS = {"list": lab_list, "start": lab_start, "hint": lab_hint,
-            "submit": lab_submit, "status": lab_status, "campaign": campaign}
+            "submit": lab_submit, "status": lab_status, "campaign": campaign,
+            "restart": lab_restart}
