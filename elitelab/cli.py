@@ -97,6 +97,10 @@ def build_parser(modules):
                      help="ask / summarize / lesson / search your indexed books, or (re)index")
     stp.add_argument("text", nargs="*", help="the question or topic")
 
+    # status / help: the home screen - where am I, what's next, what's available
+    sub.add_parser("status", help="home screen: your progress, next move, and what's available")
+    sub.add_parser("help", help="same as 'status' - your 'you are here' home screen")
+
     # path: the guided campaign
     sub.add_parser("path", help="guided campaign through the missions, with your progress")
 
@@ -137,18 +141,18 @@ def _welcome():
     missions = load_missions()
     solved = sum(1 for mid in missions if progress.lab_state(mid)["solved"])
     reconned = progress.load().get("engagement", {}).get("reconned", False)
-    print("\n  elite-lab -- you're the security team at Vantaris AI.")
+    print("\n  elite-lab -- you're the security team at Lakefront Paper & Container Co.")
     print("  Your job: find and fix every way the company can be broken.\n")
     if not reconned:
-        print("  First time? Check your setup, then map the company and start:")
+        print("  First time? Check your setup, then see your home screen:")
         print("      elite doctor     # what's installed / what (if anything) to download")
-        print("      elite engage     # begin the assessment\n")
+        print("      elite status     # where you are, what's next, what's available\n")
     else:
         print(f"  Progress: {solved}/{len(missions)} targets cleared.")
         print("  Pick up where you left off:")
-        print("      elite review     # what to redo / do next")
-        print("      elite engage     # the target board\n")
-    print("  Everything else (lessons, drills, tools, the full command list):  elite -h\n")
+        print("      elite status     # home screen: progress, next move, the full map")
+        print("      elite review     # what to redo / do next\n")
+    print("  Lost at any point?  elite status  is your 'you are here'.  Full list:  elite -h\n")
 
 
 def main(argv=None):
@@ -180,6 +184,10 @@ def main(argv=None):
     if args.command == "engage":
         from .engage import engage
         engage(args)
+        return
+    if args.command in ("status", "help"):
+        from .status import status
+        status(args)
         return
     if args.command == "study":
         from .study import study

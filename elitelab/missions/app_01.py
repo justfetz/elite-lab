@@ -60,11 +60,30 @@ def _build(workdir: Path):
 def setup_break(workdir: Path):
     _build(workdir)
     (workdir / "START_HERE.txt").write_text(
-        "portal.py looks up a customer by username against portal.db:\n"
-        "    python3 portal.py alice\n"
-        "It builds its SQL by gluing your input into the query string. There is a\n"
-        "'secrets' table you were never meant to reach. Use a UNION-based SQL injection\n"
-        "to read the admin_flag out of it, then submit flag{...}.\n")
+        "GOAL: read the admin_flag out of the 'secrets' table, then submit flag{...}.\n\n"
+        "portal.py looks up a customer by the name you pass on the command line:\n"
+        "    python3 portal.py alice        ->  prints: alice\n\n"
+        "HOW THE BUG WORKS (this is the part to really get):\n"
+        "  The code builds its SQL by gluing your argument straight into the query:\n\n"
+        "      SELECT username FROM users WHERE username = '<your argument>'\n\n"
+        "  So whatever you type as the argument lands INSIDE that query, between the\n"
+        "  quotes. Normally that's just a name. But if your argument contains SQL, the\n"
+        "  database runs it. Your input becomes code. That's injection.\n\n"
+        "DO THESE IN ORDER (each is one command; wrap the whole argument in \"quotes\"\n"
+        "so the shell passes it as a single argument):\n\n"
+        "  1. SEE IT WORK     python3 portal.py alice\n\n"
+        "  2. BREAK THE QUOTE Pass an argument that closes the string and adds an\n"
+        "                     always-true test. Watch EVERY user print, not just one:\n"
+        "                         python3 portal.py \"' OR '1'='1\"\n"
+        "                     (Why did that dump everyone? Your input stopped being a\n"
+        "                      value and became logic.)\n\n"
+        "  3. REACH THE SECRET  The flag is in a DIFFERENT table, 'secrets', column\n"
+        "                     'value'. Stitch a second SELECT onto the first with\n"
+        "                     UNION. It must select ONE column (to match), and end the\n"
+        "                     argument with  --  to comment out the leftover quote.\n\n"
+        "  4. CAPTURE          The flag prints where a username would. Then:\n"
+        "                         elite lab submit app-01 flag{...}\n\n"
+        "Stuck on step 3? `elite lab hint app-01` climbs to the exact argument.\n")
 
 
 def setup_fix(workdir: Path):
