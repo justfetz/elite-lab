@@ -52,8 +52,27 @@ def setup(workdir: Path):
     _generate(workdir)
     (workdir / "START_HERE.txt").write_text(
         "You are the on-call analyst. The web app's access log is access.log.\n"
-        "One external IP brute-forced the admin login and eventually got in.\n"
-        "Find that IP and the password that returned 200. Submit flag{IP:PASSWORD}.\n")
+        "One external IP brute-forced the admin login and eventually got in. Find that\n"
+        "IP and the password that returned 200, then submit flag{IP:PASSWORD}.\n\n"
+        "A log line looks like this:\n"
+        "    1760000042 45.137.2.9 \"POST /admin/login\" 401 user=admin pass=hunter2\n"
+        "    (time)     (IP=$2)     (request)           (status) (user)  (password tried)\n\n"
+        "GREP QUICK REFERENCE -- exactly what you need here (grep = print matching lines):\n"
+        "    grep 401 access.log                 lines containing 401 (a failed login)\n"
+        "    grep -c 401 access.log              just COUNT the matches\n"
+        "    grep 401 access.log | awk '{print $2}'          pull column 2 (the IP)\n"
+        "    grep 401 access.log | awk '{print $2}' | sort | uniq -c | sort -rn\n"
+        "                                        ^ count 401s PER IP, biggest first\n"
+        "    grep <ip> access.log | grep /admin/login | grep ' 200 '   chain filters\n"
+        "  On Windows PowerShell, plain grep = Select-String 401 access.log; use WSL for\n"
+        "  the awk/sort/uniq pipeline. New to grep?  elite learn shell-basics\n\n"
+        "THE PLAN:\n"
+        "  1. A brute force = many failures (401) from ONE IP. Count 401s per IP (the line\n"
+        "     above). One IP towers over the rest -- that's your attacker.\n"
+        "  2. Find THAT IP's single success: its 200 on /admin/login. The pass= on that\n"
+        "     line is the password that worked.\n"
+        "  3. Submit:  elite lab submit wire-01 flag{IP:PASSWORD}\n\n"
+        "Stuck? `elite lab hint wire-01`.   Clean slate? `elite lab restart wire-01`.\n")
 
 
 def solution(workdir: Path) -> str:
