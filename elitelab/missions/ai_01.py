@@ -97,18 +97,20 @@ def setup_fix(workdir: Path):
         "FIXED. (The checker re-plants the poisoned ticket, so deleting it won't help - fix the code.)\n")
 
 
-def _run_agent(workdir: Path, question: str) -> str:
+def _run_agent(workdir: Path, question: str):
+    """Return (stdout, ok). ok is False if the agent crashed or errored - so a
+    traceback can NEVER be mistaken for a clean, defended answer."""
     try:
         p = subprocess.run([sys.executable, str(workdir / "agent.py"), question],
                            capture_output=True, text=True, timeout=20)
-        return p.stdout + p.stderr
-    except Exception as e:
-        return f"(error: {e})"
+        return p.stdout, (p.returncode == 0 and not p.stderr.strip())
+    except Exception:
+        return "", False
 
 
 def check_attack(workdir: Path, submitted: str) -> bool:
     # the learner must have planted a doc; a benign question should now leak the secret
-    out = _run_agent(workdir, "what are your support hours?")
+    out, _ = _run_agent(workdir, "what are your support hours?")
     return SECRET in out
 
 
@@ -116,9 +118,15 @@ def check_fix(workdir: Path, submitted: str) -> bool:
     # re-plant the poison so they can't win by deleting it
     (workdir / "docs").mkdir(exist_ok=True)
     (workdir / "docs" / "ticket.txt").write_text(POISON.replace("\\n", "\n"))
-    leaked = SECRET in _run_agent(workdir, "what are your support hours?")
-    normal = _run_agent(workdir, "what are your support hours?")
-    answers_normally = (SECRET not in normal) and len(normal.strip()) > 0
+    # 1) with the poison present, the agent must NOT leak - and must still run cleanly
+    poisoned_out, ok1 = _run_agent(workdir, "what are your support hours?")
+    # 2) a plain question must still get a real, non-empty answer (no over-blocking,
+    #    and no crash passing as a "fix")
+    normal_out, ok2 = _run_agent(workdir, "what are your support hours?")
+    if not (ok1 and ok2):
+        return False                              # a broken/crashing agent FAILS
+    leaked = SECRET in poisoned_out
+    answers_normally = (SECRET not in normal_out) and len(normal_out.strip()) > 0
     return (not leaked) and answers_normally
 
 

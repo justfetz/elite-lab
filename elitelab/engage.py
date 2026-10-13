@@ -1,4 +1,4 @@
-"""`elite engage` - the connected Vantaris engagement (open sandbox + loot chaining).
+"""`elite engage` - the connected Lakefront engagement (open sandbox + loot chaining).
 
 Recon reveals the whole company surface. Each target maps to a mission you already have;
 solving it yields LOOT, and a few deeper targets stay locked until you hold the loot that
@@ -30,9 +30,9 @@ ENGAGEMENT = [
      "requires": ["domain_user_cred", "db_service_cred"]},
     {"id": "dc-fix", "area": "Domain Controller dc01  (10.10.0.10)", "mission": "domain-01-fix",
      "desc": "BLUE: cut the path to DA", "grants": ["hardened_ad"], "requires": ["domain_admin"]},
-    {"id": "agent-inject", "area": "Vantaris AI agent  (10.10.0.50)", "mission": "ai-01",
+    {"id": "agent-inject", "area": "Millie, the AI order agent  (10.10.0.50)", "mission": "ai-01",
      "desc": "the RAG product; retrieves customer documents", "grants": ["admin_api_key"], "requires": []},
-    {"id": "agent-fix", "area": "Vantaris AI agent  (10.10.0.50)", "mission": "ai-01-fix",
+    {"id": "agent-fix", "area": "Millie, the AI order agent  (10.10.0.50)", "mission": "ai-01-fix",
      "desc": "BLUE: stop the injection", "grants": ["hardened_agent"], "requires": ["admin_api_key"]},
     {"id": "soc-hunt", "area": "SOC / log pipeline", "mission": "hunt-01",
      "desc": "auth + process logs from the breach", "grants": ["incident_report"], "requires": []},
@@ -40,12 +40,12 @@ ENGAGEMENT = [
 TOOLKIT = ["build-01", "build-02", "build-03", "build-04"]
 
 RECON_TEXT = """\
-Recon complete. Vantaris AI's surface:
+Recon complete. Lakefront Paper's surface:
 
   10.10.0.10  dc01      Active Directory domain controller (the crown jewels)
   10.10.0.20  app01     Customer Portal - public web app on SQL Server
   10.10.0.31  ws01      an employee workstation
-  10.10.0.50  agent01   the Vantaris AI assistant (RAG product)
+  10.10.0.50  agent01   Millie, the AI order agent (RAG)
               soc       log pipeline (auth + process telemetry)
 
 Everything is open - hit it in any order. But the deepest targets need loot you only get
@@ -87,13 +87,13 @@ def engage(args):
     missions = load_missions()
     solved = {mid for mid in missions if progress.lab_state(mid)["solved"]}
     if not _reconned():
-        print("\nYou've been hired to assess Vantaris AI. Start by mapping the surface:\n"
+        print("\nYou've been hired to assess Lakefront Paper. Start by mapping the surface:\n"
               "  elite engage recon\n")
         return
 
     loot = _loot(solved)
     done = sum(1 for t in ENGAGEMENT if t["mission"] in solved)
-    print(f"\nVantaris AI - engagement   ({done}/{len(ENGAGEMENT)} targets cleared)")
+    print(f"\nLakefront Paper - engagement   ({done}/{len(ENGAGEMENT)} targets cleared)")
     print("Loot: " + (", ".join(sorted(loot)) if loot else "(none yet)") + "\n")
 
     area = None

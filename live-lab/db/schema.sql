@@ -16,8 +16,16 @@ GO
 USE millops;
 GO
 
-/* ---------- corrugator-plant customers ---------- */
+/* ---------- clean drop in child -> parent order (so re-running never fails on
+             a foreign key). Must come BEFORE any create. ---------- */
+IF OBJECT_ID('dbo.Shipments') IS NOT NULL DROP TABLE dbo.Shipments;
+IF OBJECT_ID('dbo.Orders')    IS NOT NULL DROP TABLE dbo.Orders;
+IF OBJECT_ID('dbo.Users')     IS NOT NULL DROP TABLE dbo.Users;
+IF OBJECT_ID('dbo.Trucks')    IS NOT NULL DROP TABLE dbo.Trucks;
 IF OBJECT_ID('dbo.Customers') IS NOT NULL DROP TABLE dbo.Customers;
+GO
+
+/* ---------- corrugator-plant customers ---------- */
 CREATE TABLE dbo.Customers (
     CustomerId   INT IDENTITY PRIMARY KEY,
     PlantName    NVARCHAR(100) NOT NULL,   -- e.g. 'Rockford Corrugated'
@@ -74,7 +82,7 @@ INSERT dbo.Customers (PlantName, City) VALUES
 -- demo logins. PwHash = SHA-256 of the password (unsalted - see [VULN] above).
 -- 'autumn2024'  -> for the Rockford user;  'admin'  -> the weak admin password.
 INSERT dbo.Users (CustomerId, Username, PwHash, IsAdmin) VALUES
-    (1,'rockford_ap','09a3...replace_with_real_hash...', 0),
+    (1,'rockford_ap','20946a2fb2c13f9dd77b36428e41755ff7a2c5d267eb7c27f2dcffcbd63a8f12', 0),  -- 'autumn2024'
     (1,'millops_admin','8c6976e5b5410415bde908bd4dee15dfb167a9c873fc4bb8a81f6f2ab448a918', 1);
 
 INSERT dbo.Orders (CustomerId, PaperGrade, Rolls, WeightLbs, Status) VALUES
@@ -102,10 +110,24 @@ END
 GO
 
 /* ---------- the application login ---------- */
-/* [VULN] OrderDesk connects as a login in the db_owner role - far more than it
-   needs (it only reads/writes a few tables). Lesson: least privilege. The fix
-   creates an app login with only the needed grants, and never enables
-   xp_cmdshell. Over-privilege is what turns one SQLi into full host takeover. */
+/* [VULN] OrderDesk connects as an OVER-PRIVILEGED login: db_owner, far more than
+   it needs (it only reads/writes a few tables). This is what turns one SQLi into
+   full database - and often host - takeover. The login is actually created here so
+   the weakness is runnable, not just described. */
+IF SUSER_ID('orderdesk_app') IS NULL
+    CREATE LOGIN orderdesk_app WITH PASSWORD = 'Ch4ngeMe_demo!';
+IF USER_ID('orderdesk_app') IS NULL
+    CREATE USER orderdesk_app FOR LOGIN orderdesk_app;
+ALTER ROLE db_owner ADD MEMBER orderdesk_app;     -- [VULN] the over-grant
+GO
+
+/* The FIX (least privilege): drop it from db_owner and grant ONLY what the app
+   uses. Uncomment to apply, then point OrderDesk at this login:
+     ALTER ROLE db_owner DROP MEMBER orderdesk_app;
+     GRANT SELECT, INSERT, UPDATE ON dbo.Orders    TO orderdesk_app;
+     GRANT SELECT               ON dbo.Customers TO orderdesk_app;
+     GRANT SELECT               ON dbo.Users     TO orderdesk_app;
+   -- and never: EXEC sp_configure 'xp_cmdshell', 1;  (leave it OFF) */
 
 PRINT 'millops ready. Intentional weaknesses are tagged [VULN] - find them, then fix them.';
 GO

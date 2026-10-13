@@ -24,30 +24,71 @@ WELL_KNOWN = {
 }
 
 
+# flags whose value is a target (sqlmap -u, gobuster -u, --url=, etc.)
+_TARGET_FLAGS = {"u", "url", "host", "target", "t", "domain"}
+# common file extensions, so a wordlist/key filename isn't mistaken for a host
+_FILE_EXT = {"txt", "lst", "log", "pem", "json", "xml", "html", "htm", "csv",
+             "conf", "cfg", "db", "py", "key", "pub", "md", "yaml", "yml", "ini",
+             "sh", "gz", "zip", "pcap"}
+
+
+def _looks_like_host(tok):
+    if tok == "localhost":
+        return True
+    if re.match(r"^[\d.]+(/\d+)?$", tok):              # bare IP or CIDR
+        return True
+    if "." in tok and re.search(r"[A-Za-z]", tok):     # a dotted name...
+        tld = tok.rsplit(".", 1)[-1].lower()
+        if tld in _FILE_EXT:                            # ...but a filename, not a host
+            return False
+        return bool(re.match(r"^[A-Za-z]{2,24}$", tld))
+    return False
+
+
 def _hosts_in(args):
+    """Pull every host/URL/CIDR target out of the args - including glued forms like
+    -uhttp://x and --url=http://x - while ignoring wordlist/key FILENAMES. Fails
+    CLOSED: a URL, an explicit -u value, or a domain is judged by the gate."""
     hosts = []
     for a in args:
-        m = re.match(r"^\w+://([^/:]+)", a)        # URL -> host
-        if m:
-            hosts.append(m.group(1))
-        elif re.match(r"^[\d.]+$", a) or a == "localhost":
-            hosts.append(a)
+        forced = False                                 # came from a URL or -u/--url
+        if a.startswith("--"):
+            m = re.match(r"^--([A-Za-z][\w-]*)[=:](.*)$", a)
+            if not m:
+                continue                               # a bare long flag like --authorized
+            forced = m.group(1).lower() in _TARGET_FLAGS
+            a = m.group(2)
+        elif a.startswith("-"):
+            name, a = a[1:2], a[2:]                     # -u<value> or -sV
+            if not a:
+                continue
+            forced = name.lower() in _TARGET_FLAGS
+        if re.match(r"^\w+://", a):                     # had a scheme -> definitely a target
+            forced = True
+            a = re.sub(r"^\w+://", "", a)
+        a = a.split("@")[-1].split("?")[0]             # strip userinfo / query
+        host = a if re.match(r"^[\d.]+/\d+$", a) else a.split("/")[0]
+        if re.search(r":\d+$", host):
+            host = host.rsplit(":", 1)[0]
+        if host and (forced or _looks_like_host(host)):
+            hosts.append(host)
     return hosts
 
 
 def _target_is_lab(args):
-    """True if every host-looking arg is localhost or RFC1918 (your own lab)."""
+    """True only if EVERY host-looking arg is localhost or private (your own lab).
+    Unknown/unparseable domains and public CIDRs are rejected (fail closed)."""
     hosts = _hosts_in(args)
     if not hosts:
         return True  # no explicit target (e.g. --help); let the tool decide
     for h in hosts:
-        if h in ("localhost", "127.0.0.1") or h.endswith(".local"):
+        if h == "localhost" or h.endswith(".local"):
             continue
         try:
-            ip = ipaddress.ip_address(h)
+            net = ipaddress.ip_network(h, strict=False)   # handles bare IP and CIDR
         except ValueError:
             return False   # a real hostname/domain -> not your lab
-        if not (ip.is_private or ip.is_loopback):
+        if not (net.is_private or net.is_loopback):
             return False
     return True
 
