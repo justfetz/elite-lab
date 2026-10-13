@@ -30,13 +30,22 @@ PORTAL_SRC = '''\
 import os, sqlite3, sys
 
 DB = os.path.join(os.path.dirname(os.path.abspath(__file__)), "portal.db")
-term = sys.argv[1] if len(sys.argv) > 1 else ""
+
+# Pass --show as the first argument to PRINT the exact SQL this builds, so you can
+# watch your input become part of the query. (e.g. python3 portal.py --show alice)
+args = sys.argv[1:]
+show = bool(args) and args[0] == "--show"
+if show:
+    args = args[1:]
+term = args[0] if args else ""
 
 con = sqlite3.connect(DB)
 # ---- VULNERABLE: user input concatenated straight into SQL ----
 # Your job in app-01-fix is to make this query safe (parameterize it)
 # WITHOUT breaking normal lookups.
 sql = "SELECT username FROM users WHERE username = '" + term + "'"
+if show:
+    print("-- SQL that will run --\\n" + sql + "\\n-----------------------")
 for row in con.execute(sql):
     print(row[0])
 '''
@@ -60,30 +69,37 @@ def _build(workdir: Path):
 def setup_break(workdir: Path):
     _build(workdir)
     (workdir / "START_HERE.txt").write_text(
-        "GOAL: read the admin_flag out of the 'secrets' table, then submit flag{...}.\n\n"
-        "portal.py looks up a customer by the name you pass on the command line:\n"
-        "    python3 portal.py alice        ->  prints: alice\n\n"
-        "HOW THE BUG WORKS (this is the part to really get):\n"
-        "  The code builds its SQL by gluing your argument straight into the query:\n\n"
-        "      SELECT username FROM users WHERE username = '<your argument>'\n\n"
-        "  So whatever you type as the argument lands INSIDE that query, between the\n"
-        "  quotes. Normally that's just a name. But if your argument contains SQL, the\n"
-        "  database runs it. Your input becomes code. That's injection.\n\n"
-        "DO THESE IN ORDER (each is one command; wrap the whole argument in \"quotes\"\n"
-        "so the shell passes it as a single argument):\n\n"
-        "  1. SEE IT WORK     python3 portal.py alice\n\n"
-        "  2. BREAK THE QUOTE Pass an argument that closes the string and adds an\n"
-        "                     always-true test. Watch EVERY user print, not just one:\n"
-        "                         python3 portal.py \"' OR '1'='1\"\n"
-        "                     (Why did that dump everyone? Your input stopped being a\n"
-        "                      value and became logic.)\n\n"
-        "  3. REACH THE SECRET  The flag is in a DIFFERENT table, 'secrets', column\n"
-        "                     'value'. Stitch a second SELECT onto the first with\n"
-        "                     UNION. It must select ONE column (to match), and end the\n"
-        "                     argument with  --  to comment out the leftover quote.\n\n"
-        "  4. CAPTURE          The flag prints where a username would. Then:\n"
-        "                         elite lab submit app-01 flag{...}\n\n"
-        "Stuck on step 3? `elite lab hint app-01` climbs to the exact argument.\n")
+        "GOAL: read the admin_flag from the 'secrets' table THROUGH portal.py's SQL\n"
+        "injection bug, then submit flag{...}.\n\n"
+        "portal.py looks a customer up by username:\n"
+        "    python3 portal.py alice        ->  alice\n\n"
+        "THE KEY IDEA -- and the fix for 'I didn't really write any SQL':\n"
+        "  It builds its SQL by gluing your argument into the query string. Pass\n"
+        "  --show to WATCH that happen and see the exact statement YOU just wrote:\n\n"
+        "      python3 portal.py --show alice\n"
+        "      -- SQL that will run --\n"
+        "      SELECT username FROM users WHERE username = 'alice'\n\n"
+        "  Your argument landed between the quotes. Use --show on every step below:\n"
+        "  you ARE writing SQL, through the argument, and --show proves it.\n\n"
+        "WALK IT UP (two different injection FAMILIES, so you see the map, not 1 trick):\n\n"
+        "  1. TAUTOLOGY  (the 'bypass a filter / login' family) -- make the WHERE\n"
+        "     always true:\n"
+        "         python3 portal.py --show \"' OR '1'='1\"\n"
+        "     becomes:  ... WHERE username = '' OR '1'='1'   -> every row matches.\n"
+        "     This PROVES your input runs as code. It's the root of auth-bypass bugs.\n\n"
+        "  2. UNION  (the 'steal data from another table' family) -- the flag lives\n"
+        "     in secrets(value), NOT users. Stitch a second SELECT on with UNION. It\n"
+        "     must select ONE column (to match the first query's one column), and end\n"
+        "     with  --  to comment out the trailing quote. Build it with --show so you\n"
+        "     can read the exact statement you assembled; the flag prints as a 'username'.\n\n"
+        "OTHER FAMILIES (named so you know they exist -- same root cause, input as code):\n"
+        "  - BLIND / boolean: no data shown, so you ask yes/no questions and read the\n"
+        "    answer from how the app behaves. ERROR-BASED: force a DB error that spills\n"
+        "    data. STACKED: run a whole second statement where the driver allows it.\n"
+        "  Master tautology + UNION first; the rest are variations on the same flaw.\n\n"
+        "  3. CAPTURE:  elite lab submit app-01 flag{...}\n\n"
+        "Stuck on step 2? `elite lab hint app-01` climbs to the exact argument.\n"
+        "Want a clean slate?  elite lab restart app-01\n")
 
 
 def setup_fix(workdir: Path):
@@ -107,10 +123,22 @@ def _run_portal(workdir: Path, arg: str) -> str:
 def check_fix(workdir: Path, submitted: str) -> bool:
     flag = _flag()
     leaked = flag in _run_portal(workdir, INJECTION)              # must be False now
-    tautology = _run_portal(workdir, "x' OR '1'='1")             # must not dump users
-    dumps_users = sum(u in tautology for u in USERNAMES) >= 2
+    taut = _run_portal(workdir, "x' OR '1'='1")                  # must not dump users
+    dumps_users = sum(u in taut for u in USERNAMES) >= 2
     normal_ok = "alice" in _run_portal(workdir, "alice")         # normal lookup still works
-    return (not leaked) and (not dumps_users) and normal_ok
+    # Visible red-team check: show the learner exactly what we threw at their patch.
+    def mark(bad):
+        return "[STILL VULNERABLE]" if bad else "[blocked] ok"
+    print("\n  Red-team check -- throwing the old attacks at your patched portal.py:")
+    print(f"    1) UNION injection   \"{INJECTION}\"")
+    print(f"         secret leaked?   {mark(leaked)}")
+    print(f"    2) tautology         \"x' OR '1'='1\"")
+    print(f"         dumped users?    {mark(dumps_users)}")
+    print(f"    3) normal lookup     \"alice\"")
+    print(f"         still works?     {'[works] ok' if normal_ok else '[BROKEN - fix went too far]'}")
+    ok = (not leaked) and (not dumps_users) and normal_ok
+    print(f"  Verdict: {'PASS - your fix holds against all three.' if ok else 'FAIL - see above.'}\n")
+    return ok
 
 
 MISSION = Mission(
