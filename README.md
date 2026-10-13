@@ -68,8 +68,11 @@ After working through it, you can:
 - **Secure the new attack surface** — break an AI/RAG agent with prompt injection and
   harden it, the skill almost nobody has yet.
 
-Each of those is a mission with a goal, a flag, and a checker that runs *your* work — so
-you can't fake it, and you know the moment you've actually got it.
+Each of those is a mission with a goal and a checker. The **fix** and **build** missions run
+*your actual code* against real cases — open sockets, compile and fuzz a C target, send a
+forged *and* a genuine release at your patched agent — and several show you each probe and
+verdict, so you see exactly what holds. (The break missions use fixed flags for zero-setup
+personal practice; they prove you got the answer, not that no shortcut exists.)
 
 ---
 
