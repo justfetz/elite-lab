@@ -130,6 +130,7 @@ CAMPAIGN = [
     "ai-01", "ai-01-fix",
     "hunt-01",
     "phish-01",
+    "mill-01", "mill-01-fix",
 ]
 
 

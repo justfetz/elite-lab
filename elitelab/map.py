@@ -14,6 +14,7 @@ LAYERS = [
     ("AI product",  "Millie, the AI order agent",           "threat-modeling"),
     ("6 The Hunt",  "spotting all of it in the logs",       "web-vulns"),
     ("People",      "phishing + the human (#1 way in)",      "people"),
+    ("7 The Mill (OT)", "the HQ->mill release link + PM3",    "networking"),
 ]
 
 
