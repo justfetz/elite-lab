@@ -83,6 +83,7 @@ def status(args=None):
     print("    elite map         the company + how it all connects  <- new to this? start here")
     print("    elite catalog     the full list of everything available to you")
     print("    elite status      this screen            elite path        full campaign")
+    print("    elite scenario    incident chains (break -> detect -> fix, end to end)")
     print("    elite lab ...     start/hint/submit      elite review      what to redo")
     print("    elite learn ...   read a topic           elite quiz ...    test yourself")
     print("    elite ask \"..\"    course tutor           elite study ask   your own books")

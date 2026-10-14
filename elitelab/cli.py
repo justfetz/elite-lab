@@ -108,6 +108,10 @@ def build_parser(modules):
     # path: the guided campaign
     sub.add_parser("path", help="guided campaign through the missions, with your progress")
 
+    # scenario: the incident chains (break -> detect -> fix, end to end)
+    scp = sub.add_parser("scenario", help="incident chains: break, detect, and fix one incident end to end")
+    scp.add_argument("scenario_id", nargs="?", help="omit to list; name one to walk it")
+
     # doctor: environment check
     sub.add_parser("doctor", help="check what tools/libraries are installed and what's needed")
 
@@ -180,6 +184,10 @@ def main(argv=None):
         return
     if args.command == "path":
         LAB_HANDLERS["campaign"](args)
+        return
+    if args.command == "scenario":
+        from .scenario import scenario
+        scenario(args)
         return
     if args.command == "ask":
         from .ask import ask as ask_tutor

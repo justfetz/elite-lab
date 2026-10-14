@@ -1,55 +1,56 @@
 """`elite map` - the territory. The mental model the missions hang on: what the
-company IS, its attack surface, and how each layer, learn-module, and mission
-connect. Answers "what am I defending and how does it all relate?" """
-from .missions import load_missions
+company IS, how it's segmented into trust zones, and which mission lives where.
 
-# Curated per-layer: what the layer is AT LAKEFRONT, and which module teaches it.
-# Mission ids are filled in dynamically so this stays in sync with the code.
-LAYERS = [
-    ("1 The Wire",  "network traffic + the logs",          "networking"),
-    ("2 The Door",  "portal logins + password hashes",      "security"),
-    ("3 The App",   "OrderDesk portal -> millops DB",       "web-vulns"),
-    ("4 The Host",  "one machine: reverse + escalate",      "linux"),
-    ("5 The Domain", "the Windows Active Directory",        "windows-ps"),
-    ("AI product",  "Millie, the AI order agent",           "threat-modeling"),
-    ("6 The Hunt",  "spotting all of it in the logs",       "web-vulns"),
-    ("People",      "phishing + the human (#1 way in)",      "people"),
-    ("7 The Mill (OT)", "the HQ->mill release link + PM3",    "networking"),
-]
+The whole map is DERIVED from the world registry (elitelab/world.py): the zones,
+the systems in each, and the exercises on each system. Nothing here is hand-kept.
+"""
+from . import progress, world
+from .missions import load_missions
 
 
 def status_map(args=None):
     missions = load_missions()
-    by_layer = {}
-    for mid, m in missions.items():
-        by_layer.setdefault(m.layer, []).append(mid)
 
     print("\n  THE TERRITORY -- Lakefront Paper & Container Co.\n")
     print("  WHAT THE COMPANY IS")
     print("    A Chicago paper mill. It takes orders from corrugator plants, makes the")
-    print("    product, loads trucks by weight, and ships. It has two faces:")
-    print("      OrderDesk   - the PUBLIC customer portal  (where an attacker knocks)")
-    print("      PM3 / mill  - the INTERNAL process floor   (the crown jewel: if it")
-    print("                    stops, the company bleeds money - that's ransom leverage)")
-    print("    Underneath: millops (a SQL Server database) and Millie (an AI order agent).")
-    print("    YOU are the security team. Find and fix every way in, before someone else does.\n")
+    print("    product, loads trucks by weight, and ships. It has two faces that must NOT")
+    print("    freely touch:")
+    print("      the BUSINESS side  - the public portal + the AI agent (where attackers knock)")
+    print("      the PLANT floor    - PM3 and the mill (the crown jewel: if it stops, the")
+    print("                           company bleeds money - that's ransom leverage)")
+    print("    Between them sits ONE controlled conduit. The cardinal sin of industrial")
+    print("    security is letting the business network reach the floor; the whole map is")
+    print("    built to show -- and defend -- that boundary.\n")
 
-    print("  HOW IT ALL CONNECTS   (layer  ->  what it is here  ->  learn it  ->  prove it)\n")
-    print(f"    {'LAYER':<13}{'AT LAKEFRONT':<34}{'LEARN':<16}MISSIONS")
-    for layer, what, learn in LAYERS:
-        mids = by_layer.get(layer, [])
-        mstr = ", ".join(mids) if mids else "(hunt across all)"
-        print(f"    {layer:<13}{what:<34}{learn:<16}{mstr}")
+    print("  THE ZONES   (trust world  ->  what's in it  ->  the missions there)\n")
+    for z in world.zones():
+        print(f"    [{z.name}]   ({z.trust})")
+        for s in world.systems_in(z.id):
+            addr = f"{s.addr:<11}" if s.addr else f"{'':<11}"
+            print(f"      {addr}{s.name}")
+            print(f"                 {s.blurb}")
+            ex = world.exercises_on(s.id)
+            if ex:
+                parts = []
+                for e in ex:
+                    mark = "x" if progress.lab_state(e.mission)["solved"] else " "
+                    parts.append(f"[{mark}] {e.mission}")
+                print(f"                 missions: " + "  ".join(parts))
+        print()
 
-    print("\n  THE LOOP  (how you work ANY surface)")
-    print("    threat-model  ->  recon  ->  exploit (prove it)  ->  fix  ->  hunt (detect it)")
-    print("    Break it to understand the risk; fix it to learn the defense. Both halves matter.\n")
+    print("  THE LOOP  (how you work ANY system)")
+    print("    threat-model  ->  recon  ->  break (prove it)  ->  fix (keep it working)  ->")
+    print("    detect (catch it in the logs). Break to understand the risk; fix to learn the")
+    print("    defense; detect to catch the next one. All three matter.\n")
 
     print("  SEE THE REAL THING")
-    print("    live-lab/  is the company running for real: OrderDesk (the portal + mill")
-    print("    dashboard) and millops. Host it locally and point real tools at it.\n")
+    print("    live-lab/  is the company running for real: OrderDesk (portal + PM3 dashboard),")
+    print("    LoadMaster (the optimizer), and the millops schema. Host it locally.\n")
 
     print("  WHERE TO GO")
-    print("    elite status   where you are, your next move")
-    print("    elite path     the ordered campaign through every layer")
+    print("    elite status     where you are, your next move")
+    print("    elite path       the ordered campaign through every zone")
+    print("    elite scenario   the incident chains (break -> detect -> fix, end to end)")
+    print("    elite engage     the open engagement board + loot chain")
     print("    elite learn <topic>    read a module     elite lab start <id>   do a mission\n")

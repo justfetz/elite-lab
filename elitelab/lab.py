@@ -120,18 +120,10 @@ def lab_status(args):
     print()
 
 
-# Recommended campaign order (layer by layer). Only real missions.
-CAMPAIGN = [
-    "wire-01", "build-01", "build-02",
-    "crack-01",
-    "app-01", "app-01-fix", "idor-01", "idor-01-fix",
-    "bin-01", "priv-01", "build-03", "build-04",
-    "domain-01", "domain-01-fix",
-    "ai-01", "ai-01-fix",
-    "hunt-01",
-    "phish-01",
-    "mill-01", "mill-01-fix",
-]
+# Recommended campaign order -- DERIVED from the world registry (one source of
+# truth). Edit the EXERCISES list in world.py to change the sequence.
+from .world import campaign_order
+CAMPAIGN = campaign_order()
 
 
 def campaign(args):

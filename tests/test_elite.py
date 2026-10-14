@@ -209,6 +209,29 @@ def test_checker_mission_solvable(mid, tmp_path):
     assert m.check(tmp_path, "GO"), f"{mid}: checker rejected a correct solve"
 
 
+def test_registry_matches_code():
+    """The world registry is the single source of truth: every mission in code has
+    exactly one Exercise record and vice versa, every zone/system/level/verb is
+    valid, and every required loot is granted. This test FAILS the moment anyone
+    adds a mission without registering it - which is the whole point of the layer."""
+    from elitelab import world
+    problems = world.validate(list(MISSIONS))
+    assert not problems, "registry drift:\n  " + "\n  ".join(problems)
+
+
+def test_campaign_derived_from_registry():
+    """The campaign path, engagement board, and toolkit all derive from the registry."""
+    from elitelab import world
+    from elitelab.lab import CAMPAIGN
+    assert CAMPAIGN == world.campaign_order()
+    assert set(CAMPAIGN) == set(MISSIONS)                 # the path covers every mission
+    assert all(e.board for e in world.board_exercises())  # board = live-network targets
+    # every scenario step resolves to a real mission
+    for sc in world.scenarios():
+        for step in sc.steps:
+            assert step in MISSIONS, f"scenario {sc.id} references unknown mission {step}"
+
+
 def test_mill_fix_rejects_defective_patch(tmp_path):
     """A plausible patch that checks bounds+age but NOT the signature/replay must FAIL -
     proving the checker catches an incomplete defense, not just the reference solution."""
@@ -222,6 +245,7 @@ def test_mill_fix_rejects_defective_patch(tmp_path):
 @pytest.mark.parametrize("argv", [
     ["list"], ["ask", "what is idor"], ["engage", "recon"], ["engage"],
     ["review"], ["path"], ["learn", "networking"], ["tools", "tools-recon"],
+    ["map"], ["status"], ["scenario"], ["scenario", "compromised-release"],
 ])
 def test_cli_runs(argv, tmp_path):
     env = dict(os.environ, HOME=str(tmp_path))
