@@ -131,8 +131,8 @@ class Facts:
         if self.unused_levels:
             out.append("no mission yet at the "
                        + _and([f"`{lv}`" for lv in self.unused_levels], "or")
-                       + f" level (the levels run from `{world.LEVELS[0]}` to "
-                       f"`{world.LEVELS[-1]}`)")
+                       + f" level (missions are graded on levels from `{world.LEVELS[0]}` "
+                       f"to `{world.LEVELS[-1]}`)")
         if self.unused_verbs:
             out.append("no mission yet with the verb "
                        + _and([f"`{v}`" for v in self.unused_verbs], "or"))

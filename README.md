@@ -11,11 +11,12 @@ without stopping the business, and find the attack in the logs.
 
 **The company you defend.** You are the security team at **Lakefront Paper & Container
 Co.**, a fictional paper maker with a mill on the Chicago River. It has a public order
-portal, an AI order agent, an office network and a plant floor that has to keep producing.
+portal (OrderDesk), an AI order agent, an office network and a plant floor that has to
+keep producing.
 Every mission is set there. [SCENARIO.md](SCENARIO.md) tells its story.
 
-**What is built, and what is planned.** `_build_atlas.py` writes this block from the code,
-and a test fails when it falls behind:
+**What is built, and what is planned.** A script writes this block from the code, chiefly
+the registry, the one file that lists every mission. A test fails when it falls behind.
 
 <!-- BEGIN GENERATED BLOCK: built. _build_atlas.py writes this from the registry; change the code and rerun it, don't edit here. -->
 
@@ -33,15 +34,17 @@ and a test fails when it falls behind:
 
 - no mission yet on Order-release staging, PM3 paper machine or LoadMaster optimizer;
 - no fix mission yet to pair with the break missions `crack-01`, `bin-01` and `priv-01`;
-- no mission yet at the `recovery` level (the levels run from `intro` to `recovery`).
+- no mission yet at the `recovery` level (missions are graded on levels from `intro` to `recovery`).
 
 <!-- END GENERATED BLOCK: built -->
 
-[ATLAS.md](ATLAS.md) lists every mission and what it teaches. Larger plans are in
-[VISION.md](VISION.md) and [SPEC.md](SPEC.md), with each section marked built or not built.
-The largest is a live lab you host yourself, which is [partly built](live-lab/README.md).
+[ATLAS.md](ATLAS.md) lists every mission and what it teaches. Beyond those gaps, the plan
+is a live lab you host yourself, missions that run against it, and more tool tutors. Of
+the lab, the database, the web portal and the optimizer exist and the rest does not: see
+[live-lab/README.md](live-lab/README.md). [VISION.md](VISION.md) and [SPEC.md](SPEC.md)
+hold the plans, with every section marked built, partly built or not built.
 
-**How to start.** You need only Python 3.8 or newer.
+**How to start.** You need only Python 3.8 or newer to begin.
 
 ```bash
 git clone https://github.com/justfetz/elite-lab.git
@@ -50,7 +53,8 @@ python3 elite.py
 ```
 
 The last command greets you and names your next one. [Quick start](#quick-start) lists the
-commands that follow, and `elite doctor` tells you if a mission wants an extra tool.
+commands that follow. A few missions want one extra tool, and `python3 elite.py doctor`
+names it.
 
 ---
 
@@ -105,7 +109,7 @@ After working through it, you can:
   then verify releases so that only a genuine one runs.
 - **Catch the human way in** — triage a phishing email and pull out the real link.
 
-Each of those is a mission with a goal and a checker. The **fix** and **build** missions run
+Each of those is a mission with a goal and a check. The **fix** and **build** missions run
 *your actual code* against real cases — open sockets, compile and fuzz a C target, send a
 forged *and* a genuine release at your patched agent — and several show you each probe and
 verdict, so you see exactly what holds. (The missions that take a flag use a fixed one,
@@ -207,7 +211,7 @@ understanding exactly how they fall.
 | `elite lab list` / `elite lab status` | The missions, and your progress on each |
 | `elite lab start/hint/restart <id>` | Set up a mission, unlock a hint, or start it again clean |
 | `elite lab submit <id> <flag>` | Check your work: the flag you captured, or the word that starts the checker |
-| `elite run <tool> ...` | Run a real tool (nmap, sqlmap, john, gobuster) and get a taught debrief |
+| `elite run <tool> ...` | Run a real tool (nmap, sqlmap, john, gobuster, ffuf) and get a taught debrief |
 | `elite ask "<question>"` | In-tool tutor — answers any term from the course (and points at your indexed books) |
 | `elite study ask/summarize/lesson "<topic>"` | Cited answers from your *own* books via a free local model — see [LIBRARY.md](LIBRARY.md) |
 | `elite list` | Every learn module, with your best quiz score |
@@ -250,7 +254,7 @@ generated table of modules, lessons, quizzes and tool briefings.
 
 ---
 
-## Study from your own books (local, private)
+## Study from your own books
 
 `elite study` answers questions from books *you own*, and every answer cites its page.
 With a free local model (Ollama) everything stays on your machine: no account and no
@@ -298,7 +302,8 @@ study_books.py           # local RAG over your own books
 live-lab/                # the optional running version of the company
 ```
 
-Extend it by adding a JSON file to `modules/` (a new lesson/quiz) or a mission module to
+Extend it by adding a learn module to `modules/` (a JSON file, written by hand or by a
+`_build_*.py` script) or a mission module to
 `elitelab/missions/` plus its registry record — the test suite will tell you if a mission
 isn't solvable, isn't registered, or isn't in the atlas. [MISSIONS.md](MISSIONS.md) walks
 through it.

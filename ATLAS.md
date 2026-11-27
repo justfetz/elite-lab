@@ -31,7 +31,7 @@ that no mission covers yet.
 
 - No mission yet on Order-release staging, PM3 paper machine or LoadMaster optimizer.
 - No fix mission yet to pair with the break missions `crack-01`, `bin-01` and `priv-01`.
-- No mission yet at the `recovery` level (the levels run from `intro` to `recovery`).
+- No mission yet at the `recovery` level (missions are graded on levels from `intro` to `recovery`).
 
 Plans that go beyond the registry, such as a live lab you host yourself, are in
 [VISION.md](VISION.md) and [SPEC.md](SPEC.md). Each section there is marked built,
