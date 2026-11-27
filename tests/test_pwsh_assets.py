@@ -150,6 +150,29 @@ def test_bootstrap_returns_the_exit_code_of_a_failing_subcommand(tmp_path):
     assert "invalid choice" in r.stderr
 
 
+def test_bootstrap_reads_piped_input_from_the_file_powershell_names(tmp_path):
+    """`'q' | elite learn networking`: the module writes the piped text to a file and
+    names it in ELITELAB_STDIN, so the answer arrives exactly, on every PowerShell."""
+    answers = tmp_path / "input.txt"
+    answers.write_text("q\n", encoding="utf-8")
+    env = dict(os.environ, HOME=str(tmp_path), USERPROFILE=str(tmp_path))
+    env[bootstrap.ENV_NAME] = _encode(["learn", "networking"])
+    env[bootstrap.STDIN_ENV_NAME] = str(answers)
+    r = subprocess.run([sys.executable, str(BOOTSTRAP)], capture_output=True, text=True,
+                       env=env, stdin=subprocess.DEVNULL, timeout=60)
+    assert r.returncode == 0, r.stderr
+    assert "lesson 1/" in r.stdout and "lesson 2/" not in r.stdout    # 'q' stopped it
+
+
+def test_bootstrap_reports_piped_input_it_cannot_read(tmp_path):
+    env = dict(os.environ, HOME=str(tmp_path), USERPROFILE=str(tmp_path))
+    env[bootstrap.STDIN_ENV_NAME] = str(tmp_path / "not-there.txt")
+    r = subprocess.run([sys.executable, str(BOOTSTRAP), "--version"], capture_output=True,
+                       text=True, env=env, timeout=60)
+    assert r.returncode == bootstrap.EXIT_BAD_ARGV
+    assert "could not read the piped input" in r.stderr and "Traceback" not in r.stderr
+
+
 def test_bootstrap_reports_unreadable_arguments(tmp_path):
     env = dict(os.environ, HOME=str(tmp_path), USERPROFILE=str(tmp_path))
     env[bootstrap.ENV_NAME] = "not base64;"

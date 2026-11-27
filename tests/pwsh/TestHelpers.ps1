@@ -48,6 +48,20 @@ function Get-TestText {
     }
 }
 
+function Get-TestShownText {
+    # Everything a command writes for the learner (its output and its information
+    # stream) as one line of text with single spaces. Out-String would wrap long lines
+    # at the width of the console, which differs from one PowerShell to the next.
+    [CmdletBinding()]
+    [OutputType([string])]
+    param(
+        [Parameter(Mandatory = $true, Position = 0)]
+        [scriptblock] $Command
+    )
+    $lines = @(& $Command 6>&1 | ForEach-Object { [string]$_ })
+    return (($lines -join ' ') -replace '\s+', ' ').Trim()
+}
+
 function Copy-TestClone {
     # Builds a clone of the repository's runtime files at $Destination.
     # With -StubCli the Python package is replaced by a stand-in that reports what it

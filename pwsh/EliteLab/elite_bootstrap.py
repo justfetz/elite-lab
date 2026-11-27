@@ -7,8 +7,13 @@ hands them over in the ELITELAB_ARGV environment variable instead - each
 argument UTF-8 encoded, then base64, then closed with a ';' - and this file
 turns them back into the list elitelab.cli expects.
 
-Run without that variable (python elite_bootstrap.py doctor) it uses its own
-command line, so it is also a plain entry point.
+Text piped to elite in PowerShell arrives the same way and for the same reason:
+the module writes it to a UTF-8 file under the temp folder and names the file in
+ELITELAB_STDIN. PowerShell's own pipe to a native program is ASCII in 5.1, with a
+byte-order mark in front of it when the console is set to UTF-8.
+
+Run without those variables (python elite_bootstrap.py doctor) it uses its own
+command line and its own input, so it is also a plain entry point.
 """
 import base64
 import importlib.util
@@ -16,6 +21,7 @@ import os
 import sys
 
 ENV_NAME = "ELITELAB_ARGV"
+STDIN_ENV_NAME = "ELITELAB_STDIN"
 HERE = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.dirname(os.path.dirname(HERE))      # <clone>/pwsh/EliteLab -> <clone>
 
@@ -48,6 +54,14 @@ def main():
         except ValueError as exc:          # binascii.Error and UnicodeError are ValueErrors
             print("elite: could not read the arguments PowerShell passed (%s)." % exc,
                   file=sys.stderr)
+            return EXIT_BAD_ARGV
+
+    stdin_path = os.environ.pop(STDIN_ENV_NAME, None)
+    if stdin_path:
+        try:
+            sys.stdin = open(stdin_path, "r", encoding="utf-8")
+        except OSError as exc:
+            print("elite: could not read the piped input (%s)." % exc, file=sys.stderr)
             return EXIT_BAD_ARGV
 
     # Python put this file's folder first on the path; the clone's root belongs there.

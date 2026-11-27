@@ -18,6 +18,7 @@ $script:CheckerFolder = Join-Path $PSScriptRoot 'Checkers'
 $script:MinimumPython = [version]'3.8'
 $script:PythonNames = @('py', 'python3', 'python')
 $script:ArgvVariable = 'ELITELAB_ARGV'
+$script:InputVariable = 'ELITELAB_STDIN'
 $script:ExitNoPython = 127
 $script:Utf8NoBom = New-Object System.Text.UTF8Encoding $false
 $script:OnWindows = [System.Environment]::OSVersion.Platform -eq [System.PlatformID]::Win32NT
@@ -215,7 +216,7 @@ function Get-ElitePythonAdvice {
             $first = 'elite needs {0}, and none was found on your PATH.' -f $need
         }
     }
-    $first
+    Format-EliteParagraph -Text $first
     ''
     '  Install it:   {0}' -f (Get-ElitePythonInstallCommand)
     '  Then open a new PowerShell window and run:   elite doctor'
@@ -305,19 +306,23 @@ function Enter-EliteEnvironment {
     [OutputType([hashtable])]
     param(
         [AllowEmptyString()]
-        [string] $Argv = ''
+        [string] $Argv = '',
+
+        [AllowEmptyString()]
+        [string] $InputPath = ''
     )
     $wanted = [ordered]@{
-        $script:ArgvVariable = $Argv
-        PYTHONUTF8           = '1'
-        PYTHONIOENCODING     = 'utf-8'
+        $script:ArgvVariable  = $Argv
+        $script:InputVariable = $InputPath
+        PYTHONUTF8            = '1'
+        PYTHONIOENCODING      = 'utf-8'
     }
     $state = @{ Variables = @{}; ConsoleEncoding = $null }
     foreach ($name in $wanted.Keys) {
         $state.Variables[$name] = [System.Environment]::GetEnvironmentVariable($name)
         $value = $wanted[$name]
         if ([string]::IsNullOrEmpty($value)) {
-            $value = $null      # no arguments: the variable is simply absent
+            $value = $null      # nothing to pass: the variable is simply absent
         }
         [System.Environment]::SetEnvironmentVariable($name, $value)
     }
@@ -415,6 +420,11 @@ function Invoke-Elite {
     Text piped to the command becomes the CLI's input, so answers can be
     scripted: 'q' | elite learn networking
 
+    Tab completes the subcommands, their options and their choices. The list is
+    generated from the CLI's own parser. Windows PowerShell 5.1 completes the
+    subcommands and choices but not a word that starts with a dash: 5.1 takes
+    such a word as a parameter of the function itself and asks no completer.
+
     One thing PowerShell itself takes before any function sees it: a bare --.
     Write it in quotes ('--') if the CLI must receive it.
 
@@ -456,22 +466,35 @@ function Invoke-Elite {
     }
 
     $words = @(ConvertTo-EliteArgument -ArgumentList $args)
-    $state = Enter-EliteEnvironment -Argv (ConvertTo-EliteArgv -ArgumentList $words)
+
+    # Piped text reaches the CLI by way of a file that elite_bootstrap.py reads as its
+    # input. PowerShell's own pipe to a native program is not exact everywhere: Windows
+    # PowerShell 5.1 encodes it as ASCII, and puts a byte-order mark in front of it when
+    # the console is set to UTF-8.
+    $inputPath = ''
+    if ($MyInvocation.ExpectingInput) {
+        $lines = @($input | ForEach-Object { [string]$_ })
+        $text = ''
+        if ($lines.Count -gt 0) {
+            $text = ($lines -join "`n") + "`n"
+        }
+        $inputPath = Join-Path (Get-EliteTempRoot) ('input-' + [System.Guid]::NewGuid().ToString('N') + '.txt')
+        Write-EliteTextFile -Path $inputPath -Text $text
+    }
+
+    $state = Enter-EliteEnvironment -Argv (ConvertTo-EliteArgv -ArgumentList $words) -InputPath $inputPath
     try {
         # Python's stderr (a usage error, say) must reach the screen as text and leave
         # the exit code alone, whatever the caller redirects.
         $ErrorActionPreference = 'Continue'
         Set-Variable -Name PSNativeCommandUseErrorActionPreference -Value $false -Scope Local
-        Set-Variable -Name OutputEncoding -Value $script:Utf8NoBom -Scope Local
-        if ($MyInvocation.ExpectingInput) {
-            $input | & $python.Path $script:BootstrapPath
-        }
-        else {
-            & $python.Path $script:BootstrapPath
-        }
+        & $python.Path $script:BootstrapPath
     }
     finally {
         Exit-EliteEnvironment -State $state
+        if ($inputPath) {
+            Remove-Item -LiteralPath $inputPath -Force -ErrorAction SilentlyContinue
+        }
     }
 }
 
@@ -767,6 +790,7 @@ function Test-EliteSetup {
     $python = Get-ElitePython
     if (-not $python.Usable) {
         $advice = @(Get-ElitePythonAdvice -Python $python)
+        $reason = @($advice | Where-Object { $_ -and $_ -notmatch '^\s' }) -join ' '
         $status = 'missing'
         if ($python.Problem -ne 'missing') {
             $status = 'problem'
@@ -778,7 +802,7 @@ function Test-EliteSetup {
             Status     = $status
             Group      = 'Core'
             Required   = $true
-            Detail     = $advice[0]
+            Detail     = $reason
             Install    = Get-ElitePythonInstallCommand
         }
     }
@@ -817,6 +841,58 @@ function Get-EliteTempRoot {
     [OutputType([string])]
     param()
     return Join-Path ([System.IO.Path]::GetTempPath()) 'elite-lab'
+}
+
+function Clear-EliteFolder {
+    # Removes a fixture folder and everything in it, and says so if it cannot.
+    #
+    # A fixture may hold a file whose access list denies writing to everyone, the
+    # owner included. Remove-Item -Force rewrites a file's attributes before it deletes,
+    # which such a file refuses, so the folder is deleted through .NET, which does not.
+    # If that fails too, every entry is first handed back to its owner alone.
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory = $true)]
+        [string] $Path
+    )
+    if (-not (Test-Path -LiteralPath $Path)) {
+        return
+    }
+    try {
+        [System.IO.Directory]::Delete($Path, $true)
+        return
+    }
+    catch {
+        Write-Debug "elite: first attempt to remove $Path failed: $_"
+    }
+    if ($script:OnWindows) {
+        $owner = [System.Security.Principal.WindowsIdentity]::GetCurrent().User
+        foreach ($item in @(Get-ChildItem -LiteralPath $Path -Recurse -Force -ErrorAction SilentlyContinue)) {
+            try {
+                if ($item.PSIsContainer) {
+                    $acl = New-Object System.Security.AccessControl.DirectorySecurity
+                }
+                else {
+                    $acl = New-Object System.Security.AccessControl.FileSecurity
+                }
+                $acl.SetAccessRuleProtection($true, $false)
+                $acl.AddAccessRule((New-Object System.Security.AccessControl.FileSystemAccessRule $owner, 'FullControl', 'Allow'))
+                Set-Acl -LiteralPath $item.FullName -AclObject $acl
+                if (-not $item.PSIsContainer -and $item.IsReadOnly) {
+                    $item.IsReadOnly = $false
+                }
+            }
+            catch {
+                Write-Debug "elite: could not reset the access list of $($item.FullName): $_"
+            }
+        }
+    }
+    try {
+        [System.IO.Directory]::Delete($Path, $true)
+    }
+    catch {
+        Write-Warning ('Could not remove the fixture folder {0}: {1}' -f $Path, $_.Exception.Message)
+    }
 }
 
 function Write-EliteTextFile {
@@ -1343,9 +1419,7 @@ function Start-EliteChecker {
         if ($Force -or -not (Test-Path -LiteralPath $paths.Script)) {
             Write-EliteTextFile -Path $paths.Script -Text $definition.Starter
         }
-        if (Test-Path -LiteralPath $paths.Sample) {
-            Remove-Item -LiteralPath $paths.Sample -Recurse -Force
-        }
+        Clear-EliteFolder -Path $paths.Sample
         $null = [System.IO.Directory]::CreateDirectory($paths.Sample)
         $null = & $definition.Build $paths.Sample $definition.Sample $definition
         Write-EliteTextFile -Path $paths.StartHere -Text (($brief -join [System.Environment]::NewLine) + [System.Environment]::NewLine)
@@ -1454,9 +1528,7 @@ function Test-EliteChecker {
         }
     }
     finally {
-        if (Test-Path -LiteralPath $runRoot) {
-            Remove-Item -LiteralPath $runRoot -Recurse -Force -ErrorAction SilentlyContinue
-        }
+        Clear-EliteFolder -Path $runRoot
     }
 
     $failed = @($results | Where-Object { -not $_.Passed })

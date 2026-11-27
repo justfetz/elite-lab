@@ -1,6 +1,11 @@
 # Tab completion for elite: the subcommands, their options and their choices.
 # The list is generated from the CLI's own argparse parser (pwsh/build_completions.py).
 # These tests fail when the generated file and the parser drift apart.
+#
+# One difference between the two PowerShells is tested as it is, not hidden: Windows
+# PowerShell 5.1 takes a word that starts with a dash as a parameter of the function
+# itself and never asks a completer about it, so 5.1 completes subcommands and choices
+# but not options. PowerShell 7 completes all three.
 
 BeforeDiscovery {
     $dataPath = Join-Path (Join-Path (Join-Path (Join-Path (Join-Path $PSScriptRoot '..') '..') 'pwsh') 'EliteLab') 'EliteLab.Completions.json'
@@ -21,13 +26,8 @@ BeforeDiscovery {
         @{ Line = 'elite doc'; Expected = @('doctor') }
         @{ Line = 'Invoke-Elite dr'; Expected = @('drill') }
         @{ Line = 'elite zz'; Expected = @() }
-        @{ Line = 'elite -'; Expected = @('-h', '--help', '--version') }
-        @{ Line = 'elite --'; Expected = @('--help', '--version') }
-        @{ Line = 'elite --v'; Expected = @('--version') }
         @{ Line = 'elite lab '; Expected = @($lab.commands | ForEach-Object { $_.name }) }
         @{ Line = 'elite lab s'; Expected = @($lab.commands | ForEach-Object { $_.name } | Where-Object { $_ -like 's*' }) }
-        @{ Line = 'elite lab --'; Expected = @('--help') }
-        @{ Line = 'elite lab start --'; Expected = @('--help') }
         @{ Line = 'elite learn '; Expected = $modules }
         @{ Line = 'elite learn net'; Expected = @('networking') }
         @{ Line = 'elite quiz win'; Expected = @($modules | Where-Object { $_ -like 'win*' }) }
@@ -38,9 +38,19 @@ BeforeDiscovery {
         @{ Line = 'elite -h l'; Expected = @($commandNames | Where-Object { $_ -like 'l*' }) }
         @{ Line = 'elite run nmap -'; Expected = @() }
         @{ Line = 'elite run nmap --'; Expected = @() }
-        @{ Line = 'elite learn networking -'; Expected = @('-h', '--help') }
         @{ Line = 'elite doctor; elite l'; Expected = @($commandNames | Where-Object { $_ -like 'l*' }) }
     )
+
+    # lines whose last word starts with a dash: an option is wanted
+    $script:OptionCases = @(
+        @{ Line = 'elite -'; Expected = @('-h', '--help', '--version') }
+        @{ Line = 'elite --'; Expected = @('--help', '--version') }
+        @{ Line = 'elite --v'; Expected = @('--version') }
+        @{ Line = 'elite lab --'; Expected = @('--help') }
+        @{ Line = 'elite lab start --'; Expected = @('--help') }
+        @{ Line = 'elite learn networking -'; Expected = @('-h', '--help') }
+    )
+    $script:OnPowerShell7 = $PSVersionTable.PSEdition -eq 'Core'
 }
 
 BeforeAll {
@@ -70,6 +80,19 @@ Describe 'Tab completion through the PowerShell completion engine' {
             return
         }
         ($offered -join ' ') | Should -BeExactly ($Expected -join ' ')
+    }
+
+    It 'offers the options for "<Line>" (PowerShell 7)' -ForEach $script:OptionCases -Skip:(-not $script:OnPowerShell7) {
+        ((Get-Completion -Line $Line) -join ' ') | Should -BeExactly ($Expected -join ' ')
+    }
+
+    It 'offers no option for "<Line>" in Windows PowerShell 5.1, which never asks a completer about a dash word' -ForEach $script:OptionCases -Skip:$script:OnPowerShell7 {
+        # the documented limit of 5.1. If this ever starts to fail, 5.1 has begun to ask,
+        # and the README and the help of Invoke-Elite can drop the caveat.
+        $offered = Get-Completion -Line $Line
+        foreach ($word in $Expected) {
+            $offered | Should -Not -Contain $word
+        }
     }
 
     It 'completes in the middle of a line, using only the words before the cursor' {
@@ -147,6 +170,20 @@ Describe 'Get-EliteCompletion, the function behind the completer' {
     It 'offers nothing once another tool''s arguments have begun' {
         $offered = InModuleScope EliteLab { @(Get-EliteCompletion -WordToComplete '-' -PrecedingWord @('run', 'nmap')) }
         $offered.Count | Should -Be 0
+    }
+
+    It 'offers the options of <Where> on every PowerShell' -ForEach @(
+        @{ Where = 'elite itself'; Word = '-'; Before = @(); Expected = '-h --help --version' }
+        @{ Where = 'elite itself, long form'; Word = '--'; Before = @(); Expected = '--help --version' }
+        @{ Where = 'a subcommand'; Word = '--'; Before = @('lab'); Expected = '--help' }
+        @{ Where = 'a nested subcommand'; Word = '-'; Before = @('lab', 'start'); Expected = '-h --help' }
+        @{ Where = 'a subcommand after its argument'; Word = '--h'; Before = @('learn', 'networking'); Expected = '--help' }
+    ) {
+        $offered = InModuleScope EliteLab -Parameters @{ Word = $Word; Before = $Before } {
+            param($Word, $Before)
+            @(Get-EliteCompletion -WordToComplete $Word -PrecedingWord $Before)
+        }
+        (@($offered | ForEach-Object { $_.CompletionText }) -join ' ') | Should -BeExactly $Expected
     }
 
     It 'still offers run''s own help option before the tool is named' {

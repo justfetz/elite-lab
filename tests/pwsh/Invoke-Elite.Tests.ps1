@@ -111,6 +111,8 @@ Describe 'elite runs the real CLI' {
         $output = @('q' | elite learn networking)
         $LASTEXITCODE | Should -Be 0
         ($output -join "`n") | Should -Match 'lesson 1/'
+        # the q was understood: the CLI stopped instead of going on to the next lesson
+        ($output -join "`n") | Should -Not -Match 'lesson 2/'
     }
 
     It 'prints UTF-8 text from the real CLI intact when it is captured' {
@@ -238,10 +240,24 @@ Describe 'elite hands every argument to the CLI unchanged' {
 
     It 'gives piped lines to the CLI as its input, non-ASCII included' {
         $word = 'caf{0}' -f [char]0x00E9
-        $output = @('alpha', $word | elite --stdin)
+        $output = @('alpha', $word, '' | elite --stdin)
+        $LASTEXITCODE | Should -Be 0
         $line = $output | Where-Object { $_ -like 'stdin=*' } | Select-Object -First 1
         $received = ConvertFrom-Json -InputObject ($line.Substring(6))
-        ($received -replace "`r", '') | Should -BeExactly ("alpha`n{0}`n" -f $word)
+        # exactly these lines: no byte-order mark in front, no carriage returns, no '?'
+        $received | Should -BeExactly ("alpha`n{0}`n`n" -f $word)
+    }
+
+    It 'gives the CLI an empty input, not the keyboard, when nothing is piped in' {
+        $output = @(@() | elite --stdin)
+        ($output | Where-Object { $_ -like 'stdin=*' } | Select-Object -First 1) | Should -BeExactly 'stdin=""'
+    }
+
+    It 'removes the file it used to hand the piped text over' {
+        $null = 'one', 'two' | elite --stdin
+        $root = Join-Path ([System.IO.Path]::GetTempPath()) 'elite-lab'
+        @(Get-ChildItem -LiteralPath $root -Filter 'input-*.txt' -ErrorAction Ignore).Count | Should -Be 0
+        $env:ELITELAB_STDIN | Should -BeNullOrEmpty
     }
 
     It 'returns exit code <_> from the CLI' -ForEach 0, 1, 2, 7, 42 {
@@ -292,7 +308,7 @@ Describe 'elite when Python is missing' {
 
     It 'says so in plain words, with the install command, and throws nothing' {
         $errorsBefore = $Error.Count
-        { $script:Message = (elite doctor 6>&1 | Out-String) } | Should -Not -Throw
+        { $script:Message = Get-TestShownText { elite doctor } } | Should -Not -Throw
         $shown = $script:Message
         $shown | Should -Match 'elite needs Python 3\.8 or newer, and none was found on your PATH'
         $shown | Should -Match 'Install it:\s+\S'
@@ -343,7 +359,7 @@ Describe 'elite when Python is older than 3.8' {
         $null = Write-FakePython -Directory $folder -Name 'python' -Output $Printed
         $env:PATH = $folder
 
-        { $script:Message = (elite doctor 6>&1 | Out-String) } | Should -Not -Throw
+        { $script:Message = Get-TestShownText { elite doctor } } | Should -Not -Throw
         $script:Message | Should -Match 'elite needs Python 3\.8 or newer'
         $script:Message | Should -Match ('The newest one found is Python ' + [regex]::Escape($Shown))
         $script:Message | Should -Match 'Install it:\s+\S'
@@ -360,7 +376,7 @@ Describe 'elite when Python is older than 3.8' {
         $folder = Join-Path $TestDrive 'broken python'
         $null = Write-FakePython -Directory $folder -Name 'python' -ExitCode 9
         $env:PATH = $folder
-        $shown = (elite doctor 6>&1 | Out-String)
+        $shown = Get-TestShownText { elite doctor }
         $shown | Should -Match 'was found at .+ but it did not run'
         $LASTEXITCODE | Should -Be 127
     }

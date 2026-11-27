@@ -122,14 +122,16 @@ git clone https://github.com/justfetz/elite-lab.git
 cd elite-lab
 Import-Module ./pwsh/EliteLab    # no install step
 elite doctor                     # the same CLI: every argument goes through unchanged
-elite lab <Tab>                  # subcommands, options and choices complete
+elite lab <Tab>                  # subcommands and choices complete (and options, in PowerShell 7)
 Test-EliteSetup                  # `elite doctor` as objects: Name, Ok, Group, Install ...
 ```
 
 If PowerShell says running scripts is disabled, allow them for this window only:
 `Set-ExecutionPolicy -Scope Process RemoteSigned`. If Python is missing or older than 3.8,
 `elite` says so and prints the command that installs it. The CLI's exit code is in
-`$LASTEXITCODE`, as for any program.
+`$LASTEXITCODE`, as for any program, and piped text is the CLI's input
+(`'q' | elite learn networking`). One limit: Windows PowerShell 5.1 does not complete a
+word that starts with a dash (`--help`), because 5.1 takes it as a parameter of its own.
 
 **Blue-team checkers.** You write a PowerShell audit script; the checker runs it against
 fixture cases in your temp folder and shows a verdict for each one. Nothing touches the real

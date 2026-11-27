@@ -8,7 +8,8 @@ name: CI
 #
 # Each leg runs the Python suite (pytest), PSScriptAnalyzer with the committed
 # settings, and the Pester suite for the EliteLab module (tests/pwsh).
-# The Ubuntu leg uses Python 3.8, the oldest version the project supports.
+# The PowerShell 7 on Windows leg uses Python 3.8, the oldest version the project
+# supports (ubuntu-latest no longer offers 3.8).
 
 on:
   push:
@@ -37,11 +38,11 @@ jobs:
           - name: PowerShell 7 on Windows
             os: windows-latest
             shell: pwsh
-            python: '3.12'
+            python: '3.8'
           - name: PowerShell 7 on Ubuntu
             os: ubuntu-latest
             shell: pwsh
-            python: '3.8'
+            python: '3.12'
     defaults:
       run:
         shell: ${{ matrix.shell }}
