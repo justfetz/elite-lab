@@ -124,9 +124,9 @@ foreach ($rule in $baseline) {
         }
         @{
             Name     = 'settings that are missing'
-            Why      = 'Three settings are not in the export. A setting that is absent cannot meet its baseline, and in PowerShell $null -le 365 is true: loop over the baseline, not over the settings.'
-            Omit     = @('MaximumPasswordAgeDays', 'GuestAccountEnabled', 'AuditLogonFailures')
-            Expected = @('MaximumPasswordAgeDays', 'GuestAccountEnabled', 'AuditLogonFailures')
+            Why      = 'Four settings are not in the export. A setting that is absent cannot meet its baseline, and in PowerShell $null -le 365 is true: loop over the baseline, not over the settings. LockoutThreshold is named by two rules and is still one finding.'
+            Omit     = @('MaximumPasswordAgeDays', 'GuestAccountEnabled', 'AuditLogonFailures', 'LockoutThreshold')
+            Expected = @('MaximumPasswordAgeDays', 'GuestAccountEnabled', 'AuditLogonFailures', 'LockoutThreshold')
         }
         @{
             Name     = 'two rules for one setting: below the lower one'

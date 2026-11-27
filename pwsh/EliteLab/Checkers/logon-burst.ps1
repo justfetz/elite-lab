@@ -6,6 +6,7 @@
 #
 # A series is a run of events from one source: Start (UTC time of day) and either
 # Repeat and Step (that many events, Step seconds apart) or Offsets (seconds after Start).
+# Day = 1 puts a series on 15 January instead of 14 January.
 
 $officeNoise = @(
     @{ Ip = '10.10.0.21'; Id = 4624; User = 'dana'; Start = '07:58:10'; Repeat = 4; Step = 1900 }
@@ -25,7 +26,7 @@ $officeNoise = @(
         'The fixture is logons.csv: one logon event per row, with the columns TimeCreated'
         '(UTC, written like 2026-01-14T08:15:04Z), EventId (4624 is a logon that worked,'
         '4625 is one that failed), TargetUserName, IpAddress and LogonType. The rows are'
-        'not always in time order.'
+        'not always in time order, and an export can cover more than one day.'
         ''
         'A burst is 10 or more FAILED logons from one IpAddress, with no more than 300'
         'seconds between the first and the last of them.'
@@ -69,8 +70,12 @@ $rows = Import-Csv -LiteralPath (Join-Path $Path 'logons.csv')
                 }
             }
             $start = [timespan]::Parse($series.Start, $invariant)
+            $date = $day
+            if ($series.ContainsKey('Day')) {
+                $date = $day.AddDays($series.Day)
+            }
             foreach ($offset in $offsets) {
-                $when = $day.Add($start).AddSeconds($offset)
+                $when = $date.Add($start).AddSeconds($offset)
                 $rows.Add([pscustomobject][ordered]@{
                         TimeCreated    = $when.ToString("yyyy-MM-dd'T'HH:mm:ss'Z'", $invariant)
                         EventId        = $series.Id
@@ -144,13 +149,26 @@ $rows = Import-Csv -LiteralPath (Join-Path $Path 'logons.csv')
         }
         @{
             Name     = 'a burst in the middle of a long day'
-            Why      = '203.0.113.80 fails now and then from 07:10 to 11:00, and ten times in two minutes at 09:00. Its failures span hours, and its first ten are not the burst: only a window that slides over all of them finds it.'
+            Why      = '203.0.113.80 fails now and then from 07:10 to 11:00, once at 08:56:40, and ten times in under four minutes from 09:00:00. Its failures span hours, its first ten are not the burst, and a window that opens at 08:56:40 closes in the middle of it: only a window that slides from every failure finds it.'
             Series   = @($officeNoise + @(
                     @{ Ip = '203.0.113.80'; Id = 4625; User = 'administrator'; Start = '07:10:00'; Repeat = 4; Step = 1500 }
-                    @{ Ip = '203.0.113.80'; Id = 4625; User = 'administrator'; Start = '09:00:00'; Repeat = 10; Step = 13 }
+                    @{ Ip = '203.0.113.80'; Id = 4625; User = 'administrator'; Start = '08:56:40'; Repeat = 1; Step = 1 }
+                    @{ Ip = '203.0.113.80'; Id = 4625; User = 'administrator'; Start = '09:00:00'; Repeat = 10; Step = 25 }
                     @{ Ip = '203.0.113.80'; Id = 4625; User = 'administrator'; Start = '10:00:00'; Repeat = 3; Step = 1800 }
                 ))
             Expected = @('203.0.113.80')
+        }
+        @{
+            Name     = 'two days in one export'
+            Why      = '192.0.2.60 fails five times just before midnight and five times just after: a burst that crosses into the next day. 192.0.2.61 fails five times at 10:00 on one day and five times at 10:00 on the next: a day apart. The date is part of the time.'
+            Series   = @(
+                @{ Ip = '192.0.2.60'; Id = 4625; User = 'administrator'; Start = '23:58:30'; Repeat = 5; Step = 10 }
+                @{ Ip = '192.0.2.60'; Id = 4625; User = 'administrator'; Start = '00:00:20'; Repeat = 5; Step = 10; Day = 1 }
+                @{ Ip = '192.0.2.61'; Id = 4625; User = 'svc_backup'; Start = '10:00:00'; Repeat = 5; Step = 10 }
+                @{ Ip = '192.0.2.61'; Id = 4625; User = 'svc_backup'; Start = '10:00:50'; Repeat = 5; Step = 10; Day = 1 }
+                @{ Ip = '10.10.0.21'; Id = 4624; User = 'dana'; Start = '08:01:00'; Repeat = 3; Step = 3600; Day = 1 }
+            )
+            Expected = @('192.0.2.60')
         }
         @{
             Name     = 'two sources, rows out of order'

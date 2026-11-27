@@ -151,7 +151,7 @@ permissions, firewall rules, file hashes, processes and ports, and read-only dir
 queries.
 
 Working on the module itself? `Invoke-Pester tests/pwsh` runs its tests (Pester 5), and
-`Invoke-ScriptAnalyzer -Path . -Recurse -Settings ./PSScriptAnalyzerSettings.psd1` lints it.
+`./tests/pwsh/Invoke-Analyzer.ps1` lints it with PSScriptAnalyzer and the committed settings.
 After changing the CLI's parser, run `python pwsh/build_completions.py` to regenerate the
 tab-completion list; the tests fail until you do.
 

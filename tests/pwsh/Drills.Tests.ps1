@@ -200,4 +200,18 @@ Describe 'What the drill checks covered on this machine' {
         Write-Information -InformationAction Continue -MessageData ('    parameters verified against {0} installed cmdlets: {1}' -f $names.Count, ($names -join ', '))
         $names.Count | Should -BeGreaterThan 3
     }
+
+    It 'checked every directory cmdlet in the drills, where the Active Directory module is installed' {
+        if (-not (Get-Module -ListAvailable -Name ActiveDirectory)) {
+            Set-ItResult -Skipped -Because 'the Active Directory module is not on this machine; the Windows legs of CI add it'
+            return
+        }
+        $directory = @($script:Bank | Where-Object { $_.platform -eq 'powershell' } | ForEach-Object {
+                (Get-ParsedCommand -Text $_.answer).Commands | ForEach-Object { $_.GetCommandName() }
+            } | Where-Object { $_ -match '^(Get|Search)-AD' } | Sort-Object -Unique)
+        $directory.Count | Should -BeGreaterThan 4
+        foreach ($name in $directory) {
+            $script:Verified | Should -Contain $name -Because "$name is in a drill answer and the module that has it is installed"
+        }
+    }
 }

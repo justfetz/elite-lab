@@ -226,22 +226,58 @@ function Get-ElitePythonAdvice {
 
 #region Running the CLI
 
-function Test-EliteWordInLine {
-    # True when $Word stands in $Line as a word of its own.
+function Get-EliteCommandOption {
+    # The parameters of the calling command, as its own syntax shows them.
+    #
+    # PowerShell reads -w=list.txt as the parameter -w=list followed by the word .txt,
+    # and -p:80 as the parameter -p: followed by 80. A function sees the same two words
+    # for -w=list .txt and for -p: 80, which were typed as two. The command's syntax tree
+    # still shows whether anything stood between them, so this returns, for every
+    # parameter of that command in order, the text $args shows for it and whether the
+    # next word was typed as part of it. Only the command at $Offset on $Line is looked
+    # at: another command on the same line, or a comment, cannot be mistaken for it.
     [CmdletBinding()]
-    [OutputType([bool])]
+    [OutputType([hashtable])]
     param(
-        [Parameter(Mandatory = $true)]
-        [string] $Word,
-
         [AllowEmptyString()]
-        [string] $Line = ''
+        [string] $Line = '',
+
+        [int] $Offset = 0
     )
-    if ([string]::IsNullOrEmpty($Line)) {
-        return $false
+    if ([string]::IsNullOrWhiteSpace($Line) -or $Offset -lt 1) {
+        return
     }
-    $pattern = '(?<![^\s;|&({])' + [regex]::Escape($Word) + '(?![^\s;|&)}])'
-    return [regex]::IsMatch($Line, $pattern)
+    $tokens = $null
+    $errors = $null
+    $tree = [System.Management.Automation.Language.Parser]::ParseInput($Line, [ref]$tokens, [ref]$errors)
+    $command = $tree.FindAll({ param($node) $node -is [System.Management.Automation.Language.CommandAst] }, $true) |
+        Where-Object { $_.Extent.StartLineNumber -eq 1 -and $_.Extent.StartColumnNumber -eq $Offset } |
+        Select-Object -First 1
+    if ($null -eq $command) {
+        return
+    }
+    $elements = @($command.CommandElements)
+    for ($i = 1; $i -lt $elements.Count; $i++) {
+        $element = $elements[$i]
+        if ($element -isnot [System.Management.Automation.Language.CommandParameterAst]) {
+            continue
+        }
+        if ($null -ne $element.Argument) {
+            # -p:80 or -p: 80. The text up to the value is '-p:' or '-p: '.
+            $lead = $element.Extent.Text.Substring(0, $element.Argument.Extent.StartOffset - $element.Extent.StartOffset)
+            $text = $lead.TrimEnd()
+            @{ Text = $text; Joined = ($lead.Length -eq $text.Length) }
+            continue
+        }
+        $joined = $false
+        if (($i + 1) -lt $elements.Count) {
+            $next = $elements[$i + 1]
+            $joined = ($next -isnot [System.Management.Automation.Language.CommandParameterAst]) -and
+                ($next.Extent.StartOffset -eq $element.Extent.EndOffset) -and
+                $next.Extent.Text.StartsWith('.')
+        }
+        @{ Text = $element.Extent.Text; Joined = $joined }
+    }
 }
 
 function ConvertTo-EliteArgument {
@@ -250,13 +286,18 @@ function ConvertTo-EliteArgument {
     # PowerShell parses a command line before a function sees it, and four of its
     # habits would change what Python receives:
     #   80,443     arrives as an array        -> joined again with ','
-    #   -p:80      arrives as '-p:' and 80    -> joined again (PowerShell marks '-p:' as a
-    #                                            parameter it split; a quoted '-p:' is left alone)
-    #   -w=a.txt   arrives as '-w=a' and .txt -> joined again when the line that called elite
-    #                                            shows them as one word ($InvocationLine); a
-    #                                            real pair such as  -w ./a.txt  is left alone
+    #   -p:80      arrives as '-p:' and 80    -> joined again
+    #   -w=a.txt   arrives as '-w=a' and .txt -> joined again
     #   0x10, 1.0  arrive as numbers          -> [string] gives back the text as typed
     # $null and an empty array (an empty variable) are dropped, as for any native command.
+    #
+    # PowerShell marks the words it parsed as parameters (a quoted '-p:' is not one).
+    # Whether a marked word and the next one were typed as one is read from the calling
+    # command (Get-EliteCommandOption): -p: 80 and -w ./a.txt stay two words. When the
+    # command cannot be read, or its parameters are not the marked words (a continuation
+    # line, a splatted list), '-p:' is joined to its value, since that is how it is
+    # nearly always typed, and a word split at a dot is left as two.
+    #
     # The words are written one by one; collect them with @( ), which keeps an empty
     # string as a word and gives an empty array when there are none.
     [CmdletBinding()]
@@ -267,34 +308,62 @@ function ConvertTo-EliteArgument {
         [object[]] $ArgumentList = @(),
 
         [AllowEmptyString()]
-        [string] $InvocationLine = ''
+        [string] $InvocationLine = '',
+
+        [int] $InvocationOffset = 0
     )
-    # every argument as text, and whether PowerShell marked it as a parameter it parsed
-    $items = New-Object System.Collections.Generic.List[object]
+    # every argument as text; whether PowerShell marked it as a parameter it parsed; and
+    # whether it held nothing (it is not passed on, but it still is the value of a '-p:')
+    $items = New-Object System.Collections.Generic.List[hashtable]
     foreach ($item in @($ArgumentList)) {
         if ($null -eq $item) {
+            $items.Add(@{ Text = ''; Marked = $false; Dropped = $true })
             continue
         }
         if ($item -is [System.Collections.IEnumerable] -and $item -isnot [string]) {
             $parts = @($item | ForEach-Object { [string]$_ })
-            if ($parts.Count -gt 0) {
-                $items.Add(@{ Text = ($parts -join ','); Marked = $false })
-            }
+            $items.Add(@{ Text = ($parts -join ','); Marked = $false; Dropped = ($parts.Count -eq 0) })
             continue
         }
         $marked = ($item -is [string]) -and ($null -ne $item.psobject.Properties['<CommandParameterName>'])
-        $items.Add(@{ Text = [string]$item; Marked = $marked })
+        $items.Add(@{ Text = [string]$item; Marked = $marked; Dropped = $false })
     }
 
+    # the calling command's parameters are trusted only when they are exactly the marked words
+    $options = @(Get-EliteCommandOption -Line $InvocationLine -Offset $InvocationOffset)
+    $markedItems = @($items | Where-Object { $_.Marked })
+    $known = ($options.Count -eq $markedItems.Count)
+    for ($k = 0; $known -and $k -lt $markedItems.Count; $k++) {
+        $known = ($options[$k].Text -ceq $markedItems[$k].Text)
+    }
+
+    $seen = 0
     for ($i = 0; $i -lt $items.Count; $i++) {
-        $text = $items[$i].Text
-        if ($items[$i].Marked -and ($i + 1) -lt $items.Count) {
-            $next = $items[$i + 1].Text
-            $splitAtColon = $text.Length -gt 2 -and $text.EndsWith(':')
-            $splitAtDot = $next.StartsWith('.') -and -not $items[$i + 1].Marked -and
-                (Test-EliteWordInLine -Word ($text + $next) -Line $InvocationLine)
-            if ($splitAtColon -or $splitAtDot) {
-                $text + $next
+        $item = $items[$i]
+        if ($item.Dropped) {
+            continue
+        }
+        $text = $item.Text
+        if (-not $item.Marked) {
+            $text
+            continue
+        }
+        $option = $null
+        if ($known) {
+            $option = $options[$seen]
+        }
+        $seen++
+        if (($i + 1) -lt $items.Count -and -not $items[$i + 1].Marked) {
+            $next = $items[$i + 1]
+            if ($text.Length -gt 2 -and $text.EndsWith(':')) {
+                if ($null -eq $option -or $option.Joined) {
+                    $text + $next.Text          # -p:80, and -p: alone when the value held nothing
+                    $i++
+                    continue
+                }
+            }
+            elseif ($null -ne $option -and $option.Joined -and -not $next.Dropped -and $next.Text.StartsWith('.')) {
+                $text + $next.Text              # -w=list.txt
                 $i++
                 continue
             }
@@ -483,9 +552,11 @@ function Invoke-Elite {
     would make PowerShell claim options such as -h and -sV before the CLI saw them.
 
     PowerShell splits an option at its first dot (-w=list.txt becomes -w=list
-    and .txt). The two halves are joined again when the line that called elite
-    shows them as one word. If the option came from a variable or from another
-    function's arguments, that line does not show it: quote it there.
+    and .txt) and after a colon (-p:80 becomes -p: and 80). The two halves are
+    joined again when the command you typed shows nothing between them. That
+    can be seen only on the line where the command starts: quote such an option
+    ('-w=list.txt') when it is on a continuation line, in a variable, or passed
+    on from another function's arguments.
 
     .LINK
     Test-EliteSetup
@@ -499,7 +570,7 @@ function Invoke-Elite {
         return
     }
 
-    $words = @(ConvertTo-EliteArgument -ArgumentList $args -InvocationLine ([string]$MyInvocation.Line))
+    $words = @(ConvertTo-EliteArgument -ArgumentList $args -InvocationLine ([string]$MyInvocation.Line) -InvocationOffset $MyInvocation.OffsetInLine)
 
     # Piped text reaches the CLI by way of a file that elite_bootstrap.py reads as its
     # input. PowerShell's own pipe to a native program is not exact everywhere: Windows
@@ -1550,9 +1621,11 @@ function Test-EliteChecker {
     verdict. A failed case also says what was missed or wrongly flagged, and why
     that case exists. The fixture folders are removed afterwards.
 
-    The cases are built around the ways an audit goes wrong: each rule of the
-    brief has a case that only a script applying that rule gets right, and a
-    case with nothing to find.
+    The cases are built around the ways an audit goes wrong. Each rule of the
+    brief has a case of its own, with a row for every spelling the brief
+    lists, next to rows that only look like a finding; one case has nothing
+    to find. Passing every case means the script met all of them, which is a
+    strong sign and not a proof.
 
     A case fails if the script misses a finding, flags something it should not,
     prints a finding twice, prints anything that is not a finding, errors,

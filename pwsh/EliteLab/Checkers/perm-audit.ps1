@@ -36,8 +36,8 @@
 
     BriefUnix    = @(
         ''
-        'On Linux and macOS a file is over-shared when "others" may write it: the w in the'
-        'last of the three rwx groups, as in rw-rw-rw- (modes 666, 646 and 777 all have it).'
+        'On Linux and macOS a file is over-shared when "others" may write it: a w in the'
+        'last of the three rwx groups, whatever stands beside it (rw-, -w- and rwx all count).'
         'A file only its group can write is not over-shared, and a folder is not a file.'
         ''
         'Read the mode with (Get-Item <file>).UnixMode.'
@@ -71,6 +71,7 @@ foreach ($file in $files) {
         'authusers-full'      = @{ Mode = '777'; Grants = @(@{ Sid = 'S-1-5-11'; Rights = 'FullControl'; Type = 'Allow' }) }
         'users-write'         = @{ Mode = '646'; Grants = @(@{ Sid = 'S-1-5-32-545'; Rights = 'Write'; Type = 'Allow' }) }
         'users-modify'        = @{ Mode = '666'; Grants = @(@{ Sid = 'S-1-5-32-545'; Rights = 'Modify'; Type = 'Allow' }) }
+        'users-write-only'    = @{ Mode = '662'; Grants = @(@{ Sid = 'S-1-5-32-545'; Rights = 'WriteData, AppendData'; Type = 'Allow' }) }
         'admins-full'         = @{ Mode = '660'; Grants = @(@{ Sid = 'S-1-5-32-544'; Rights = 'FullControl'; Type = 'Allow' }) }
         'everyone-deny-write' = @{
             Mode   = '444'
@@ -202,16 +203,17 @@ foreach ($file in $files) {
             Expected = @('ops/old-passwords.txt')
         }
         @{
-            Name     = 'three ways to be too broad'
-            Why      = 'Three files, three different ways in (on Windows: Everyone, Authenticated Users and BUILTIN\Users; elsewhere: modes 666, 777 and 646). A script that looks for one of them finds one of three. The administrators'' file is fine.'
+            Name     = 'four ways to be too broad'
+            Why      = 'Four files, four different ways in. On Windows: Everyone, Authenticated Users and BUILTIN\Users, and BUILTIN\Users once more with nothing but the right to write data. Elsewhere: modes 666, 777, 646 and 662, where others may write and not read. A script that looks for one of them finds one of four. The administrators'' file is fine.'
             Tree     = @(
                 @{ Path = 'share/everyone.txt'; Access = 'everyone-modify' }
                 @{ Path = 'share/authenticated.txt'; Access = 'authusers-full' }
                 @{ Path = 'share/users.txt'; Access = 'users-write' }
+                @{ Path = 'share/inbox.log'; Access = 'users-write-only' }
                 @{ Path = 'share/admins.txt'; Access = 'admins-full' }
                 @{ Path = 'share/private.txt'; Access = 'owner-only' }
             )
-            Expected = @('share/everyone.txt', 'share/authenticated.txt', 'share/users.txt')
+            Expected = @('share/everyone.txt', 'share/authenticated.txt', 'share/users.txt', 'share/inbox.log')
         }
         @{
             Name     = 'deep in the tree'

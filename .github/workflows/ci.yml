@@ -74,9 +74,22 @@ jobs:
         shell: powershell
         run: |
           $ProgressPreference = 'SilentlyContinue'
-          $feature = Install-WindowsFeature -Name RSAT-AD-PowerShell
-          "RSAT-AD-PowerShell: success={0} exit={1}" -f $feature.Success, $feature.ExitCode
-          Get-Module -ListAvailable -Name ActiveDirectory | ForEach-Object { '{0} {1}' -f $_.Name, $_.Version }
+          try {
+            $feature = Install-WindowsFeature -Name RSAT-AD-PowerShell
+            "RSAT-AD-PowerShell: success={0} exit={1}" -f $feature.Success, $feature.ExitCode
+          }
+          catch {
+            "RSAT-AD-PowerShell could not be added: $($_.Exception.Message)"
+          }
+          $module = Get-Module -ListAvailable -Name ActiveDirectory | Select-Object -First 1
+          if ($null -eq $module) {
+            # the run goes on and says so on its summary page. Where the module is there,
+            # the Pester suite requires that every directory cmdlet in the drills was checked.
+            '::warning::The Active Directory module could not be added on this leg, so the directory drills cannot be checked against the real cmdlets.'
+          }
+          else {
+            '{0} {1}' -f $module.Name, $module.Version
+          }
 
       - name: Python suite (pytest)
         run: |
@@ -96,16 +109,12 @@ jobs:
           Import-Module PSScriptAnalyzer -RequiredVersion 1.24.0
           Get-Module -Name Pester, PSScriptAnalyzer | ForEach-Object { '{0} {1}' -f $_.Name, $_.Version }
 
+      # The analyzer runs in a child process with a time limit and is started again if it
+      # crashes or hangs (it did both once on the Ubuntu leg). Findings are never retried.
       - name: PSScriptAnalyzer
         run: |
-          Import-Module PSScriptAnalyzer -RequiredVersion 1.24.0
-          $files = @(Get-ChildItem -Path . -Recurse -File -Include *.ps1, *.psm1, *.psd1)
-          $findings = @(Invoke-ScriptAnalyzer -Path . -Recurse -Settings ./PSScriptAnalyzerSettings.psd1)
-          $findings | Sort-Object ScriptName, Line |
-            Format-Table -AutoSize -Wrap -Property ScriptName, Line, Severity, RuleName, Message |
-            Out-String -Width 200
-          "PSScriptAnalyzer {0}: {1} files analyzed, {2} findings" -f (Get-Module PSScriptAnalyzer).Version, $files.Count, $findings.Count
-          if ($findings.Count -gt 0) { exit 1 }
+          ./tests/pwsh/Invoke-Analyzer.ps1 -ModuleVersion 1.24.0
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 
       - name: Pester
         run: |

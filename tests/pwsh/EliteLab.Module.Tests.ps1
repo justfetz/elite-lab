@@ -213,12 +213,10 @@ Describe 'PSScriptAnalyzer' {
             Set-ItResult -Skipped -Because 'PSScriptAnalyzer is not installed here; the CI workflow runs it on every leg'
             return
         }
-        $settings = Join-Path $script:RepoRoot 'PSScriptAnalyzerSettings.psd1'
-        $findings = @()
-        foreach ($folder in 'pwsh', (Join-Path 'tests' 'pwsh')) {
-            $findings += @(Invoke-ScriptAnalyzer -Path (Join-Path $script:RepoRoot $folder) -Recurse -Settings $settings)
-        }
-        $report = ($findings | ForEach-Object { '{0}:{1} {2} {3}' -f $_.ScriptName, $_.Line, $_.RuleName, $_.Message }) -join "`n"
+        # the same runner CI uses: a child process, a time limit, another go if it crashes
+        $runner = Join-Path (Join-Path (Join-Path $script:RepoRoot 'tests') 'pwsh') 'Invoke-Analyzer.ps1'
+        $findings = @(& $runner -PassThru)
+        $report = ($findings | ForEach-Object { '{0}:{1} {2} {3}' -f $_.File, $_.Line, $_.RuleName, $_.Message }) -join "`n"
         $findings.Count | Should -Be 0 -Because $report
     }
 }

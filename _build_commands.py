@@ -28,12 +28,20 @@ def C(id, platform, prompt, answer, why, accept=None, wrong=None):
 # They accept what a practised administrator would type for the same job - the short
 # names where and select, a pipe without spaces, columns in another order - and nothing
 # that would not run or would answer a different question.
-Q = r"['\"]?"                               # an optional quote of either kind
-QQ = r"['\"]"                               # a quote that has to be there
 SP = r" ?"                                  # an optional space
 PIPE = r" ?\| ?"                            # a pipe, spaces optional
-WHERE = r"(where-object|where|\?)"          # Where-Object and its two short names
-SELECT = r"(select-object|select)"          # Select-Object and its short name
+WHERE = r"(?:where-object|where|\?)"        # Where-Object and its two short names
+SELECT = r"(?:select-object|select)"        # Select-Object and its short name
+
+
+def quoted(word):
+    """'word' or "word": a quote of either kind, closed by the same kind."""
+    return r"(?:'" + word + r"'|\"" + word + r"\")"
+
+
+def maybe_quoted(word):
+    """word, 'word' or "word"."""
+    return r"(?:" + word + r"|'" + word + r"'|\"" + word + r"\")"
 
 
 def where(prop, op, word, literal=False):
@@ -43,17 +51,21 @@ def where(prop, op, word, literal=False):
     `{ $_.Prop -op 'word' }`, a bare word is a parse error, so the quotes are required.
     literal=True is for a value that is not a string, such as $null or $true.
     """
-    simple = word if literal else Q + word + Q
-    block = word if literal else QQ + word + QQ
-    return [WHERE + r" (-property )?" + prop + " " + op + " " + simple,
+    simple = word if literal else maybe_quoted(word)
+    block = word if literal else quoted(word)
+    return [WHERE + r" (?:-property )?" + prop + " " + op + " " + simple,
             WHERE + r" \{" + SP + r"\$_\." + prop + " " + op + " " + block + SP + r"\}"]
 
 
-def select(*props):
-    """Select-Object with exactly these properties, in any order."""
-    one = "(" + "|".join(props) + ")"
-    each_once = "".join(r"(?=.*\b" + p + r"\b)" for p in props)
-    return SELECT + r" (-property )?" + each_once + one + ("(," + SP + one + "){%d}" % (len(props) - 1))
+def select(*required, optional=()):
+    """Select-Object with every required property once, in any order; the optional
+    ones may be there too. No property twice: Select-Object refuses that."""
+    allowed = tuple(required) + tuple(optional)
+    one = "(?:" + "|".join(allowed) + ")"
+    each_required = "".join(r"(?=.*\b" + p + r"\b)" for p in required)
+    none_twice = "".join(r"(?!.*\b" + p + r"\b.*\b" + p + r"\b)" for p in allowed)
+    count = "{%d,%d}" % (len(required) - 1, len(allowed) - 1)
+    return SELECT + r" (?:-property )?" + each_required + none_twice + one + "(?:," + SP + one + ")" + count
 
 
 def piped(left, rights):
@@ -63,30 +75,42 @@ def piped(left, rights):
     return [left + PIPE + right for right in rights]
 
 
-def event_filter(log, event_id, extra=""):
-    """Get-WinEvent -FilterHashtable @{LogName='..';Id=..}: spaces optional, either key
-    first, and the log name quoted - a bare word in a hashtable is taken as a command."""
-    name = "logname" + SP + "=" + SP + QQ + log + QQ
-    ident = "id" + SP + "=" + SP + str(event_id)
-    sep = SP + ";" + SP
-    head = r"get-winevent -filterhashtable @\{" + SP
-    tail = extra + SP + r"\}"
-    return [head + name + sep + ident + tail, head + ident + sep + name + tail]
+def hashtable(*pairs):
+    """@{key=value;...} with every pair once, in any order, spaces optional."""
+    one = "(?:" + "|".join(key + SP + "=" + SP + value for key, value in pairs) + ")"
+    each_once = "".join(r"(?=[^}]*\b" + key + SP + "=)" for key, _value in pairs)
+    return r"@\{" + SP + each_once + one + "(?:" + SP + ";" + SP + one + "){%d}" % (len(pairs) - 1) + SP + r"\}"
+
+
+def event_filter(log, event_id, *more):
+    """Get-WinEvent -FilterHashtable @{LogName='..';Id=..}. The log name has to be
+    quoted: a bare word in a hashtable is run as a command."""
+    return ["get-winevent -filterhashtable "
+            + hashtable(("logname", quoted(log)), ("id", str(event_id)), *more)]
 
 
 def any_order(command, *parts):
     """command followed by each of these parameters exactly once, in any order."""
     each_once = "".join("(?=.* -" + part + ")" for part in parts)
-    return command + each_once + "( -(" + "|".join(parts) + ")){%d}" % len(parts)
+    return command + each_once + "(?: -(?:" + "|".join(parts) + ")){%d}" % len(parts)
 
 
-FINANCE = Q + r"c:\\shares\\finance" + Q            # C:\Shares\Finance, quoted or not
-AGENT = Q + r"c:\\tools\\agent\.exe" + Q            # C:\Tools\agent.exe, quoted or not
-PATH_ARG = r"(-(path|literalpath) )?"
+FINANCE = maybe_quoted(r"c:\\shares\\finance")       # C:\Shares\Finance, quoted or not
+AGENT = maybe_quoted(r"c:\\tools\\agent\.exe")       # C:\Tools\agent.exe, quoted or not
+TOOLS = maybe_quoted(r"c:\\tools")
+BACKUP = maybe_quoted("backup")
+JSMITH = maybe_quoted("jsmith")
+PATH_ARG = r"(?:-(?:path|literalpath) )?"
 ACL = r"\(get-acl " + PATH_ARG + FINANCE + r"\)"
-CIM_SERVICE = r"get-ciminstance (-classname )?win32_service"
-CIM_PROCESS = r"get-ciminstance (-classname )?win32_process"
+CIM_SERVICE = r"get-ciminstance (?:-classname )?win32_service"
+CIM_PROCESS = r"get-ciminstance (?:-classname )?win32_process"
 SPOOLER = r" -filter \"name" + SP + "=" + SP + r"'spooler'\""
+LISTENER = any_order("get-nettcpconnection", "localport 3389", "state listen")
+
+
+def ad_filter(test):
+    """An Active Directory -Filter: in single quotes, or as a script block."""
+    return r"(?:'" + test + r"'|\{" + SP + test + SP + r"\})"
 
 
 bank = [
@@ -173,7 +197,7 @@ bank = [
       "Get-WinEvent -LogName System -MaxEvents 50",
       "-MaxEvents caps the count, and Get-WinEvent returns the newest first. "
       "-Newest belongs to the older Get-EventLog.",
-      [any_order("get-winevent", "logname " + Q + "system" + Q, "maxevents 50")],
+      [any_order("get-winevent", "logname " + maybe_quoted("system"), "maxevents 50")],
       wrong="Get-WinEvent -LogName System -Newest 50"),
     C("ps-evt-logon-ok", "powershell", "List successful logons (event 4624) from the Security log",
       "Get-WinEvent -FilterHashtable @{LogName='Security';Id=4624}",
@@ -185,8 +209,7 @@ bank = [
       "Get-WinEvent -FilterHashtable @{LogName='Security';Id=4625;StartTime=(Get-Date).AddDays(-1)}",
       "StartTime is the oldest event you want. EndTime with the same value would return everything "
       "BEFORE yesterday.",
-      event_filter("security", 4625, SP + ";" + SP + "starttime" + SP + "=" + SP
-                   + r"\(get-date\)\.add(days\(-1\)|hours\(-24\))"),
+      event_filter("security", 4625, ("starttime", r"\(get-date\)\.add(?:days\(-1\)|hours\(-24\))")),
       wrong="Get-WinEvent -FilterHashtable @{LogName='Security';Id=4625;EndTime=(Get-Date).AddDays(-1)}"),
     C("ps-evt-account-created", "powershell", "Find user accounts that were created (event 4720)",
       "Get-WinEvent -FilterHashtable @{LogName='Security';Id=4720}",
@@ -214,13 +237,13 @@ bank = [
     C("ps-evt-list-logs", "powershell", "List every event log on this machine with its record count",
       "Get-WinEvent -ListLog *",
       "-ListLog describes the logs. -LogName * asks for the events themselves, from every log at once.",
-      [r"get-winevent -listlog " + Q + r"\*" + Q],
+      [r"get-winevent -listlog " + maybe_quoted(r"\*")],
       wrong="Get-WinEvent -LogName *"),
     C("ps-evt-from-file", "powershell", r"Read the events in the saved log file C:\Cases\security.evtx",
       r"Get-WinEvent -Path C:\Cases\security.evtx",
       "-Path reads an exported .evtx file, so you can work a case away from the machine. "
       "-LogName only names a live log.",
-      [r"get-winevent -path " + Q + r"c:\\cases\\security\.evtx" + Q],
+      [r"get-winevent -path " + maybe_quoted(r"c:\\cases\\security\.evtx")],
       wrong=r"Get-WinEvent -LogName C:\Cases\security.evtx"),
     # --- services and scheduled tasks ---
     C("ps-svc-running", "powershell", "List only the services that are running",
@@ -236,7 +259,7 @@ bank = [
     C("ps-svc-binary", "powershell", "Show the program file behind the service named Spooler",
       "Get-CimInstance Win32_Service -Filter \"Name='Spooler'\" | Select-Object Name, PathName",
       "PathName is the command the service starts. Check where it lives and who can write there.",
-      piped(CIM_SERVICE + SPOOLER, [select("name", "pathname"), SELECT + r" (-property |-expandproperty )?pathname"])
+      piped(CIM_SERVICE + SPOOLER, [select("pathname", optional=("name",)), SELECT + r" -expandproperty pathname"])
       + [r"\(" + CIM_SERVICE + SPOOLER + r"\)\.pathname"],
       wrong="Get-Service Spooler | Select-Object Name, PathName"),
     C("ps-svc-auto-stopped", "powershell",
@@ -244,10 +267,10 @@ bank = [
       "Get-Service | Where-Object { $_.StartType -eq 'Automatic' -and $_.Status -ne 'Running' }",
       "An automatic service that is stopped either failed or was stopped by someone. Both are worth a look.",
       piped("get-service",
-            [WHERE + r" \{" + SP + r"\$_\.starttype -eq " + QQ + "automatic" + QQ
-             + r" -and \$_\.status -ne " + QQ + "running" + QQ + SP + r"\}",
-             WHERE + r" \{" + SP + r"\$_\.status -ne " + QQ + "running" + QQ
-             + r" -and \$_\.starttype -eq " + QQ + "automatic" + QQ + SP + r"\}"]),
+            [WHERE + r" \{" + SP + r"\$_\.starttype -eq " + quoted("automatic")
+             + r" -and \$_\.status -ne " + quoted("running") + SP + r"\}",
+             WHERE + r" \{" + SP + r"\$_\.status -ne " + quoted("running")
+             + r" -and \$_\.starttype -eq " + quoted("automatic") + SP + r"\}"]),
       wrong="Get-Service | Where-Object { $_.StartType -eq 'Automatic' -and $_.Status -eq 'Running' }"),
     C("ps-task-active", "powershell", "List the scheduled tasks that are not disabled",
       "Get-ScheduledTask | Where-Object State -ne Disabled",
@@ -257,15 +280,15 @@ bank = [
     C("ps-task-action", "powershell", "Show what the scheduled task named Backup actually runs",
       "(Get-ScheduledTask -TaskName Backup).Actions",
       "Actions holds the program and its arguments. Get-ScheduledTaskInfo shows when it ran, not what.",
-      [r"\(get-scheduledtask (-taskname )?" + Q + "backup" + Q + r"\)\.actions"]
-      + piped(r"get-scheduledtask (-taskname )?" + Q + "backup" + Q, SELECT + r" -expandproperty actions"),
+      [r"\(get-scheduledtask (?:-taskname )?" + BACKUP + r"\)\.actions"]
+      + piped(r"get-scheduledtask (?:-taskname )?" + BACKUP, SELECT + r" -expandproperty actions"),
       wrong="Get-ScheduledTaskInfo -TaskName Backup"),
     C("ps-task-lastrun", "powershell",
       "Show when the scheduled task named Backup last ran, and with what result",
       "Get-ScheduledTaskInfo -TaskName Backup",
       "LastRunTime and LastTaskResult are on the info object. Get-ScheduledTask alone shows only the state.",
-      [r"get-scheduledtaskinfo (-taskname )?" + Q + "backup" + Q]
-      + piped(r"get-scheduledtask (-taskname )?" + Q + "backup" + Q, "get-scheduledtaskinfo"),
+      [r"get-scheduledtaskinfo (?:-taskname )?" + BACKUP]
+      + piped(r"get-scheduledtask (?:-taskname )?" + BACKUP, "get-scheduledtaskinfo"),
       wrong="Get-ScheduledTask -TaskName Backup"),
     C("ps-task-nonmicrosoft", "powershell",
       r"List the scheduled tasks that live outside the \Microsoft\ folder",
@@ -277,8 +300,8 @@ bank = [
     C("ps-user-enabled", "powershell", "List the local accounts that are enabled",
       "Get-LocalUser | Where-Object Enabled",
       "Enabled is a property to filter on. Get-LocalUser has no -Enabled parameter.",
-      piped("get-localuser", [WHERE + r" (-property )?enabled( -eq \$true)?",
-                              WHERE + r" \{" + SP + r"\$_\.enabled( -eq \$true)?" + SP + r"\}"]),
+      piped("get-localuser", [WHERE + r" (?:-property )?enabled(?: -eq \$true)?",
+                              WHERE + r" \{" + SP + r"\$_\.enabled(?: -eq \$true)?" + SP + r"\}"]),
       wrong="Get-LocalUser -Enabled"),
     C("ps-user-lastlogon", "powershell",
       "Show each local account's name, whether it is enabled, and its last logon",
@@ -298,7 +321,7 @@ bank = [
       "Get-LocalGroupMember 'Remote Desktop Users'",
       "Membership of Remote Desktop Users is what allows it. Remote Management Users is WinRM, "
       "a different door.",
-      [r"get-localgroupmember (-(group|name) )?" + QQ + "remote desktop users" + QQ],
+      [r"get-localgroupmember (?:-(?:group|name) )?" + quoted("remote desktop users")],
       wrong="Get-LocalGroupMember 'Remote Management Users'"),
     # --- file permissions ---
     C("ps-acl-entries", "powershell", r"Show who has what access to C:\Shares\Finance",
@@ -311,7 +334,7 @@ bank = [
       r"(Get-Acl C:\Shares\Finance).Owner",
       "The owner can always change the permissions, so it matters. It is on the ACL, not on the item.",
       [ACL + r"\.owner"]
-      + piped(r"get-acl " + PATH_ARG + FINANCE, SELECT + r" (-property |-expandproperty )?owner"),
+      + piped(r"get-acl " + PATH_ARG + FINANCE, SELECT + r" (?:-property |-expandproperty )?owner"),
       wrong=r"(Get-Item C:\Shares\Finance).Owner"),
     C("ps-acl-everyone", "powershell",
       r"From the access list of C:\Shares\Finance, show only the entries for Everyone",
@@ -347,13 +370,13 @@ bank = [
       "Show which ports the firewall rule with the display name 'Lab Web' covers",
       "Get-NetFirewallRule -DisplayName 'Lab Web' | Get-NetFirewallPortFilter",
       "A rule object does not carry its ports. Pipe it to Get-NetFirewallPortFilter to see them.",
-      piped(r"get-netfirewallrule -displayname " + QQ + "lab web" + QQ, "get-netfirewallportfilter"),
+      piped(r"get-netfirewallrule -displayname " + quoted("lab web"), "get-netfirewallportfilter"),
       wrong="Get-NetFirewallRule -DisplayName 'Lab Web' | Select-Object LocalPort"),
     # --- file hashes and signatures ---
     C("ps-hash-sha256", "powershell", r"Compute the SHA-256 hash of C:\Tools\agent.exe",
       r"Get-FileHash C:\Tools\agent.exe",
       "SHA256 is the default, so no -Algorithm is needed. MD5 is not what a modern feed lists.",
-      [r"get-filehash " + PATH_ARG + AGENT + r"( -algorithm sha256)?",
+      [r"get-filehash " + PATH_ARG + AGENT + r"(?: -algorithm sha256)?",
        r"get-filehash -algorithm sha256 " + PATH_ARG + AGENT],
       wrong=r"Get-FileHash C:\Tools\agent.exe -Algorithm MD5"),
     C("ps-hash-sha1", "powershell",
@@ -366,31 +389,31 @@ bank = [
     C("ps-hash-tree", "powershell", r"Hash every file under C:\Tools, subfolders included",
       r"Get-ChildItem C:\Tools -Recurse -File | Get-FileHash",
       "Get-FileHash has no -Recurse. Let Get-ChildItem find the files and pipe them in.",
-      piped(any_order(r"get-childitem " + PATH_ARG + Q + r"c:\\tools" + Q, "recurse", "file"), "get-filehash")
-      + piped(any_order(r"get-childitem", "recurse", "file") + " " + PATH_ARG + Q + r"c:\\tools" + Q,
-              "get-filehash"),
+      piped(any_order(r"get-childitem " + PATH_ARG + TOOLS, "recurse", "file"), "get-filehash")
+      + piped(any_order(r"get-childitem", "recurse", "file") + " " + PATH_ARG + TOOLS, "get-filehash"),
       wrong=r"Get-FileHash C:\Tools -Recurse"),
     C("ps-sig-check", "powershell", r"Check the digital signature of C:\Tools\agent.exe",
       r"Get-AuthenticodeSignature C:\Tools\agent.exe",
       "Status says Valid, NotSigned or HashMismatch, and SignerCertificate says who signed it.",
-      [r"get-authenticodesignature (-(filepath|literalpath) )?" + AGENT],
+      [r"get-authenticodesignature (?:-(?:filepath|literalpath) )?" + AGENT],
       wrong=r"Get-FileHash C:\Tools\agent.exe -Algorithm Authenticode"),
     # --- processes and listening ports ---
     C("ps-proc-path", "powershell", "List the running processes with the file each one runs from",
       "Get-Process | Select-Object Name, Id, Path",
       "A process object calls it Path. ExecutablePath is the Win32_Process name for the same thing.",
-      piped("get-process", select("name", "id", "path")),
+      piped("get-process", [select("name", "path", optional=("id",)), select("id", "path", optional=("name",))]),
       wrong="Get-Process | Select-Object Name, Id, ExecutablePath"),
     C("ps-proc-cmdline", "powershell", "Show the full command line of every running process",
       "Get-CimInstance Win32_Process | Select-Object ProcessId, Name, CommandLine",
       "The command line is on Win32_Process. It shows the arguments a program was started with, "
       "which is where the story usually is.",
-      piped(CIM_PROCESS, select("processid", "name", "commandline")),
+      piped(CIM_PROCESS, select("commandline", optional=("processid", "name"))),
       wrong="Get-CimInstance Win32_Service | Select-Object ProcessId, Name, CommandLine"),
     C("ps-proc-parent", "powershell", "Show every process with the process ID of its parent",
       "Get-CimInstance Win32_Process | Select-Object Name, ProcessId, ParentProcessId",
       "The parent tells you what started it: a document viewer that starts a shell is a finding.",
-      piped(CIM_PROCESS, select("name", "processid", "parentprocessid")),
+      piped(CIM_PROCESS, [select("name", "parentprocessid", optional=("processid",)),
+                          select("processid", "parentprocessid", optional=("name",))]),
       wrong="Get-Process | Select-Object Name, Id, ParentProcessId"),
     C("ps-proc-by-id", "powershell", "Show the process whose ID is 4242",
       "Get-Process -Id 4242",
@@ -400,16 +423,18 @@ bank = [
     C("ps-port-owner", "powershell", "Find which process owns the listener on TCP port 3389",
       "Get-NetTCPConnection -LocalPort 3389 -State Listen",
       "A listener is a LOCAL port. The OwningProcess column is the ID to hand to Get-Process -Id.",
-      [any_order("get-nettcpconnection", "localport 3389", "state listen")]
-      + piped(any_order("get-nettcpconnection", "localport 3389", "state listen"),
-              [select("owningprocess"), select("localport", "owningprocess"),
-               SELECT + " -expandproperty owningprocess"])
-      + [r"\(" + any_order("get-nettcpconnection", "localport 3389", "state listen") + r"\)\.owningprocess"],
+      [LISTENER]
+      + piped(LISTENER, [select("owningprocess", optional=("localport", "localaddress")),
+                         SELECT + " -expandproperty owningprocess"])
+      + [r"\(" + LISTENER + r"\)\.owningprocess",
+         r"get-process -id \(" + LISTENER + r"\)\.owningprocess"],
       wrong="Get-NetTCPConnection -RemotePort 3389 -State Listen"),
     C("ps-port-udp", "powershell", "List the UDP endpoints this machine is listening on",
       "Get-NetUDPEndpoint",
       "UDP has no connections, so it has its own cmdlet. Get-NetTCPConnection knows only TCP.",
-      [r"get-netudpendpoint"],
+      [r"get-netudpendpoint"]
+      + piped(r"get-netudpendpoint",
+              select("localport", optional=("localaddress", "owningprocess", "creationtime"))),
       wrong="Get-NetTCPConnection -Protocol UDP"),
     C("ps-conn-established", "powershell",
       "List the established TCP connections with their remote address, remote port and owning process",
@@ -423,42 +448,40 @@ bank = [
       "Search-ADAccount has a switch for the common account audits. With Get-ADUser the "
       "filter is Enabled -eq $false: there is no Disabled attribute.",
       [any_order("search-adaccount", "accountdisabled", "usersonly"),
-       r"get-aduser -filter " + QQ + r"enabled -eq \$false" + QQ,
-       r"get-aduser -filter \{" + SP + r"enabled -eq \$false" + SP + r"\}"],
+       r"get-aduser -filter " + ad_filter(r"enabled -eq \$false")],
       wrong="Get-ADUser -Filter 'Disabled -eq $true'"),
     C("ps-ad-inactive", "powershell", "Find user accounts that have not logged on for 90 days",
       "Search-ADAccount -AccountInactive -TimeSpan 90.00:00:00 -UsersOnly",
       "The time span is days.hours:minutes:seconds. A bare 90 is taken as 90 ticks, nine "
       "millionths of a second, so every account that has ever been idle matches.",
       [any_order("search-adaccount", "accountinactive", r"timespan 90\.00:00:00", "usersonly"),
-       any_order("search-adaccount", "accountinactive", "timespan " + QQ + r"90(\.00:00:00)?" + QQ, "usersonly"),
+       any_order("search-adaccount", "accountinactive", "timespan " + quoted(r"90(?:\.00:00:00)?"), "usersonly"),
        any_order("search-adaccount", "accountinactive", r"timespan \(new-timespan -days 90\)", "usersonly")],
       wrong="Search-ADAccount -AccountInactive -TimeSpan 90 -UsersOnly"),
     C("ps-ad-locked", "powershell", "List the accounts that are locked out right now",
       "Search-ADAccount -LockedOut",
       "LockedOut is worked out by the directory, so Get-ADUser -Filter cannot search on it. "
       "Search-ADAccount can.",
-      [r"search-adaccount -lockedout( -usersonly)?", r"search-adaccount -usersonly -lockedout"],
+      [r"search-adaccount -lockedout(?: -usersonly)?", r"search-adaccount -usersonly -lockedout"],
       wrong="Get-ADUser -Filter 'LockedOut -eq $true'"),
     C("ps-ad-pw-never", "powershell", "List the domain users whose password never expires",
       "Get-ADUser -Filter 'PasswordNeverExpires -eq $true'",
       "Service accounts often have this set, which is why they are worth listing.",
-      [r"get-aduser -filter " + QQ + r"passwordneverexpires -eq \$true" + QQ,
-       r"get-aduser -filter \{" + SP + r"passwordneverexpires -eq \$true" + SP + r"\}",
-       r"search-adaccount -passwordneverexpires( -usersonly)?",
+      [r"get-aduser -filter " + ad_filter(r"passwordneverexpires -eq \$true"),
+       r"search-adaccount -passwordneverexpires(?: -usersonly)?",
        r"search-adaccount -usersonly -passwordneverexpires"],
       wrong="Get-ADUser -Filter 'PasswordExpires -eq $false'"),
     C("ps-ad-memberof", "powershell", "Show every group the user jsmith belongs to",
       "Get-ADPrincipalGroupMembership jsmith",
       "This asks about one account's groups. Get-ADGroupMember asks the opposite: one group's members.",
-      [r"get-adprincipalgroupmembership (-identity )?" + Q + "jsmith" + Q],
+      [r"get-adprincipalgroupmembership (?:-identity )?" + JSMITH],
       wrong="Get-ADGroupMember jsmith"),
     C("ps-ad-nested-admins", "powershell",
       "List the members of Domain Admins, including the members of groups nested inside it",
       "Get-ADGroupMember 'Domain Admins' -Recursive",
       "Nested groups hide administrators. The switch is -Recursive; -Recurse belongs to Get-ChildItem.",
-      [r"get-adgroupmember (-identity )?" + QQ + "domain admins" + QQ + " -recursive",
-       r"get-adgroupmember -recursive (-identity )?" + QQ + "domain admins" + QQ],
+      [r"get-adgroupmember (?:-identity )?" + quoted("domain admins") + " -recursive",
+       r"get-adgroupmember -recursive (?:-identity )?" + quoted("domain admins")],
       wrong="Get-ADGroupMember 'Domain Admins' -Recurse"),
     C("ps-ad-pw-policy", "powershell", "Show the domain's default password policy",
       "Get-ADDefaultDomainPasswordPolicy",
@@ -471,8 +494,9 @@ bank = [
       "Get-ADUser jsmith -Properties LastLogonDate, PasswordLastSet",
       "Get-ADUser returns a short default set. Anything else has to be asked for with "
       "-Properties, or it comes back empty.",
-      [r"get-aduser (-identity )?" + Q + "jsmith" + Q + r" -properties lastlogondate," + SP + "passwordlastset",
-       r"get-aduser (-identity )?" + Q + "jsmith" + Q + r" -properties passwordlastset," + SP + "lastlogondate"],
+      [r"get-aduser (?:-identity )?" + JSMITH + r" -properties (?:lastlogondate," + SP + "passwordlastset|passwordlastset,"
+       + SP + "lastlogondate)(?:" + PIPE + select("lastlogondate", "passwordlastset", optional=("name", "samaccountname"))
+       + ")?"],
       wrong="Get-ADUser jsmith | Select-Object LastLogonDate, PasswordLastSet"),
 ]
 

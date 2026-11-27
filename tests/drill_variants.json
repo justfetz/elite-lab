@@ -1,5 +1,95 @@
 [
   {
+    "id": "ps-evt-newest",
+    "text": "Get-WinEvent -MaxEvents 50 -LogName System",
+    "accepted": true,
+    "note": "parameters in the other order"
+  },
+  {
+    "id": "ps-evt-logon-ok",
+    "text": "Get-WinEvent -FilterHashtable @{ Id = 4624; LogName = \"Security\" }",
+    "accepted": true,
+    "note": "keys in the other order, spaces, double quotes"
+  },
+  {
+    "id": "ps-evt-logon-ok",
+    "text": "Get-WinEvent -FilterHashtable @{LogName=Security;Id=4624}",
+    "accepted": false,
+    "note": "an unquoted log name is run as a command"
+  },
+  {
+    "id": "ps-evt-logon-ok",
+    "text": "Get-WinEvent -FilterHashtable @{LogName='Security\";Id=4624}",
+    "accepted": false,
+    "note": "a quote closed by the other kind does not parse"
+  },
+  {
+    "id": "ps-evt-last-day",
+    "text": "Get-WinEvent -FilterHashtable @{StartTime=(Get-Date).AddDays(-1);LogName='Security';Id=4625}",
+    "accepted": true,
+    "note": "the keys in another order"
+  },
+  {
+    "id": "ps-evt-last-day",
+    "text": "Get-WinEvent -FilterHashtable @{LogName='Security';Id=4625;StartTime=(Get-Date).AddHours(-24)}",
+    "accepted": true,
+    "note": "24 hours back, written in hours"
+  },
+  {
+    "id": "ps-evt-last-day",
+    "text": "Get-WinEvent -FilterHashtable @{LogName='Security';Id=4625;StartTime=(Get-Date).AddDays(1)}",
+    "accepted": false,
+    "note": "a day ahead, not a day back"
+  },
+  {
+    "id": "ps-evt-account-created",
+    "text": "Get-WinEvent -FilterHashtable @{Id=4720;LogName='Security'}",
+    "accepted": true,
+    "note": "the keys in another order"
+  },
+  {
+    "id": "ps-evt-account-created",
+    "text": "Get-WinEvent -FilterHashtable @{LogName='Security';EventId=4720}",
+    "accepted": false,
+    "note": "the key is Id"
+  },
+  {
+    "id": "ps-evt-log-cleared",
+    "text": "Get-WinEvent -FilterHashtable @{LogName=\"Security\"; Id=1102}",
+    "accepted": true,
+    "note": "double quotes, a space after the semicolon"
+  },
+  {
+    "id": "ps-evt-service-installed",
+    "text": "Get-WinEvent -FilterHashtable @{ LogName = 'System'; Id = 7045 }",
+    "accepted": true,
+    "note": "spaces inside the braces"
+  },
+  {
+    "id": "ps-evt-scriptblock",
+    "text": "Get-WinEvent -FilterHashtable @{LogName='Microsoft-Windows-PowerShell/Operational';Id=4103}",
+    "accepted": false,
+    "note": "4103 is module logging, not script blocks"
+  },
+  {
+    "id": "ps-evt-list-logs",
+    "text": "Get-WinEvent -ListProvider *",
+    "accepted": false,
+    "note": "providers, not logs"
+  },
+  {
+    "id": "ps-evt-from-file",
+    "text": "Get-WinEvent -Path 'C:\\Cases\\security.evtx'",
+    "accepted": true,
+    "note": "the path in quotes"
+  },
+  {
+    "id": "ps-evt-from-file",
+    "text": "Get-WinEvent -Path 'C:\\Cases\\security.evtx",
+    "accepted": false,
+    "note": "a quote left open does not parse"
+  },
+  {
     "id": "ps-svc-running",
     "text": "Get-Service|Where-Object Status -eq Running",
     "accepted": true,
@@ -36,22 +126,232 @@
     "note": "the opposite test"
   },
   {
-    "id": "ps-evt-logon-ok",
-    "text": "Get-WinEvent -FilterHashtable @{ Id = 4624; LogName = \"Security\" }",
-    "accepted": true,
-    "note": "keys in the other order, spaces, double quotes"
-  },
-  {
-    "id": "ps-evt-logon-ok",
-    "text": "Get-WinEvent -FilterHashtable @{LogName=Security;Id=4624}",
+    "id": "ps-svc-running",
+    "text": "Get-Service | Where-Object { $_.Status -eq 'Running\" }",
     "accepted": false,
-    "note": "an unquoted log name is run as a command"
+    "note": "a quote closed by the other kind does not parse"
   },
   {
-    "id": "ps-evt-newest",
-    "text": "Get-WinEvent -MaxEvents 50 -LogName System",
+    "id": "ps-svc-running",
+    "text": "Get-Service | Where-Object Status -eq 'Running",
+    "accepted": false,
+    "note": "a quote left open does not parse"
+  },
+  {
+    "id": "ps-svc-account",
+    "text": "Get-CimInstance -ClassName Win32_Service | select StartName, Name, StartMode",
     "accepted": true,
-    "note": "parameters in the other order"
+    "note": "the class named, select, another order"
+  },
+  {
+    "id": "ps-svc-binary",
+    "text": "(Get-CimInstance Win32_Service -Filter \"Name='Spooler'\").PathName",
+    "accepted": true,
+    "note": "just the path"
+  },
+  {
+    "id": "ps-svc-auto-stopped",
+    "text": "Get-Service | where { $_.Status -ne 'Running' -and $_.StartType -eq 'Automatic' }",
+    "accepted": true,
+    "note": "the two tests the other way round"
+  },
+  {
+    "id": "ps-svc-auto-stopped",
+    "text": "Get-Service | Where-Object { $_.StartType -eq 'Automatic' -or $_.Status -ne 'Running' }",
+    "accepted": false,
+    "note": "-or lets every stopped service through"
+  },
+  {
+    "id": "ps-task-active",
+    "text": "Get-ScheduledTask | where State -ne 'Disabled'",
+    "accepted": true,
+    "note": "where, with the word in quotes"
+  },
+  {
+    "id": "ps-task-active",
+    "text": "Get-ScheduledTask | ? { $_.State -ne Disabled }",
+    "accepted": false,
+    "note": "a bare word in a script block does not parse"
+  },
+  {
+    "id": "ps-task-action",
+    "text": "(Get-ScheduledTask -TaskName 'Backup').Actions",
+    "accepted": true,
+    "note": "the name in quotes"
+  },
+  {
+    "id": "ps-task-action",
+    "text": "Get-ScheduledTask -TaskName Backup | Select-Object -ExpandProperty Actions",
+    "accepted": true,
+    "note": "the same list through Select-Object"
+  },
+  {
+    "id": "ps-task-lastrun",
+    "text": "Get-ScheduledTask -TaskName Backup | Get-ScheduledTaskInfo",
+    "accepted": true,
+    "note": "the task piped in"
+  },
+  {
+    "id": "ps-task-nonmicrosoft",
+    "text": "Get-ScheduledTask | where { $_.TaskPath -notlike '\\Microsoft\\*' }",
+    "accepted": true,
+    "note": "a script block with where"
+  },
+  {
+    "id": "ps-user-enabled",
+    "text": "Get-LocalUser | where { $_.Enabled }",
+    "accepted": true,
+    "note": "a script block with where"
+  },
+  {
+    "id": "ps-user-enabled",
+    "text": "Get-LocalUser | Where-Object Enabled -eq $true",
+    "accepted": true,
+    "note": "the comparison spelled out"
+  },
+  {
+    "id": "ps-user-enabled",
+    "text": "Get-LocalUser | Where-Object Enabled -eq $false",
+    "accepted": false,
+    "note": "the disabled accounts"
+  },
+  {
+    "id": "ps-user-lastlogon",
+    "text": "Get-LocalUser | select LastLogon,Name,Enabled",
+    "accepted": true,
+    "note": "select, another order, no spaces"
+  },
+  {
+    "id": "ps-user-pw-never",
+    "text": "Get-LocalUser | where PasswordExpires -eq $null",
+    "accepted": true,
+    "note": "the short form"
+  },
+  {
+    "id": "ps-group-rdp",
+    "text": "Get-LocalGroupMember -Group \"Remote Desktop Users\"",
+    "accepted": true,
+    "note": "the parameter named, double quotes"
+  },
+  {
+    "id": "ps-group-rdp",
+    "text": "Get-LocalGroupMember Remote Desktop Users",
+    "accepted": false,
+    "note": "a name with spaces needs quotes"
+  },
+  {
+    "id": "ps-acl-entries",
+    "text": "(Get-Acl 'C:\\Shares\\Finance).Access",
+    "accepted": false,
+    "note": "a quote left open does not parse"
+  },
+  {
+    "id": "ps-acl-entries",
+    "text": "(Get-Acl \"C:\\Shares\\Finance\").Access",
+    "accepted": true,
+    "note": "the path in double quotes"
+  },
+  {
+    "id": "ps-acl-entries",
+    "text": "Get-Acl C:\\Shares\\Finance | Select-Object -ExpandProperty Access",
+    "accepted": true,
+    "note": "the same list through Select-Object"
+  },
+  {
+    "id": "ps-acl-owner",
+    "text": "(Get-Acl -Path C:\\Shares\\Finance).Owner",
+    "accepted": true,
+    "note": "the parameter named"
+  },
+  {
+    "id": "ps-acl-everyone",
+    "text": "(Get-Acl C:\\Shares\\Finance).Access | ? { $_.IdentityReference -eq 'Everyone' }",
+    "accepted": true,
+    "note": "a script block with ?"
+  },
+  {
+    "id": "ps-acl-inheritance",
+    "text": "(Get-Acl 'C:\\Shares\\Finance').AreAccessRulesProtected",
+    "accepted": true,
+    "note": "the path in quotes"
+  },
+  {
+    "id": "ps-fw-profiles",
+    "text": "Get-NetFirewallProfile | select Enabled, Name",
+    "accepted": true,
+    "note": "select, another order"
+  },
+  {
+    "id": "ps-fw-inbound-allow",
+    "text": "Get-NetFirewallRule -Enabled True -Action Allow -Direction Inbound",
+    "accepted": true,
+    "note": "parameters in another order"
+  },
+  {
+    "id": "ps-fw-inbound-allow",
+    "text": "Get-NetFirewallRule -Direction Inbound -Direction Inbound -Action Allow",
+    "accepted": false,
+    "note": "one parameter twice instead of all three"
+  },
+  {
+    "id": "ps-fw-outbound-block",
+    "text": "Get-NetFirewallRule -Action Block -Direction Outbound",
+    "accepted": true,
+    "note": "the parameters in another order"
+  },
+  {
+    "id": "ps-fw-rule-ports",
+    "text": "Get-NetFirewallRule -DisplayName \"Lab Web\" | Get-NetFirewallPortFilter",
+    "accepted": true,
+    "note": "double quotes"
+  },
+  {
+    "id": "ps-fw-rule-ports",
+    "text": "Get-NetFirewallRule -DisplayName Lab Web | Get-NetFirewallPortFilter",
+    "accepted": false,
+    "note": "a name with spaces needs quotes"
+  },
+  {
+    "id": "ps-hash-sha256",
+    "text": "Get-FileHash C:\\Tools\\agent.exe -Algorithm SHA256",
+    "accepted": true,
+    "note": "the default algorithm named"
+  },
+  {
+    "id": "ps-hash-sha256",
+    "text": "Get-FileHash -Path 'C:\\Tools\\agent.exe'",
+    "accepted": true,
+    "note": "the parameter named, the path in quotes"
+  },
+  {
+    "id": "ps-hash-sha1",
+    "text": "Get-FileHash -Algorithm SHA1 C:\\Tools\\agent.exe",
+    "accepted": true,
+    "note": "the algorithm first"
+  },
+  {
+    "id": "ps-hash-tree",
+    "text": "Get-ChildItem C:\\Tools -File -Recurse | Get-FileHash",
+    "accepted": true,
+    "note": "switches in the other order"
+  },
+  {
+    "id": "ps-hash-tree",
+    "text": "Get-ChildItem -Recurse -File -Path C:\\Tools | Get-FileHash",
+    "accepted": true,
+    "note": "the path last, named"
+  },
+  {
+    "id": "ps-hash-tree",
+    "text": "Get-ChildItem C:\\Tools -File | Get-FileHash",
+    "accepted": false,
+    "note": "subfolders are left out"
+  },
+  {
+    "id": "ps-sig-check",
+    "text": "Get-AuthenticodeSignature -FilePath C:\\Tools\\agent.exe",
+    "accepted": true,
+    "note": "the parameter named"
   },
   {
     "id": "ps-proc-path",
@@ -78,6 +378,30 @@
     "note": "a column twice instead of all three"
   },
   {
+    "id": "ps-proc-path",
+    "text": "Get-Process | select Name, Path",
+    "accepted": true,
+    "note": "without the Id column, which the prompt does not ask for"
+  },
+  {
+    "id": "ps-proc-cmdline",
+    "text": "Get-CimInstance Win32_Process | select Name, CommandLine",
+    "accepted": true,
+    "note": "without the ProcessId column, which the prompt does not ask for"
+  },
+  {
+    "id": "ps-proc-parent",
+    "text": "Get-CimInstance Win32_Process | select ProcessId, ParentProcessId",
+    "accepted": true,
+    "note": "without the Name column, which the prompt does not ask for"
+  },
+  {
+    "id": "ps-proc-by-id",
+    "text": "Get-Process -Name 4242",
+    "accepted": false,
+    "note": "a name, not an ID"
+  },
+  {
     "id": "ps-port-owner",
     "text": "Get-NetTCPConnection -State Listen -LocalPort 3389",
     "accepted": true,
@@ -102,6 +426,24 @@
     "note": "not limited to listeners"
   },
   {
+    "id": "ps-port-owner",
+    "text": "Get-Process -Id (Get-NetTCPConnection -LocalPort 3389 -State Listen).OwningProcess",
+    "accepted": true,
+    "note": "straight to the owning process"
+  },
+  {
+    "id": "ps-port-udp",
+    "text": "Get-NetUDPEndpoint | Select-Object LocalAddress, LocalPort, OwningProcess",
+    "accepted": true,
+    "note": "with the columns chosen"
+  },
+  {
+    "id": "ps-conn-established",
+    "text": "Get-NetTCPConnection -State Established | select OwningProcess, RemoteAddress, RemotePort",
+    "accepted": true,
+    "note": "select, another order"
+  },
+  {
     "id": "ps-ad-disabled",
     "text": "Get-ADUser -Filter {Enabled -eq $false}",
     "accepted": true,
@@ -112,6 +454,12 @@
     "text": "Search-ADAccount -UsersOnly -AccountDisabled",
     "accepted": true,
     "note": "switches in the other order"
+  },
+  {
+    "id": "ps-ad-disabled",
+    "text": "Get-ADUser -Filter \"Enabled -eq $false\"",
+    "accepted": false,
+    "note": "in double quotes $false is expanded before the filter reads it"
   },
   {
     "id": "ps-ad-inactive",
@@ -138,63 +486,45 @@
     "note": "a bare 90 is 90 ticks, not 90 days"
   },
   {
-    "id": "ps-hash-tree",
-    "text": "Get-ChildItem C:\\Tools -File -Recurse | Get-FileHash",
+    "id": "ps-ad-locked",
+    "text": "Search-ADAccount -LockedOut -UsersOnly",
     "accepted": true,
-    "note": "switches in the other order"
+    "note": "users only"
   },
   {
-    "id": "ps-hash-tree",
-    "text": "Get-ChildItem -Recurse -File -Path C:\\Tools | Get-FileHash",
+    "id": "ps-ad-pw-never",
+    "text": "Get-ADUser -Filter {PasswordNeverExpires -eq $true}",
     "accepted": true,
-    "note": "the path last, named"
+    "note": "the filter as a script block"
   },
   {
-    "id": "ps-hash-tree",
-    "text": "Get-ChildItem C:\\Tools -File | Get-FileHash",
+    "id": "ps-ad-pw-never",
+    "text": "Get-ADUser -Filter \"PasswordNeverExpires -eq $true\"",
     "accepted": false,
-    "note": "subfolders are left out"
+    "note": "in double quotes $true is expanded before the filter reads it"
   },
   {
-    "id": "ps-fw-inbound-allow",
-    "text": "Get-NetFirewallRule -Enabled True -Action Allow -Direction Inbound",
+    "id": "ps-ad-memberof",
+    "text": "Get-ADPrincipalGroupMembership -Identity jsmith",
     "accepted": true,
-    "note": "parameters in another order"
+    "note": "the parameter named"
   },
   {
-    "id": "ps-fw-inbound-allow",
-    "text": "Get-NetFirewallRule -Direction Inbound -Direction Inbound -Action Allow",
+    "id": "ps-ad-nested-admins",
+    "text": "Get-ADGroupMember -Recursive -Identity \"Domain Admins\"",
+    "accepted": true,
+    "note": "the switch first, the parameter named"
+  },
+  {
+    "id": "ps-ad-user-dates",
+    "text": "Get-ADUser jsmith -Properties LastLogonDate, PasswordLastSet | Select-Object LastLogonDate, PasswordLastSet",
+    "accepted": true,
+    "note": "with the two dates chosen"
+  },
+  {
+    "id": "ps-ad-user-dates",
+    "text": "Get-ADUser jsmith -Properties LastLogonDate",
     "accepted": false,
-    "note": "one parameter twice instead of all three"
-  },
-  {
-    "id": "ps-svc-binary",
-    "text": "(Get-CimInstance Win32_Service -Filter \"Name='Spooler'\").PathName",
-    "accepted": true,
-    "note": "just the path"
-  },
-  {
-    "id": "ps-svc-account",
-    "text": "Get-CimInstance -ClassName Win32_Service | select StartName, Name, StartMode",
-    "accepted": true,
-    "note": "the class named, select, another order"
-  },
-  {
-    "id": "ps-user-pw-never",
-    "text": "Get-LocalUser | where PasswordExpires -eq $null",
-    "accepted": true,
-    "note": "the short form"
-  },
-  {
-    "id": "ps-acl-everyone",
-    "text": "(Get-Acl C:\\Shares\\Finance).Access | ? { $_.IdentityReference -eq 'Everyone' }",
-    "accepted": true,
-    "note": "a script block with ?"
-  },
-  {
-    "id": "ps-task-nonmicrosoft",
-    "text": "Get-ScheduledTask | where { $_.TaskPath -notlike '\\Microsoft\\*' }",
-    "accepted": true,
-    "note": "a script block with where"
+    "note": "one of the two dates"
   }
 ]

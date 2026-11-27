@@ -29,10 +29,17 @@ BeforeDiscovery {
         @{ Name = 'a comma list (PowerShell makes it an array)'; Call = { elite run nmap -p 80,443 10.0.0.5 }; Expected = @('run', 'nmap', '-p', '80,443', '10.0.0.5') }
         @{ Name = 'an option joined to its value by a colon'; Call = { elite run tool -o:x -mc:200 }; Expected = @('run', 'tool', '-o:x', '-mc:200') }
         @{ Name = 'a quoted option that ends in a colon stays its own word'; Call = { elite run tool '-o:' x }; Expected = @('run', 'tool', '-o:', 'x') }
+        @{ Name = 'a colon, then a space, stays two words'; Call = { elite run tool -p: 80 -o:x }; Expected = @('run', 'tool', '-p:', '80', '-o:x') }
+        @{ Name = 'a colon joined to a list and to another option'; Call = { elite run tool -p:80,443 -o:-x }; Expected = @('run', 'tool', '-p:80,443', '-o:-x') }
+        @{ Name = 'a colon joined to a variable that holds nothing does not take the next word'; Call = { $nothing = $null; elite run tool -p:$nothing done }; Expected = @('run', 'tool', '-p:', 'done') }
         @{ Name = 'an option with a file name in it (PowerShell splits it at the dot)'; Call = { elite run john -w=rockyou.txt hashes.txt }; Expected = @('run', 'john', '-w=rockyou.txt', 'hashes.txt') }
         @{ Name = 'an option with an address in it'; Call = { elite run nmap -S10.0.0.5 -T4 10.0.0.9 }; Expected = @('run', 'nmap', '-S10.0.0.5', '-T4', '10.0.0.9') }
         @{ Name = 'an option with a dotted name and a decimal'; Call = { elite run tool -Dkey.name=1 -t1.5 }; Expected = @('run', 'tool', '-Dkey.name=1', '-t1.5') }
         @{ Name = 'an option followed by a word that starts with a dot stays two words'; Call = { elite run tool -w ./words.txt -x .php -C .. }; Expected = @('run', 'tool', '-w', './words.txt', '-x', '.php', '-C', '..') }
+        @{ Name = 'two words, when the same option is one word earlier on the line'; Call = { elite run tool -x.php | Out-Null; elite run tool -x .php }; Expected = @('run', 'tool', '-x', '.php') }
+        @{ Name = 'one word, when the same option is two words earlier on the line'; Call = { elite run tool -x .php | Out-Null; elite run tool -x.php }; Expected = @('run', 'tool', '-x.php') }
+        @{ Name = 'two words, when a comment on the line shows them as one'; Call = { elite run tool -x .php <# not -x.php #> }; Expected = @('run', 'tool', '-x', '.php') }
+        @{ Name = 'two split options in one command, one glued and one not'; Call = { elite run tool -o .a -o.b -w=c.txt .d }; Expected = @('run', 'tool', '-o', '.a', '-o.b', '-w=c.txt', '.d') }
         @{ Name = 'a wildcard and a tilde, as typed'; Call = { elite run tool *.md ~/notes.txt }; Expected = @('run', 'tool', '*.md', '~/notes.txt') }
         @{ Name = 'a quoted help switch'; Call = { elite run curl '-?' }; Expected = @('run', 'curl', '-?') }
         @{ Name = 'a quoted comma list of numbers keeps its text'; Call = { elite run tool '0x10,007' }; Expected = @('run', 'tool', '0x10,007') }
@@ -226,6 +233,24 @@ Describe 'elite hands every argument to the CLI unchanged' {
         for ($i = 0; $i -lt $Expected.Count; $i++) {
             $received[$i] | Should -BeExactly $Expected[$i]
         }
+    }
+
+    It 'loses nothing of an option with a dot in it that is typed on a continuation line' {
+        # The help for Invoke-Elite says so: the two halves PowerShell makes of -w=rockyou.txt
+        # can be joined only on the line where the command starts. Further down they may stay
+        # two words, in order, with every character there. Quoted, the option is one word.
+        $received = Get-StubArgument -Output @(
+            elite run john `
+                -w=rockyou.txt hashes.txt
+        )
+        $LASTEXITCODE | Should -Be 0
+        ($received -join '|') | Should -BeIn @('run|john|-w=rockyou.txt|hashes.txt', 'run|john|-w=rockyou|.txt|hashes.txt')
+
+        $received = Get-StubArgument -Output @(
+            elite run john `
+                '-w=rockyou.txt' hashes.txt
+        )
+        ($received -join '|') | Should -BeExactly 'run|john|-w=rockyou.txt|hashes.txt'
     }
 
     It 'passes non-ASCII text' {

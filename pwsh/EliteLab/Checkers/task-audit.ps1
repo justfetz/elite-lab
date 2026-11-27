@@ -16,16 +16,25 @@ $quiet = @(
         Arguments = '--source C:\Users\Public\Documents --target D:\Backups --quiet' }
     # -Encoding is not -enc, and -ExecutionPolicy is not -e
     @{ TaskName = 'LogRotate'; TaskPath = '\Lakefront\'; State = 'Ready'; RunAs = 'SYSTEM'
-        Execute = 'powershell.exe'; Arguments = '-NoProfile -File C:\Scripts\Rotate-Logs.ps1 -Encoding UTF8' }
+        Execute = 'powershell.exe'; Arguments = '-NoProfile -File C:\Scripts\Rotate-Logs.ps1 -encoding utf8' }
     @{ TaskName = 'InventoryReport'; TaskPath = '\Lakefront\'; State = 'Disabled'; RunAs = 'LAKEFRONT\svc_inventory'
         Execute = 'C:\Windows\System32\WindowsPowerShell\v1.0\powershell.exe'
         Arguments = '-NoProfile -ExecutionPolicy RemoteSigned -WindowStyle Normal -File "C:\Program Files\Lakefront\Inventory\report.ps1"' }
     # httpd.conf holds "http" but is not a URL
     @{ TaskName = 'ApacheReload'; TaskPath = '\Lakefront\'; State = 'Ready'; RunAs = 'SYSTEM'
         Execute = '"C:\Program Files\Apache24\bin\httpd.exe"'; Arguments = '-k restart -f conf\httpd.conf' }
-    # \Users\ in the middle of a path on another drive is not C:\Users\
+    # \Users\ in the middle of a path on another drive is not C:\Users\, and ldap:// is not http://
     @{ TaskName = 'UserDirectorySync'; TaskPath = '\Lakefront\'; State = 'Ready'; RunAs = 'LAKEFRONT\svc_directory'
-        Execute = 'D:\Apps\Users\dirsync.exe'; Arguments = '/full' }
+        Execute = 'D:\Apps\Users\dirsync.exe'; Arguments = '/full ldap://dc01.lakefront.test/DC=lakefront,DC=test' }
+    # the word Hidden in a script's name and in one of its own switches is not -WindowStyle Hidden
+    @{ TaskName = 'ShareAudit'; TaskPath = '\Lakefront\'; State = 'Ready'; RunAs = 'LAKEFRONT\svc_audit'
+        Execute = 'C:\Windows\System32\WindowsPowerShell\v1.0\powershell.exe'
+        Arguments = '-NoProfile -File "C:\Program Files\Lakefront\Audit\Find-HiddenShares.ps1" -IncludeHidden' }
+    # C:\UsersArchive\ is not C:\Users\, and %TEMPLATE_HOME% is not %TEMP%
+    @{ TaskName = 'ArchiveSweep'; TaskPath = '\Lakefront\'; State = 'Ready'; RunAs = 'SYSTEM'
+        Execute = 'C:\UsersArchive\Tools\sweep.exe'; Arguments = '/quiet' }
+    @{ TaskName = 'TemplateBuild'; TaskPath = '\Lakefront\'; State = 'Ready'; RunAs = 'LAKEFRONT\svc_build'
+        Execute = '%TEMPLATE_HOME%\bin\render.exe'; Arguments = '--all' }
 )
 
 $writableFolder = @(
@@ -47,17 +56,17 @@ $writableFolder = @(
 
 $hiddenCommand = @(
     @{ TaskName = 'HealthCheck'; TaskPath = '\'; State = 'Ready'; RunAs = 'SYSTEM'
-        Execute = 'powershell.exe'; Arguments = '-NoProfile -WindowStyle Hidden -File C:\Scripts\health.ps1' }
+        Execute = 'powershell.exe'; Arguments = '-NoProfile -windowstyle hidden -File C:\Scripts\health.ps1' }
     @{ TaskName = 'TrayRefresh'; TaskPath = '\'; State = 'Ready'; RunAs = 'LAKEFRONT\dana'
-        Execute = 'powershell.exe'; Arguments = '-nop -w hidden -File C:\Scripts\tray.ps1' }
+        Execute = 'powershell.exe'; Arguments = '-nop -W Hidden -File C:\Scripts\tray.ps1' }
     @{ TaskName = 'DriverSync'; TaskPath = '\Microsoft\Windows\'; State = 'Ready'; RunAs = 'SYSTEM'
         Execute = 'powershell.exe'
-        Arguments = '-nop -enc VwByAGkAdABlAC0ATwB1AHQAcAB1AHQAIAAiAGgAZQBsAGwAbwAiAA==' }
+        Arguments = '-nop -ENC VwByAGkAdABlAC0ATwB1AHQAcAB1AHQAIAAiAGgAZQBsAGwAbwAiAA==' }
     @{ TaskName = 'FontCache'; TaskPath = '\'; State = 'Ready'; RunAs = 'SYSTEM'
         Execute = 'C:\Windows\System32\WindowsPowerShell\v1.0\powershell.exe'
         Arguments = '-EncodedCommand RwBlAHQALQBEAGEAdABlAA==' }
     @{ TaskName = 'Indexer'; TaskPath = '\'; State = 'Ready'; RunAs = 'LAKEFRONT\dana'
-        Execute = 'pwsh.exe'; Arguments = '-e RwBlAHQALQBEAGEAdABlAA==' }
+        Execute = 'pwsh.exe'; Arguments = '-E RwBlAHQALQBEAGEAdABlAA==' }
 )
 
 $network = @(
@@ -140,28 +149,28 @@ foreach ($task in $tasks) {
     Cases      = @(
         @{
             Name     = 'a clean export'
-            Why      = 'Nothing here is risky. A script that flags a row is matching too loosely: -Encoding is not -enc, -ExecutionPolicy is not -e, httpd.conf is not a URL, D:\Apps\Users\ is not C:\Users\, and a path in the arguments is not where the program runs from.'
+            Why      = 'Nothing here is risky. A script that flags a row is matching too loosely: -encoding is not -enc, -ExecutionPolicy is not -e, a script named Find-HiddenShares is not a hidden window, httpd.conf and ldap:// are not web addresses, C:\UsersArchive\ and D:\Apps\Users\ are not C:\Users\, and a path in the arguments is not where the program runs from.'
             Tasks    = $quiet
             Expected = @()
         }
         @{
             Name     = 'program in a folder any user can write to'
-            Why      = 'Rule 1 only, with one task for each of the seven places it lists. Two paths are quoted and two are in lower case.'
+            Why      = 'Rule 1 only, with one task for each of the seven places it lists. Two paths are quoted and two are in lower case. C:\UsersArchive\ and %TEMPLATE_HOME% only begin like two of them.'
             Tasks    = @($quiet[0], $writableFolder[0], $quiet[2], $writableFolder[1], $quiet[6], $writableFolder[2],
-                $writableFolder[3], $quiet[1], $writableFolder[4], $writableFolder[5], $writableFolder[6])
+                $quiet[8], $writableFolder[3], $quiet[1], $writableFolder[4], $quiet[9], $writableFolder[5], $writableFolder[6])
             Expected = @('Updater', 'SyncHelper', 'TelemetryCache', 'ProfileTidy', 'CacheWarm', 'NotesHelper', 'ScanInbox')
         }
         @{
             Name     = 'command line that hides what it runs'
-            Why      = 'Rule 2 only, with one task for each of its five spellings: -WindowStyle Hidden, -w hidden, -enc, -EncodedCommand and -e. The -Encoding, -ExecutionPolicy and -WindowStyle Normal rows must stay clean.'
+            Why      = 'Rule 2 only, with one task for each of its five spellings, in mixed case: -windowstyle hidden, -W Hidden, -ENC, -EncodedCommand and -E. The -encoding, -ExecutionPolicy, -WindowStyle Normal and Find-HiddenShares rows must stay clean.'
             Tasks    = @($quiet[3], $hiddenCommand[0], $quiet[4], $hiddenCommand[1], $hiddenCommand[2], $quiet[0],
-                $hiddenCommand[3], $hiddenCommand[4])
+                $quiet[7], $hiddenCommand[3], $hiddenCommand[4])
             Expected = @('HealthCheck', 'TrayRefresh', 'DriverSync', 'FontCache', 'Indexer')
         }
         @{
             Name     = 'command line that reaches the network'
-            Why      = 'Rule 3 only: one task with https://, one with http:// and one with HTTP:// in capitals. httpd.conf is a file name.'
-            Tasks    = @($quiet[5], $network[0], $quiet[2], $network[1], $network[2], $quiet[1])
+            Why      = 'Rule 3 only: one task with https://, one with http:// and one with HTTP:// in capitals. httpd.conf is a file name, and ldap:// is not the web.'
+            Tasks    = @($quiet[5], $network[0], $quiet[2], $network[1], $quiet[6], $network[2], $quiet[1])
             Expected = @('PatchFetch', 'HelpViewer', 'CertSync')
         }
         @{
