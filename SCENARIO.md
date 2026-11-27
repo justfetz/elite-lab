@@ -1,5 +1,7 @@
 # The scenario: you are the security team at Lakefront Paper & Container Co.
 
+> **Doc status: current** · answers: *Who is the company I defend, and where can it be broken?* · [doc map](README.md#doc-map)
+
 Everything in elite-lab hangs on one fiction, so every mission has a reason to exist. The
 company is a real-feeling one on purpose — a manufacturer, not a vague "tech startup" —
 because the interesting security lives in the seams of a business that actually makes and
@@ -9,36 +11,49 @@ ships something.
 
 **Lakefront Paper & Container Co.** runs a paper mill on the Chicago River. It takes orders
 from **corrugator plants** (the factories that turn paper rolls into cardboard), makes the
-product, **loads trucks by weight**, and delivers. Two systems run the business, and the
-split between them is the whole point:
+product, **loads trucks by weight**, and delivers. The business side and the plant floor
+are separate trust worlds joined by one controlled conduit, and that split is the whole
+point:
 
 ```
-        HQ / cloud (IT)                              the mill floor (OT)
-  ┌──────────────────────────┐                ┌────────────────────────────────┐
-  │ OrderDesk  customer portal│   order        │  FIREWALL                      │
-  │ LoadMaster truck loading  │   release       │   └─ mill-agent: receives the  │
-  │ "Millie"   AI order agent │ ──TCP/IP──────▶ │        release, runs the order │
-  │ SQL Server (millops DB)   │ ◀─UDP status──  │        on the machine          │
-  └──────────────────────────┘                 └────────────────────────────────┘
+       the business side (IT)                                 the plant floor (OT)
+  ┌──────────────────────────────┐                       ┌──────────────────────────────┐
+  │ public                       │      one conduit      │ FIREWALL                     │
+  │   OrderDesk  customer portal │   ┌───────────────┐   │  └─ mill-agent: receives the │
+  │   Millie     AI order agent  │──▶│ order-release │──▶│     release and drives PM3   │
+  │ office network               │   │ staging (DMZ) │   │     PM3  the paper machine   │
+  │   dc01, ws01, the SOC        │   └───────────────┘   │     LoadMaster  optimizer    │
+  └──────────────────────────────┘   one direction only  └──────────────────────────────┘
           ▲
           │  corrugator-plant customers log in to "see my orders"
        customer
 ```
 
 - **OrderDesk** — the public web portal. Customers log in and track orders and shipments.
-- **LoadMaster** — schedules and loads trucks by weight (your optimization background lives here).
-- **Millie** — an AI assistant bolted on last year: a RAG + data agent that answers
-  "where's my order?" by reading the docs *and* querying the database.
+- **Millie** — an AI assistant bolted on last year: a RAG agent that reads customer
+  documents and writes orders.
+- **millops** — the SQL Server database behind OrderDesk: customers, users, orders,
+  trucks, shipments.
+- **The office network** — Active Directory on `dc01`, employee workstations such as
+  `ws01`, and the SOC's log pipeline.
+- **Order-release staging** — the conduit. HQ writes a signed order release here and the
+  floor reads it. Orders cross in one direction only.
 - **mill-agent** — the on-site service behind the plant firewall that receives an order
-  release over TCP and reports machine status back as UDP datagrams.
-- **millops** — the SQL Server database: customers, orders, trucks, shipments, routes, users.
+  release and drives PM3, the paper machine.
+- **LoadMaster** — cutting-stock and truck-load optimization for the floor (your
+  optimization background lives here).
+- **Email** — the human layer, which no firewall covers: where phishing arrives.
+
+The diagram is a sketch and leaves out email and the wire itself. The zones, the systems
+in each and their addresses come from the world registry: [ATLAS.md](ATLAS.md#missions-by-zone-and-system) prints them, and
+`elite map` shows them with your progress.
 
 **You are the security team.** Your job: find and fix every way Lakefront can be broken —
 across the office IT, the public app, the mill floor, and the AI product — before an
 attacker (or a customer's auditor) does. You work it from the CLI, with your own tools
 (`elite tools`) and your own bookshelf (`elite study`) as your kit.
 
-## Why two components
+## Why the split matters
 
 A single app has no interesting trust boundary. The moment HQ and the mill talk across the
 firewall, you get the thing security is actually about: **the seam.** Is that order-release
@@ -53,37 +68,42 @@ Draw the system, mark the trust boundaries, walk **STRIDE** at each one, and eve
 find becomes a hit point to prove with a mission. STRIDE = **S**poofing, **T**ampering,
 **R**epudiation, **I**nformation disclosure, **D**enial of service, **E**levation of privilege.
 
-## The attack surface — every hit point maps to a layer, a STRIDE threat, and a mission
+## The attack surface — every hit point maps to a STRIDE threat and a system
 
-| Hit point | STRIDE | Layer | Mission(s) |
-|-----------|--------|-------|------------|
-| **The wire** — exposed services, an intrusion in the logs | R / D | 1 Wire | `wire-01` |
-| **The HQ↔mill link** — forge/replay an order release across the seam | **S·T** | 1 Wire | *live-lab (building)* |
-| **The door** — weak/stolen credentials, crackable hashes | **S** | 2 Door | `crack-01` |
-| **OrderDesk (the app)** — SQL injection, broken access control (see other plants' orders) | **T·I·E** | 3 App | `app-01`/`-fix`, `idor-01`/`-fix` |
-| **The DOM / client** — a leaked API key in the page's JavaScript, client-side trust | **I** | 3 App | *live-lab (building)* |
-| **millops (the data)** — over-privileged login, dynamic-SQL proc, `xp_cmdshell` | **I·E** | 3 App / 4 Host | *live-lab (building)* |
-| **The host** — a suspicious binary; privilege escalation | **T·E** | 4 Host | `bin-01`, `priv-01` |
-| **The domain** — Active Directory: one cred → Domain Admin | **S·E** | 5 Domain | `domain-01`/`-fix` |
-| **Millie (the AI product)** — prompt injection, cross-customer data leak, over-permissioned agent | **T·I·E** | AI | `ai-01`/`-fix`, *live agent (building)* |
-| **The hunt** — can you detect all of the above: brute force, phishing, a Tor exit node in the logs? | **R** | 6 Hunt | `hunt-01`, *Tor/phishing (planned)* |
+| Hit point | STRIDE | Where it lives |
+|-----------|--------|----------------|
+| **The wire** — exposed services, an intrusion in the logs | R / D | The wire |
+| **The HQ↔mill link** — forge or replay an order release across the seam | **S·T** | Order-release staging and the mill-floor agent |
+| **The door** — weak or stolen credentials, crackable hashes | **S** | Workstation ws01 |
+| **OrderDesk (the app)** — SQL injection, broken access control (see other plants' orders) | **T·I·E** | Customer Portal |
+| **The DOM / client** — a leaked API key in the page's JavaScript, client-side trust | **I** | Customer Portal, in the [live lab](live-lab/README.md) only |
+| **millops (the data)** — an over-privileged login, a dynamic-SQL procedure | **I·E** | The portal's database, in the [live lab](live-lab/README.md) only |
+| **The host** — a suspicious binary; privilege escalation | **T·E** | Workstation ws01 |
+| **The domain** — Active Directory: one credential → Domain Admin | **S·E** | Domain Controller dc01 |
+| **Millie (the AI product)** — prompt injection, cross-customer data leak, an over-permissioned agent | **T·I·E** | Millie, the AI order agent |
+| **People** — phishing, lookalike domains, spoofed senders | **S** | Corporate email |
+| **The hunt** — can you find all of the above in the logs? | **R** | SOC / log pipeline |
+
+This table does not list missions, because that list changes.
+[ATLAS.md](ATLAS.md#missions-by-zone-and-system) is generated from the registry and shows
+which missions exist on each system today. A system marked "none yet" there has no
+mission.
 
 ## How you play it
 
 1. **Recon** the company (`elite engage recon`) — what's exposed?
 2. **Threat-model** a surface — what could go wrong here, and which STRIDE threat is it?
 3. **Prove it** — run the mission; the checker runs *your* work, so you can't fake it.
-4. **Fix it** — most missions have a break→fix pair; you write the patch that closes the hole.
-5. **Hunt it** — then find the same attack in the logs, from the defender's chair.
+4. **Fix it** — many break missions have a fix twin; you write the patch that closes the hole.
+5. **Hunt it** — then take the defender's chair and find an intrusion in the logs.
 
-## The live lab (being built)
+`elite scenario` chains those steps around one incident, end to end.
 
-The offline missions stay zero-setup. On top of them, `live-lab/` is an *optional* real
-version of Lakefront you host on your own machine (Docker + SQL Server), so you attack a
-**real running app with real tools** — the `millops` database, the OrderDesk portal (with
-its mill dashboard), the mill-agent link, and Millie the AI agent. It's a "Northwind for
-security": a reproducible sample company whose schema, data, and procs ship in the repo —
-some of them *intentionally* vulnerable, clearly labeled, for you to find and fix.
+## The live lab
+
+The offline missions stay zero-setup. On top of them, `live-lab/` is an *optional* running
+version of Lakefront that you host on your own machine and attack with real tools.
+[live-lab/README.md](live-lab/README.md) says which parts of it exist today.
 
 > **Legal & local, always.** Every bit of this runs on hardware you own, against a fictional
 > company. `elite run` refuses active tools aimed outside your lab. The rule never changes:

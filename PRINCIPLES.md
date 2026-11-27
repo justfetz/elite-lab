@@ -1,5 +1,7 @@
 # Design principles (the North Star)
 
+> **Doc status: current** · answers: *Which design decisions are settled?* · [doc map](README.md#doc-map)
+
 Decisions that are settled. Build toward these; don't re-litigate them.
 
 1. **Coach over terminal. Real terminal commands are the learning apparatus — period.**
