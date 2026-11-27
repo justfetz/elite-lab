@@ -8,8 +8,14 @@ name: CI
 #
 # Each leg runs the Python suite (pytest), PSScriptAnalyzer with the committed
 # settings, and the Pester suite for the EliteLab module (tests/pwsh).
-# The PowerShell 7 on Windows leg uses Python 3.8, the oldest version the project
-# supports (ubuntu-latest no longer offers 3.8).
+#
+# The Python that setup-python installs runs pytest. On the PowerShell 7 on Windows leg
+# that is 3.8, the oldest version the project supports (ubuntu-latest no longer offers
+# it), so the bootstrap and the completion generator are tested there under 3.8. The
+# module picks its own Python the way a learner's machine would: py, python3, python.
+#
+# The Windows legs also add the Active Directory PowerShell module, so that the drills
+# on directory queries are checked against the real cmdlets. Nothing connects to a domain.
 
 on:
   push:
@@ -58,43 +64,19 @@ jobs:
       - name: Show the PowerShell and Python in use
         run: |
           "PowerShell $($PSVersionTable.PSVersion) ($($PSVersionTable.PSEdition)) on $([System.Environment]::OSVersion.VersionString)"
-          python --version
+          "pytest runs under: $(python --version)"
+          Import-Module ./pwsh/EliteLab
+          "elite runs under:  Python $((Test-EliteSetup | Select-Object -First 1).Detail)"
 
-      - name: Probe (temporary, removed once all three legs are green)
+      - name: Add the Active Directory PowerShell module (Windows legs)
+        if: runner.os == 'Windows'
         continue-on-error: true
+        shell: powershell
         run: |
-          function Invoke-Thing { 'args: ' + ($args -join '|') }
-          Set-Alias thing Invoke-Thing
-          Register-ArgumentCompleter -Native -CommandName thing, Invoke-Thing -ScriptBlock {
-            param($w, $a, $c)
-            'alpha', 'beta', '--gamma' | Where-Object { $_ -like "$w*" } | ForEach-Object { New-Object System.Management.Automation.CompletionResult $_, $_, 'ParameterValue', $_ }
-          }
-          foreach ($line in 'thing a', 'thing ', 'Invoke-Thing b', 'thing --', 'thing -', 'thing x -') {
-            $r = TabExpansion2 -inputScript $line -cursorColumn $line.Length
-            'native completer, function: <{0}> -> {1}' -f $line, (($r.CompletionMatches | ForEach-Object { $_.CompletionText } | Select-Object -First 4) -join ',')
-          }
-          function Invoke-Other { 'x' }
-          Set-Alias other Invoke-Other
-          function TabExpansion($line, $lastWord) { if ($line -match '^other\s') { 'delta', 'epsilon' | Where-Object { $_ -like "$lastWord*" } } }
-          foreach ($line in 'other d', 'other ') {
-            $r = TabExpansion2 -inputScript $line -cursorColumn $line.Length
-            'legacy TabExpansion: <{0}> -> {1}' -f $line, (($r.CompletionMatches | ForEach-Object { $_.CompletionText } | Select-Object -First 4) -join ',')
-          }
-          Remove-Item Function:\TabExpansion
-          function Show-Arg {
-            for ($i = 0; $i -lt $args.Count; $i++) {
-              $note = $null
-              if ($null -ne $args[$i]) { $note = $args[$i].psobject.Properties['<CommandParameterName>'] }
-              $type = 'null'
-              if ($null -ne $args[$i]) { $type = $args[$i].GetType().Name }
-              '  [{0}] <{1}> type={2} marked={3}' -f $i, ([string]$args[$i]), $type, ($null -ne $note)
-            }
-          }
-          'args as a function sees them:'
-          Show-Arg -o:x 0x10 1.0 007 80,443 -h '-o:' y -- z
-          'console output encoding: {0} ({1})' -f [Console]::OutputEncoding.CodePage, [Console]::OutputEncoding.WebName
-          'temp: ' + [System.IO.Path]::GetTempPath()
-          Get-Command py, python3, python -CommandType Application -ErrorAction SilentlyContinue | ForEach-Object { 'on PATH: ' + $_.Path }
+          $ProgressPreference = 'SilentlyContinue'
+          $feature = Install-WindowsFeature -Name RSAT-AD-PowerShell
+          "RSAT-AD-PowerShell: success={0} exit={1}" -f $feature.Success, $feature.ExitCode
+          Get-Module -ListAvailable -Name ActiveDirectory | ForEach-Object { '{0} {1}' -f $_.Name, $_.Version }
 
       - name: Python suite (pytest)
         run: |

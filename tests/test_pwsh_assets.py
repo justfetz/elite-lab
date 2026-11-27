@@ -238,6 +238,20 @@ def test_powershell_drill_answer_matches_and_wrong_answer_does_not(drill):
     assert commands.matches(drill, "  " + drill["answer"].upper().replace(" ", "   ") + " ")
 
 
+VARIANTS = json.loads((ROOT / "tests" / "drill_variants.json").read_text(encoding="utf-8"))
+
+
+@pytest.mark.parametrize("variant", VARIANTS,
+                         ids=["%s: %s" % (v["id"], v["note"]) for v in VARIANTS])
+def test_powershell_drill_accepts_what_an_admin_types_and_nothing_that_would_not_run(variant):
+    """Other spellings of a right answer are right (where, select, a pipe without
+    spaces, columns in another order); a command that would not run, or that answers a
+    different question, is not. tests/drill_variants.json is the table; the Pester suite
+    reads the same file, so .NET's regex engine has to agree with Python's."""
+    drill = next(c for c in PS_DRILLS if c["id"] == variant["id"])
+    assert commands.matches(drill, variant["text"]) is variant["accepted"], variant["note"]
+
+
 def test_commands_json_is_what_the_builder_generates(tmp_path):
     """drills/commands.json is generated. Edit _build_commands.py, then run it."""
     shutil.copy(ROOT / "_build_commands.py", tmp_path / "_build_commands.py")

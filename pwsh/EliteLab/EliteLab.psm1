@@ -208,8 +208,8 @@ function Get-ElitePythonAdvice {
         'broken' {
             $first = 'elite needs {0}. ''{1}'' was found at {2} but it did not run.' -f
                 $need, $Python.Name, $Python.Path
-            if ($script:OnWindows) {
-                $first += ' On Windows that is usually the Microsoft Store placeholder, not a real Python.'
+            if ([string]$Python.Path -like '*\WindowsApps\*') {
+                $first += ' That file is the Microsoft Store placeholder, not a real Python.'
             }
         }
         default {
@@ -226,16 +226,37 @@ function Get-ElitePythonAdvice {
 
 #region Running the CLI
 
+function Test-EliteWordInLine {
+    # True when $Word stands in $Line as a word of its own.
+    [CmdletBinding()]
+    [OutputType([bool])]
+    param(
+        [Parameter(Mandatory = $true)]
+        [string] $Word,
+
+        [AllowEmptyString()]
+        [string] $Line = ''
+    )
+    if ([string]::IsNullOrEmpty($Line)) {
+        return $false
+    }
+    $pattern = '(?<![^\s;|&({])' + [regex]::Escape($Word) + '(?![^\s;|&)}])'
+    return [regex]::IsMatch($Line, $pattern)
+}
+
 function ConvertTo-EliteArgument {
     # Turns a function's $args back into the words the learner typed.
     #
-    # PowerShell parses a command line before a function sees it, and three of its
+    # PowerShell parses a command line before a function sees it, and four of its
     # habits would change what Python receives:
-    #   80,443     arrives as an array      -> joined again with ','
-    #   -p:80      arrives as '-p:' and 80  -> joined again (PowerShell marks '-p:' as a
-    #                                          parameter it split; a quoted '-p:' is left alone)
-    #   0x10, 1.0  arrive as numbers        -> [string] gives back the text as typed
-    # $null (an empty variable) is dropped, as it is for any native command.
+    #   80,443     arrives as an array        -> joined again with ','
+    #   -p:80      arrives as '-p:' and 80    -> joined again (PowerShell marks '-p:' as a
+    #                                            parameter it split; a quoted '-p:' is left alone)
+    #   -w=a.txt   arrives as '-w=a' and .txt -> joined again when the line that called elite
+    #                                            shows them as one word ($InvocationLine); a
+    #                                            real pair such as  -w ./a.txt  is left alone
+    #   0x10, 1.0  arrive as numbers          -> [string] gives back the text as typed
+    # $null and an empty array (an empty variable) are dropped, as for any native command.
     # The words are written one by one; collect them with @( ), which keeps an empty
     # string as a word and gives an empty array when there are none.
     [CmdletBinding()]
@@ -243,41 +264,42 @@ function ConvertTo-EliteArgument {
     param(
         [AllowEmptyCollection()]
         [AllowNull()]
-        [object[]] $ArgumentList = @()
+        [object[]] $ArgumentList = @(),
+
+        [AllowEmptyString()]
+        [string] $InvocationLine = ''
     )
-    $words = New-Object System.Collections.Generic.List[string]
-    $pending = $null
+    # every argument as text, and whether PowerShell marked it as a parameter it parsed
+    $items = New-Object System.Collections.Generic.List[object]
     foreach ($item in @($ArgumentList)) {
         if ($null -eq $item) {
             continue
         }
         if ($item -is [System.Collections.IEnumerable] -and $item -isnot [string]) {
-            $text = @($item | ForEach-Object { [string]$_ }) -join ','
-        }
-        else {
-            $text = [string]$item
-        }
-        if ($null -ne $pending) {
-            $words.Add($pending + $text)
-            $pending = $null
+            $parts = @($item | ForEach-Object { [string]$_ })
+            if ($parts.Count -gt 0) {
+                $items.Add(@{ Text = ($parts -join ','); Marked = $false })
+            }
             continue
         }
-        $splitByParser = $false
-        if ($item -is [string] -and $text.Length -gt 2 -and $text.StartsWith('-') -and $text.EndsWith(':')) {
-            $splitByParser = $null -ne $item.psobject.Properties['<CommandParameterName>']
-        }
-        if ($splitByParser) {
-            $pending = $text
-        }
-        else {
-            $words.Add($text)
-        }
+        $marked = ($item -is [string]) -and ($null -ne $item.psobject.Properties['<CommandParameterName>'])
+        $items.Add(@{ Text = [string]$item; Marked = $marked })
     }
-    if ($null -ne $pending) {
-        $words.Add($pending)
-    }
-    foreach ($word in $words) {
-        $word
+
+    for ($i = 0; $i -lt $items.Count; $i++) {
+        $text = $items[$i].Text
+        if ($items[$i].Marked -and ($i + 1) -lt $items.Count) {
+            $next = $items[$i + 1].Text
+            $splitAtColon = $text.Length -gt 2 -and $text.EndsWith(':')
+            $splitAtDot = $next.StartsWith('.') -and -not $items[$i + 1].Marked -and
+                (Test-EliteWordInLine -Word ($text + $next) -Line $InvocationLine)
+            if ($splitAtColon -or $splitAtDot) {
+                $text + $next
+                $i++
+                continue
+            }
+        }
+        $text
     }
 }
 
@@ -421,12 +443,19 @@ function Invoke-Elite {
     scripted: 'q' | elite learn networking
 
     Tab completes the subcommands, their options and their choices. The list is
-    generated from the CLI's own parser. Windows PowerShell 5.1 completes the
-    subcommands and choices but not a word that starts with a dash: 5.1 takes
-    such a word as a parameter of the function itself and asks no completer.
+    generated from the CLI's own parser. In Windows PowerShell 5.1, type the
+    first letter of an option before Tab (--v, then Tab): 5.1 offers nothing
+    for a bare - or --, which PowerShell 7 does.
 
-    One thing PowerShell itself takes before any function sees it: a bare --.
-    Write it in quotes ('--') if the CLI must receive it.
+    Arguments reach the CLI as you typed them, quotes, spaces and empty
+    strings included. PowerShell reads the line before any function sees it,
+    so four things differ from running a program directly:
+
+      --         a bare double dash is taken by PowerShell. Write '--'.
+      -?         is PowerShell's own help switch. Write '-?'.
+      0x10,007   numbers in a comma list arrive in plain form (16,7).
+                 Quote the list: '0x10,007'. A single number is safe.
+      *.txt, ~   are passed as typed. Nothing expands them, on any system.
 
     .EXAMPLE
     elite doctor
@@ -453,6 +482,11 @@ function Invoke-Elite {
     This function has no parameters of its own on purpose. A declared parameter
     would make PowerShell claim options such as -h and -sV before the CLI saw them.
 
+    PowerShell splits an option at its first dot (-w=list.txt becomes -w=list
+    and .txt). The two halves are joined again when the line that called elite
+    shows them as one word. If the option came from a variable or from another
+    function's arguments, that line does not show it: quote it there.
+
     .LINK
     Test-EliteSetup
     #>
@@ -465,7 +499,7 @@ function Invoke-Elite {
         return
     }
 
-    $words = @(ConvertTo-EliteArgument -ArgumentList $args)
+    $words = @(ConvertTo-EliteArgument -ArgumentList $args -InvocationLine ([string]$MyInvocation.Line))
 
     # Piped text reaches the CLI by way of a file that elite_bootstrap.py reads as its
     # input. PowerShell's own pipe to a native program is not exact everywhere: Windows
@@ -477,6 +511,12 @@ function Invoke-Elite {
         $text = ''
         if ($lines.Count -gt 0) {
             $text = ($lines -join "`n") + "`n"
+        }
+        $problem = Initialize-EliteTempRoot
+        if ($problem) {
+            Write-EliteLine $problem
+            $global:LASTEXITCODE = 1
+            return
         }
         $inputPath = Join-Path (Get-EliteTempRoot) ('input-' + [System.Guid]::NewGuid().ToString('N') + '.txt')
         Write-EliteTextFile -Path $inputPath -Text $text
@@ -836,11 +876,68 @@ function Test-EliteSetup {
 #region Blue-team checkers
 
 function Get-EliteTempRoot {
-    # Everything the checkers write goes under this one folder in the temp folder.
+    # Everything the module writes goes under this one folder in the temp folder.
+    # On Windows the temp folder is the user's own. On Linux and macOS /tmp can be
+    # shared, so the folder carries the user's name: two learners on one machine do
+    # not collide, and neither works in a folder the other one made.
     [CmdletBinding()]
     [OutputType([string])]
     param()
-    return Join-Path ([System.IO.Path]::GetTempPath()) 'elite-lab'
+    $name = 'elite-lab'
+    if (-not $script:OnWindows) {
+        $name = 'elite-lab-' + [System.Environment]::UserName
+    }
+    return Join-Path ([System.IO.Path]::GetTempPath()) $name
+}
+
+function Initialize-EliteTempRoot {
+    # Makes sure the module's folder under the temp folder exists and is the user's own.
+    # Returns nothing when it is usable, or one plain sentence that says why it is not.
+    [CmdletBinding()]
+    [OutputType([string])]
+    param()
+    $root = Get-EliteTempRoot
+    $advice = 'Point TMPDIR (TEMP on Windows) at a folder of your own and try again.'
+    try {
+        $isNew = -not (Test-Path -LiteralPath $root)
+        $null = [System.IO.Directory]::CreateDirectory($root)
+        if (-not $script:OnWindows) {
+            $folder = Get-Item -LiteralPath $root -Force
+            $owner = $folder.PSObject.Properties['User']
+            if ($null -ne $owner -and [string]$owner.Value -ne [System.Environment]::UserName) {
+                return 'elite will not use {0}: it belongs to {1}. {2}' -f $root, $owner.Value, $advice
+            }
+            if ($isNew) {
+                $chmod = Get-Command -Name chmod -CommandType Application -ErrorAction Ignore | Select-Object -First 1
+                if ($null -ne $chmod) {
+                    & $chmod.Path 700 $root
+                }
+            }
+        }
+        $probe = Join-Path $root ('probe-' + [System.Guid]::NewGuid().ToString('N'))
+        [System.IO.File]::WriteAllText($probe, '')
+        [System.IO.File]::Delete($probe)
+    }
+    catch {
+        return 'elite cannot write to its folder under the temp folder ({0}): {1} {2}' -f
+            $root, $_.Exception.GetBaseException().Message, $advice
+    }
+}
+
+function Assert-EliteTempRoot {
+    # The same check for the checker commands: a plain error, raised for the caller.
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory = $true)]
+        [System.Management.Automation.PSCmdlet] $Cmdlet
+    )
+    $problem = Initialize-EliteTempRoot
+    if ($problem) {
+        $record = New-Object System.Management.Automation.ErrorRecord (
+            (New-Object System.IO.IOException ([string]$problem)), 'EliteLab.TempFolderNotUsable',
+            [System.Management.Automation.ErrorCategory]::WriteError, (Get-EliteTempRoot))
+        $Cmdlet.ThrowTerminatingError($record)
+    }
 }
 
 function Clear-EliteFolder {
@@ -1183,6 +1280,7 @@ function Test-EliteCheckerCase {
 
     $expected = @($Case.Expected | ForEach-Object { ConvertTo-EliteFinding -Definition $Definition -Line ([string]$_) -CasePath $CasePath })
     $actual = New-Object System.Collections.Generic.List[string]
+    $repeated = New-Object System.Collections.Generic.List[string]
     $seen = New-Object 'System.Collections.Generic.HashSet[string]' ([System.StringComparer]::OrdinalIgnoreCase)
     foreach ($line in $run.Output) {
         if ([string]::IsNullOrWhiteSpace($line)) {
@@ -1191,6 +1289,9 @@ function Test-EliteCheckerCase {
         $finding = ConvertTo-EliteFinding -Definition $Definition -Line $line -CasePath $CasePath
         if ($seen.Add($finding)) {
             $actual.Add($finding)
+        }
+        elseif (-not $repeated.Contains($finding)) {
+            $repeated.Add($finding)      # every brief says "once each"
         }
     }
     $wanted = New-Object 'System.Collections.Generic.HashSet[string]' ([System.StringComparer]::OrdinalIgnoreCase)
@@ -1201,7 +1302,7 @@ function Test-EliteCheckerCase {
     $unexpected = @($actual | Where-Object { -not $wanted.Contains($_) })
 
     $ran = (-not $run.TimedOut) -and ($run.ExitCode -eq 0)
-    $passed = $ran -and ($missed.Count -eq 0) -and ($unexpected.Count -eq 0)
+    $passed = $ran -and ($missed.Count -eq 0) -and ($unexpected.Count -eq 0) -and ($repeated.Count -eq 0)
     $detail = ''
     if ($run.TimedOut) {
         $detail = 'the script was still running after {0} seconds and was stopped' -f $TimeoutSeconds
@@ -1221,6 +1322,9 @@ function Test-EliteCheckerCase {
         if ($unexpected.Count -gt 0) {
             $parts += 'should not be flagged: ' + (Format-EliteList -Item $unexpected)
         }
+        if ($repeated.Count -gt 0) {
+            $parts += 'printed more than once: ' + (Format-EliteList -Item $repeated.ToArray())
+        }
         $detail = $parts -join '; '
     }
     $verdict = 'FAIL'
@@ -1239,6 +1343,7 @@ function Test-EliteCheckerCase {
         Actual     = $actual.ToArray()
         Missed     = $missed
         Unexpected = $unexpected
+        Repeated   = $repeated.ToArray()
         ExitCode   = $run.ExitCode
         Seconds    = [math]::Round($timer.Elapsed.TotalSeconds, 2)
     }
@@ -1415,6 +1520,7 @@ function Start-EliteChecker {
     )
 
     if ($PSCmdlet.ShouldProcess($paths.Workspace, 'Set up the checker workspace')) {
+        Assert-EliteTempRoot -Cmdlet $PSCmdlet
         $null = [System.IO.Directory]::CreateDirectory($paths.Workspace)
         if ($Force -or -not (Test-Path -LiteralPath $paths.Script)) {
             Write-EliteTextFile -Path $paths.Script -Text $definition.Starter
@@ -1444,11 +1550,13 @@ function Test-EliteChecker {
     verdict. A failed case also says what was missed or wrongly flagged, and why
     that case exists. The fixture folders are removed afterwards.
 
-    Each case is built so that one mistake fails it and nothing else does: a
-    script that skips a rule passes the other cases and fails that one.
+    The cases are built around the ways an audit goes wrong: each rule of the
+    brief has a case that only a script applying that rule gets right, and a
+    case with nothing to find.
 
-    A case fails if the script errors, exits with a code other than 0, runs
-    longer than the time limit, or prints anything that is not a finding.
+    A case fails if the script misses a finding, flags something it should not,
+    prints a finding twice, prints anything that is not a finding, errors,
+    exits with a code other than 0, or runs longer than the time limit.
 
     .PARAMETER Id
     The checker to run. Get-EliteChecker lists them.
@@ -1462,7 +1570,7 @@ function Test-EliteChecker {
 
     .PARAMETER PassThru
     Also return one object per case: Case, Passed, Verdict, Detail, Expected,
-    Actual, Missed, Unexpected, ExitCode and Seconds.
+    Actual, Missed, Unexpected, Repeated, ExitCode and Seconds.
 
     .EXAMPLE
     Test-EliteChecker task-audit
@@ -1515,6 +1623,7 @@ function Test-EliteChecker {
         $PSCmdlet.ThrowTerminatingError($record)
     }
     $ScriptPath = (Resolve-Path -LiteralPath $ScriptPath).ProviderPath
+    Assert-EliteTempRoot -Cmdlet $PSCmdlet
 
     $cases = @(Get-EliteCheckerCase -Definition $definition)
     $runRoot = Join-Path (Get-EliteTempRoot) ('run-' + [System.Guid]::NewGuid().ToString('N').Substring(0, 12))

@@ -6,14 +6,21 @@
 
 BeforeDiscovery {
     $script:CheckerIds = 'baseline-check', 'logon-burst', 'perm-audit', 'task-audit' | ForEach-Object { @{ Id = $_ } }
+    $script:OnWindows = [System.Environment]::OSVersion.Platform -eq [System.PlatformID]::Win32NT
+
+    # every wrong solution in tests/pwsh/solutions: <checker>.defective[-<mistake>].ps1
+    $script:WrongSolutions = @(Get-ChildItem -LiteralPath (Join-Path $PSScriptRoot 'solutions') -Filter '*.defective*.ps1' |
+            Sort-Object -Property Name | ForEach-Object {
+                @{ Name = $_.Name; Path = $_.FullName; Id = ($_.Name -replace '\.defective.*$', '') }
+            })
 }
 
 BeforeAll {
     . (Join-Path $PSScriptRoot 'TestHelpers.ps1')
     $script:RepoRoot = Get-TestRepoRoot
     $script:Solutions = Join-Path $PSScriptRoot 'solutions'
-    $script:TempRoot = Join-Path ([System.IO.Path]::GetTempPath()) 'elite-lab'
     Import-TestModule
+    $script:TempRoot = InModuleScope EliteLab { Get-EliteTempRoot }
 
     function Get-ShownText {
         # everything a command wrote for the learner (the information stream), as lines
@@ -71,10 +78,17 @@ Describe 'Get-EliteChecker' {
     }
 
     It 'keeps every workspace under the temp folder' {
+        $script:TempRoot | Should -BeLike ([System.IO.Path]::GetTempPath() + '*')
         foreach ($checker in @(Get-EliteChecker)) {
             $checker.Workspace | Should -BeLike ($script:TempRoot + '*')
             $checker.Script | Should -BeLike ($checker.Workspace + '*')
         }
+    }
+
+    It 'gives each user a folder of their own where the temp folder is shared (Linux, macOS)' -Skip:$script:OnWindows {
+        (Split-Path -Leaf $script:TempRoot) | Should -Be ('elite-lab-' + [System.Environment]::UserName)
+        $null = Get-ShownText { Start-EliteChecker -Id task-audit }
+        (Get-Item -LiteralPath $script:TempRoot).UnixMode | Should -Be 'drwx------'
     }
 
     It 'says which checkers exist when asked for one that does not' {
@@ -170,8 +184,8 @@ Describe 'Checker <Id>' -ForEach $script:CheckerIds {
             foreach ($result in $failed) {
                 $result.Verdict | Should -Be 'FAIL'
                 $result.ExitCode | Should -Be 0 -Because 'the wrong solution runs fine; it is only wrong'
-                $result.Detail | Should -Match 'missed|should not be flagged'
-                (@($result.Missed).Count + @($result.Unexpected).Count) | Should -BeGreaterThan 0
+                $result.Detail | Should -Match 'missed|should not be flagged|printed more than once'
+                (@($result.Missed).Count + @($result.Unexpected).Count + @($result.Repeated).Count) | Should -BeGreaterThan 0
             }
         }
 
@@ -203,6 +217,24 @@ Describe 'Checker <Id>' -ForEach $script:CheckerIds {
     }
 }
 
+
+Describe 'Wrong solution <Name>' -ForEach $script:WrongSolutions {
+    # Each of these makes one plausible mistake: it skips a rule, or one spelling of a
+    # rule, or a step of the method. A checker that let any of them through would be
+    # checking less than its brief says.
+    It 'runs without an error and fails at least one case of <Id>' {
+        $results = @(Test-EliteChecker -Id $Id -ScriptPath $Path -PassThru 6>$null)
+        $results.Count | Should -BeGreaterThan 0
+        foreach ($result in $results) {
+            $result.ExitCode | Should -Be 0 -Because "the script is only wrong, not broken (case '$($result.Case)': $($result.Detail))"
+        }
+        $failed = @($results | Where-Object { -not $_.Passed })
+        $failed.Count | Should -BeGreaterThan 0 -Because "$Name passed every case of $Id"
+        foreach ($result in $failed) {
+            $result.Detail | Should -Match 'missed|should not be flagged|printed more than once'
+        }
+    }
+}
 
 Describe 'Test-EliteChecker with scripts that misbehave' {
     It 'fails every case of a script that throws, and says so' {
@@ -251,6 +283,19 @@ Describe 'Test-EliteChecker with scripts that misbehave' {
         $results[0].Unexpected | Should -Contain 'Scanning the task list...'
     }
 
+    It 'fails a script that prints a finding twice: every brief says once each' {
+        $reference = (Join-Path $script:Solutions 'logon-burst.ps1').Replace("'", "''")
+        $script = Write-TestScript -Name 'twice.ps1' -Body ("& '$reference' -Path `$Path`n& '$reference' -Path `$Path")
+        $results = @(Test-EliteChecker -Id logon-burst -ScriptPath $script -PassThru 6>$null)
+        $withFindings = @($results | Where-Object { @($_.Expected).Count -gt 0 })
+        $withFindings.Count | Should -BeGreaterThan 0
+        foreach ($result in $withFindings) {
+            $result.Passed | Should -BeFalse
+            $result.Detail | Should -Match 'printed more than once'
+            @($result.Repeated).Count | Should -Be @($result.Expected).Count
+        }
+    }
+
     It 'accepts a script whose path has a space and an apostrophe in it' {
         $folder = Join-Path $TestDrive "dana's audit scripts"
         $null = New-Item -ItemType Directory -Path $folder -Force
@@ -277,10 +322,41 @@ Describe 'Test-EliteChecker with scripts that misbehave' {
         { Test-EliteChecker -Id nope } | Should -Throw -ErrorId 'EliteLab.UnknownChecker*'
         { Start-EliteChecker -Id nope } | Should -Throw -ErrorId 'EliteLab.UnknownChecker*'
     }
+
+    It 'says so in plain words when its folder under the temp folder cannot be used' {
+        $saved = @{}
+        foreach ($name in 'TEMP', 'TMP', 'TMPDIR') {
+            $saved[$name] = [System.Environment]::GetEnvironmentVariable($name)
+        }
+        $blocked = Join-Path $TestDrive 'blocked temp for checkers'
+        $null = New-Item -ItemType Directory -Path $blocked -Force
+        $reference = Join-Path $script:Solutions 'task-audit.ps1'
+        try {
+            foreach ($name in 'TEMP', 'TMP', 'TMPDIR') {
+                [System.Environment]::SetEnvironmentVariable($name, $blocked)
+            }
+            # a file sits where the folder should be
+            [System.IO.File]::WriteAllText((InModuleScope EliteLab { Get-EliteTempRoot }), 'not a folder')
+            { Start-EliteChecker -Id task-audit 6>$null } | Should -Throw -ErrorId 'EliteLab.TempFolderNotUsable*'
+            { Test-EliteChecker -Id task-audit -ScriptPath $reference 6>$null } | Should -Throw -ErrorId 'EliteLab.TempFolderNotUsable*'
+            try {
+                Start-EliteChecker -Id task-audit 6>$null
+            }
+            catch {
+                $_.Exception.Message | Should -Match 'elite cannot write to its folder under the temp folder'
+                $_.Exception.Message | Should -Not -Match 'Exception calling'
+            }
+        }
+        finally {
+            foreach ($name in 'TEMP', 'TMP', 'TMPDIR') {
+                [System.Environment]::SetEnvironmentVariable($name, $saved[$name])
+            }
+        }
+    }
 }
 
 Describe 'The checkers and the real system' {
-    It 'writes nothing outside the temp folder: the clone is untouched by a full round' {
+    It 'leaves the clone untouched by a full round of every checker' {
         $before = @(Get-TestFileList -Path $script:RepoRoot)
         foreach ($id in 'baseline-check', 'logon-burst', 'perm-audit', 'task-audit') {
             $null = Get-ShownText { Start-EliteChecker -Id $id -Force }
@@ -320,7 +396,7 @@ Describe 'The checkers and the real system' {
         }
     }
 
-    It 'does not need administrator rights: nothing in a checker asks for elevation' {
+    It 'asks for no elevation anywhere in the module or the checkers' {
         $text = ''
         foreach ($file in (Get-ChildItem -LiteralPath (Join-Path $script:RepoRoot 'pwsh/EliteLab') -Recurse -File -Include '*.ps1', '*.psm1')) {
             $text += [System.IO.File]::ReadAllText($file.FullName)

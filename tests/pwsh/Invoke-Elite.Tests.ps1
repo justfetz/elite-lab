@@ -29,11 +29,19 @@ BeforeDiscovery {
         @{ Name = 'a comma list (PowerShell makes it an array)'; Call = { elite run nmap -p 80,443 10.0.0.5 }; Expected = @('run', 'nmap', '-p', '80,443', '10.0.0.5') }
         @{ Name = 'an option joined to its value by a colon'; Call = { elite run tool -o:x -mc:200 }; Expected = @('run', 'tool', '-o:x', '-mc:200') }
         @{ Name = 'a quoted option that ends in a colon stays its own word'; Call = { elite run tool '-o:' x }; Expected = @('run', 'tool', '-o:', 'x') }
+        @{ Name = 'an option with a file name in it (PowerShell splits it at the dot)'; Call = { elite run john -w=rockyou.txt hashes.txt }; Expected = @('run', 'john', '-w=rockyou.txt', 'hashes.txt') }
+        @{ Name = 'an option with an address in it'; Call = { elite run nmap -S10.0.0.5 -T4 10.0.0.9 }; Expected = @('run', 'nmap', '-S10.0.0.5', '-T4', '10.0.0.9') }
+        @{ Name = 'an option with a dotted name and a decimal'; Call = { elite run tool -Dkey.name=1 -t1.5 }; Expected = @('run', 'tool', '-Dkey.name=1', '-t1.5') }
+        @{ Name = 'an option followed by a word that starts with a dot stays two words'; Call = { elite run tool -w ./words.txt -x .php -C .. }; Expected = @('run', 'tool', '-w', './words.txt', '-x', '.php', '-C', '..') }
+        @{ Name = 'a wildcard and a tilde, as typed'; Call = { elite run tool *.md ~/notes.txt }; Expected = @('run', 'tool', '*.md', '~/notes.txt') }
+        @{ Name = 'a quoted help switch'; Call = { elite run curl '-?' }; Expected = @('run', 'curl', '-?') }
+        @{ Name = 'a quoted comma list of numbers keeps its text'; Call = { elite run tool '0x10,007' }; Expected = @('run', 'tool', '0x10,007') }
         @{ Name = 'numbers keep the text that was typed'; Call = { elite run tool 0x10 1.0 007 1e3 -5 }; Expected = @('run', 'tool', '0x10', '1.0', '007', '1e3', '-5') }
         @{ Name = 'a quoted double dash'; Call = { elite run nmap '--' -x }; Expected = @('run', 'nmap', '--', '-x') }
         @{ Name = 'a URL with a query string'; Call = { elite run sqlmap -u 'http://10.0.0.5/item?id=1' --batch }; Expected = @('run', 'sqlmap', '-u', 'http://10.0.0.5/item?id=1', '--batch') }
         @{ Name = 'a splatted list'; Call = { $list = 'ask', 'a b', '-c'; elite @list }; Expected = @('ask', 'a b', '-c') }
         @{ Name = 'a variable that holds nothing is dropped'; Call = { $nothing = $null; elite ask $nothing done }; Expected = @('ask', 'done') }
+        @{ Name = 'a variable that holds an empty list is dropped'; Call = { $none = @(); elite ask $none done }; Expected = @('ask', 'done') }
     )
 
     $script:OldPythons = @(
@@ -255,9 +263,38 @@ Describe 'elite hands every argument to the CLI unchanged' {
 
     It 'removes the file it used to hand the piped text over' {
         $null = 'one', 'two' | elite --stdin
-        $root = Join-Path ([System.IO.Path]::GetTempPath()) 'elite-lab'
-        @(Get-ChildItem -LiteralPath $root -Filter 'input-*.txt' -ErrorAction Ignore).Count | Should -Be 0
+        $root = InModuleScope EliteLab { Get-EliteTempRoot }
+        $root | Should -Exist
+        @(Get-ChildItem -LiteralPath $root -Filter 'input-*.txt').Count | Should -Be 0
         $env:ELITELAB_STDIN | Should -BeNullOrEmpty
+    }
+
+    It 'says so in plain words, and does not start the CLI, when it cannot write the piped text down' {
+        # the module's folder under the temp folder is taken by a file of the same name
+        $saved = @{}
+        foreach ($name in 'TEMP', 'TMP', 'TMPDIR') {
+            $saved[$name] = [System.Environment]::GetEnvironmentVariable($name)
+        }
+        $blocked = Join-Path $TestDrive 'blocked temp'
+        $null = New-Item -ItemType Directory -Path $blocked -Force
+        try {
+            foreach ($name in 'TEMP', 'TMP', 'TMPDIR') {
+                [System.Environment]::SetEnvironmentVariable($name, $blocked)
+            }
+            $root = InModuleScope EliteLab { Get-EliteTempRoot }
+            $root | Should -BeLike ($blocked + '*')
+            [System.IO.File]::WriteAllText($root, 'not a folder')
+            { $script:Message = Get-TestShownText { 'q' | elite --stdin } } | Should -Not -Throw
+            $script:Message | Should -Match 'elite cannot write to its folder under the temp folder'
+            $script:Message | Should -Match 'Point TMPDIR \(TEMP on Windows\) at a folder of your own'
+            $script:Message | Should -Not -Match 'stdin='
+            $LASTEXITCODE | Should -Be 1
+        }
+        finally {
+            foreach ($name in 'TEMP', 'TMP', 'TMPDIR') {
+                [System.Environment]::SetEnvironmentVariable($name, $saved[$name])
+            }
+        }
     }
 
     It 'returns exit code <_> from the CLI' -ForEach 0, 1, 2, 7, 42 {

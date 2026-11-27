@@ -129,9 +129,15 @@ foreach ($rule in $baseline) {
             Expected = @('MaximumPasswordAgeDays', 'GuestAccountEnabled', 'AuditLogonFailures')
         }
         @{
-            Name     = 'two rules for one setting'
+            Name     = 'two rules for one setting: below the lower one'
             Why      = 'LockoutThreshold is 0: it passes "at most 5" and fails "at least 1", because 0 means never lock out. One setting, two rules, one finding.'
             Change   = @{ LockoutThreshold = 0 }
+            Expected = @('LockoutThreshold')
+        }
+        @{
+            Name     = 'two rules for one setting: above the upper one'
+            Why      = 'LockoutThreshold is 50: it passes "at least 1" and fails "at most 5". A script that stops at the first rule that names a setting never reaches the second.'
+            Change   = @{ LockoutThreshold = 50 }
             Expected = @('LockoutThreshold')
         }
         @{

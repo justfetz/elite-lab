@@ -3,6 +3,7 @@
 #   Invoke-ScriptAnalyzer -Path . -Recurse -Settings ./PSScriptAnalyzerSettings.psd1
 #
 # Every rule the analyzer ships with runs, at every severity, and no rule is excluded.
+# ParseError is in the list so that a file that does not parse is reported, not skipped.
 # Two things are set on top of the defaults:
 #
 #   PSUseCompatibleSyntax      fails anything Windows PowerShell 5.1 cannot parse
@@ -13,7 +14,7 @@
 #                              alias; tests/pwsh/EliteLab.Module.Tests.ps1 checks that.
 @{
     IncludeDefaultRules = $true
-    Severity            = @('Error', 'Warning', 'Information')
+    Severity            = @('ParseError', 'Error', 'Warning', 'Information')
     Rules               = @{
         PSUseCompatibleSyntax     = @{
             Enable         = $true

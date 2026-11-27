@@ -121,8 +121,8 @@ straight from the clone:
 git clone https://github.com/justfetz/elite-lab.git
 cd elite-lab
 Import-Module ./pwsh/EliteLab    # no install step
-elite doctor                     # the same CLI: every argument goes through unchanged
-elite lab <Tab>                  # subcommands and choices complete (and options, in PowerShell 7)
+elite doctor                     # the same CLI, with your arguments passed on as typed
+elite lab <Tab>                  # subcommands, options and choices complete
 Test-EliteSetup                  # `elite doctor` as objects: Name, Ok, Group, Install ...
 ```
 
@@ -130,8 +130,10 @@ If PowerShell says running scripts is disabled, allow them for this window only:
 `Set-ExecutionPolicy -Scope Process RemoteSigned`. If Python is missing or older than 3.8,
 `elite` says so and prints the command that installs it. The CLI's exit code is in
 `$LASTEXITCODE`, as for any program, and piped text is the CLI's input
-(`'q' | elite learn networking`). One limit: Windows PowerShell 5.1 does not complete a
-word that starts with a dash (`--help`), because 5.1 takes it as a parameter of its own.
+(`'q' | elite learn networking`). One difference: in Windows PowerShell 5.1, type the
+first letter of an option before Tab (`--v`, then Tab); PowerShell 7 also lists the options
+for a bare `--`. `Get-Help Invoke-Elite` lists the four things PowerShell itself does to a
+command line before any function sees it, such as taking a bare `--`, and what to type instead.
 
 **Blue-team checkers.** You write a PowerShell audit script; the checker runs it against
 fixture cases in your temp folder and shows a verdict for each one. Nothing touches the real

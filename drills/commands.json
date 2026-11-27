@@ -226,8 +226,7 @@
     "answer": "Get-WinEvent -LogName System -MaxEvents 50",
     "why": "-MaxEvents caps the count, and Get-WinEvent returns the newest first. -Newest belongs to the older Get-EventLog.",
     "accept": [
-      "get-winevent -logname ['\\\"]?system['\\\"]? -maxevents 50",
-      "get-winevent -maxevents 50 -logname ['\\\"]?system['\\\"]?"
+      "get-winevent(?=.* -logname ['\\\"]?system['\\\"]?)(?=.* -maxevents 50)( -(logname ['\\\"]?system['\\\"]?|maxevents 50)){2}"
     ],
     "wrong": "Get-WinEvent -LogName System -Newest 50"
   },
@@ -238,8 +237,8 @@
     "answer": "Get-WinEvent -FilterHashtable @{LogName='Security';Id=4624}",
     "why": "4624 is a logon that worked; 4625 is one that failed. The hashtable filters at the source, which is far faster than filtering afterwards.",
     "accept": [
-      "get-winevent -filterhashtable @\\{ ?logname ?= ?['\\\"]?security['\\\"]? ?; ?id ?= ?4624 ?\\}",
-      "get-winevent -filterhashtable @\\{ ?id ?= ?4624 ?; ?logname ?= ?['\\\"]?security['\\\"]? ?\\}"
+      "get-winevent -filterhashtable @\\{ ?logname ?= ?['\\\"]security['\\\"] ?; ?id ?= ?4624 ?\\}",
+      "get-winevent -filterhashtable @\\{ ?id ?= ?4624 ?; ?logname ?= ?['\\\"]security['\\\"] ?\\}"
     ],
     "wrong": "Get-WinEvent -FilterHashtable @{LogName='Security';Id=4625}"
   },
@@ -250,8 +249,8 @@
     "answer": "Get-WinEvent -FilterHashtable @{LogName='Security';Id=4625;StartTime=(Get-Date).AddDays(-1)}",
     "why": "StartTime is the oldest event you want. EndTime with the same value would return everything BEFORE yesterday.",
     "accept": [
-      "get-winevent -filterhashtable @\\{ ?logname ?= ?['\\\"]?security['\\\"]? ?; ?id ?= ?4625 ?; ?starttime ?= ?\\(get-date\\)\\.add(days\\(-1\\)|hours\\(-24\\)) ?\\}",
-      "get-winevent -filterhashtable @\\{ ?id ?= ?4625 ?; ?logname ?= ?['\\\"]?security['\\\"]? ?; ?starttime ?= ?\\(get-date\\)\\.add(days\\(-1\\)|hours\\(-24\\)) ?\\}"
+      "get-winevent -filterhashtable @\\{ ?logname ?= ?['\\\"]security['\\\"] ?; ?id ?= ?4625 ?; ?starttime ?= ?\\(get-date\\)\\.add(days\\(-1\\)|hours\\(-24\\)) ?\\}",
+      "get-winevent -filterhashtable @\\{ ?id ?= ?4625 ?; ?logname ?= ?['\\\"]security['\\\"] ?; ?starttime ?= ?\\(get-date\\)\\.add(days\\(-1\\)|hours\\(-24\\)) ?\\}"
     ],
     "wrong": "Get-WinEvent -FilterHashtable @{LogName='Security';Id=4625;EndTime=(Get-Date).AddDays(-1)}"
   },
@@ -262,8 +261,8 @@
     "answer": "Get-WinEvent -FilterHashtable @{LogName='Security';Id=4720}",
     "why": "4720 = a user account was created. 4726 is the opposite: an account was deleted.",
     "accept": [
-      "get-winevent -filterhashtable @\\{ ?logname ?= ?['\\\"]?security['\\\"]? ?; ?id ?= ?4720 ?\\}",
-      "get-winevent -filterhashtable @\\{ ?id ?= ?4720 ?; ?logname ?= ?['\\\"]?security['\\\"]? ?\\}"
+      "get-winevent -filterhashtable @\\{ ?logname ?= ?['\\\"]security['\\\"] ?; ?id ?= ?4720 ?\\}",
+      "get-winevent -filterhashtable @\\{ ?id ?= ?4720 ?; ?logname ?= ?['\\\"]security['\\\"] ?\\}"
     ],
     "wrong": "Get-WinEvent -FilterHashtable @{LogName='Security';Id=4726}"
   },
@@ -274,8 +273,8 @@
     "answer": "Get-WinEvent -FilterHashtable @{LogName='Security';Id=1102}",
     "why": "1102 is written to the Security log itself when someone clears it. A cleared log is a finding.",
     "accept": [
-      "get-winevent -filterhashtable @\\{ ?logname ?= ?['\\\"]?security['\\\"]? ?; ?id ?= ?1102 ?\\}",
-      "get-winevent -filterhashtable @\\{ ?id ?= ?1102 ?; ?logname ?= ?['\\\"]?security['\\\"]? ?\\}"
+      "get-winevent -filterhashtable @\\{ ?logname ?= ?['\\\"]security['\\\"] ?; ?id ?= ?1102 ?\\}",
+      "get-winevent -filterhashtable @\\{ ?id ?= ?1102 ?; ?logname ?= ?['\\\"]security['\\\"] ?\\}"
     ],
     "wrong": "Get-WinEvent -FilterHashtable @{LogName='System';Id=1102}"
   },
@@ -286,8 +285,8 @@
     "answer": "Get-WinEvent -FilterHashtable @{LogName='System';Id=7045}",
     "why": "7045 lives in the System log (the Security log's version is 4697). A new service is a common way to stay on a machine.",
     "accept": [
-      "get-winevent -filterhashtable @\\{ ?logname ?= ?['\\\"]?system['\\\"]? ?; ?id ?= ?7045 ?\\}",
-      "get-winevent -filterhashtable @\\{ ?id ?= ?7045 ?; ?logname ?= ?['\\\"]?system['\\\"]? ?\\}"
+      "get-winevent -filterhashtable @\\{ ?logname ?= ?['\\\"]system['\\\"] ?; ?id ?= ?7045 ?\\}",
+      "get-winevent -filterhashtable @\\{ ?id ?= ?7045 ?; ?logname ?= ?['\\\"]system['\\\"] ?\\}"
     ],
     "wrong": "Get-WinEvent -FilterHashtable @{LogName='Security';Id=7045}"
   },
@@ -298,8 +297,8 @@
     "answer": "Get-WinEvent -FilterHashtable @{LogName='Microsoft-Windows-PowerShell/Operational';Id=4104}",
     "why": "4104 records the script text that ran. It is in the Operational log, not the classic 'Windows PowerShell' log.",
     "accept": [
-      "get-winevent -filterhashtable @\\{ ?logname ?= ?['\\\"]?microsoft-windows-powershell/operational['\\\"]? ?; ?id ?= ?4104 ?\\}",
-      "get-winevent -filterhashtable @\\{ ?id ?= ?4104 ?; ?logname ?= ?['\\\"]?microsoft-windows-powershell/operational['\\\"]? ?\\}"
+      "get-winevent -filterhashtable @\\{ ?logname ?= ?['\\\"]microsoft-windows-powershell/operational['\\\"] ?; ?id ?= ?4104 ?\\}",
+      "get-winevent -filterhashtable @\\{ ?id ?= ?4104 ?; ?logname ?= ?['\\\"]microsoft-windows-powershell/operational['\\\"] ?\\}"
     ],
     "wrong": "Get-WinEvent -FilterHashtable @{LogName='Windows PowerShell';Id=4104}"
   },
@@ -308,7 +307,7 @@
     "platform": "powershell",
     "prompt": "List every event log on this machine with its record count",
     "answer": "Get-WinEvent -ListLog *",
-    "why": "-ListLog describes the logs; -LogName * would start reading every event in all of them.",
+    "why": "-ListLog describes the logs. -LogName * asks for the events themselves, from every log at once.",
     "accept": [
       "get-winevent -listlog ['\\\"]?\\*['\\\"]?"
     ],
@@ -332,8 +331,8 @@
     "answer": "Get-Service | Where-Object Status -eq Running",
     "why": "Get-Service has no -Status parameter: filter its objects with Where-Object.",
     "accept": [
-      "get-service \\| where-object (-property )?status -eq ['\\\"]?running['\\\"]?",
-      "get-service \\| where-object \\{ ?\\$_\\.status -eq ['\\\"]?running['\\\"]? ?\\}"
+      "get-service ?\\| ?(where-object|where|\\?) (-property )?status -eq ['\\\"]?running['\\\"]?",
+      "get-service ?\\| ?(where-object|where|\\?) \\{ ?\\$_\\.status -eq ['\\\"]running['\\\"] ?\\}"
     ],
     "wrong": "Get-Service -Status Running"
   },
@@ -344,8 +343,7 @@
     "answer": "Get-CimInstance Win32_Service | Select-Object Name, StartMode, StartName",
     "why": "StartName is the account. It lives on the Win32_Service class, not on what Get-Service returns.",
     "accept": [
-      "get-ciminstance (-classname )?win32_service \\| select-object (-property )?name, ?startmode, ?startname",
-      "get-ciminstance (-classname )?win32_service \\| select-object (-property )?name, ?startname, ?startmode"
+      "get-ciminstance (-classname )?win32_service ?\\| ?(select-object|select) (-property )?(?=.*\\bname\\b)(?=.*\\bstartmode\\b)(?=.*\\bstartname\\b)(name|startmode|startname)(, ?(name|startmode|startname)){2}"
     ],
     "wrong": "Get-Service | Select-Object Name, StartMode, StartName"
   },
@@ -356,7 +354,8 @@
     "answer": "Get-CimInstance Win32_Service -Filter \"Name='Spooler'\" | Select-Object Name, PathName",
     "why": "PathName is the command the service starts. Check where it lives and who can write there.",
     "accept": [
-      "get-ciminstance (-classname )?win32_service -filter \\\"name ?= ?'spooler'\\\" \\| select-object (-property )?name, ?pathname",
+      "get-ciminstance (-classname )?win32_service -filter \\\"name ?= ?'spooler'\\\" ?\\| ?(select-object|select) (-property )?(?=.*\\bname\\b)(?=.*\\bpathname\\b)(name|pathname)(, ?(name|pathname)){1}",
+      "get-ciminstance (-classname )?win32_service -filter \\\"name ?= ?'spooler'\\\" ?\\| ?(select-object|select) (-property |-expandproperty )?pathname",
       "\\(get-ciminstance (-classname )?win32_service -filter \\\"name ?= ?'spooler'\\\"\\)\\.pathname"
     ],
     "wrong": "Get-Service Spooler | Select-Object Name, PathName"
@@ -368,8 +367,8 @@
     "answer": "Get-Service | Where-Object { $_.StartType -eq 'Automatic' -and $_.Status -ne 'Running' }",
     "why": "An automatic service that is stopped either failed or was stopped by someone. Both are worth a look.",
     "accept": [
-      "get-service \\| where-object \\{ ?\\$_\\.starttype -eq ['\\\"]?automatic['\\\"]? -and \\$_\\.status -ne ['\\\"]?running['\\\"]? ?\\}",
-      "get-service \\| where-object \\{ ?\\$_\\.status -ne ['\\\"]?running['\\\"]? -and \\$_\\.starttype -eq ['\\\"]?automatic['\\\"]? ?\\}"
+      "get-service ?\\| ?(where-object|where|\\?) \\{ ?\\$_\\.starttype -eq ['\\\"]automatic['\\\"] -and \\$_\\.status -ne ['\\\"]running['\\\"] ?\\}",
+      "get-service ?\\| ?(where-object|where|\\?) \\{ ?\\$_\\.status -ne ['\\\"]running['\\\"] -and \\$_\\.starttype -eq ['\\\"]automatic['\\\"] ?\\}"
     ],
     "wrong": "Get-Service | Where-Object { $_.StartType -eq 'Automatic' -and $_.Status -eq 'Running' }"
   },
@@ -380,8 +379,8 @@
     "answer": "Get-ScheduledTask | Where-Object State -ne Disabled",
     "why": "Ready and Running tasks will fire. Start an audit with the ones that can actually run.",
     "accept": [
-      "get-scheduledtask \\| where-object (-property )?state -ne ['\\\"]?disabled['\\\"]?",
-      "get-scheduledtask \\| where-object \\{ ?\\$_\\.state -ne ['\\\"]?disabled['\\\"]? ?\\}"
+      "get-scheduledtask ?\\| ?(where-object|where|\\?) (-property )?state -ne ['\\\"]?disabled['\\\"]?",
+      "get-scheduledtask ?\\| ?(where-object|where|\\?) \\{ ?\\$_\\.state -ne ['\\\"]disabled['\\\"] ?\\}"
     ],
     "wrong": "Get-ScheduledTask | Where-Object State -eq Disabled"
   },
@@ -393,7 +392,7 @@
     "why": "Actions holds the program and its arguments. Get-ScheduledTaskInfo shows when it ran, not what.",
     "accept": [
       "\\(get-scheduledtask (-taskname )?['\\\"]?backup['\\\"]?\\)\\.actions",
-      "get-scheduledtask (-taskname )?['\\\"]?backup['\\\"]? \\| select-object -expandproperty actions"
+      "get-scheduledtask (-taskname )?['\\\"]?backup['\\\"]? ?\\| ?(select-object|select) -expandproperty actions"
     ],
     "wrong": "Get-ScheduledTaskInfo -TaskName Backup"
   },
@@ -405,7 +404,7 @@
     "why": "LastRunTime and LastTaskResult are on the info object. Get-ScheduledTask alone shows only the state.",
     "accept": [
       "get-scheduledtaskinfo (-taskname )?['\\\"]?backup['\\\"]?",
-      "get-scheduledtask (-taskname )?['\\\"]?backup['\\\"]? \\| get-scheduledtaskinfo"
+      "get-scheduledtask (-taskname )?['\\\"]?backup['\\\"]? ?\\| ?get-scheduledtaskinfo"
     ],
     "wrong": "Get-ScheduledTask -TaskName Backup"
   },
@@ -416,8 +415,8 @@
     "answer": "Get-ScheduledTask | Where-Object TaskPath -notlike '\\Microsoft\\*'",
     "why": "Windows keeps its own tasks under \\Microsoft\\. What sits elsewhere was added by someone.",
     "accept": [
-      "get-scheduledtask \\| where-object (-property )?taskpath -notlike ['\\\"]?\\\\microsoft\\\\\\*['\\\"]?",
-      "get-scheduledtask \\| where-object \\{ ?\\$_\\.taskpath -notlike ['\\\"]?\\\\microsoft\\\\\\*['\\\"]? ?\\}"
+      "get-scheduledtask ?\\| ?(where-object|where|\\?) (-property )?taskpath -notlike ['\\\"]?\\\\microsoft\\\\\\*['\\\"]?",
+      "get-scheduledtask ?\\| ?(where-object|where|\\?) \\{ ?\\$_\\.taskpath -notlike ['\\\"]\\\\microsoft\\\\\\*['\\\"] ?\\}"
     ],
     "wrong": "Get-ScheduledTask -TaskPath '\\Microsoft\\*'"
   },
@@ -428,8 +427,8 @@
     "answer": "Get-LocalUser | Where-Object Enabled",
     "why": "Enabled is a property to filter on. Get-LocalUser has no -Enabled parameter.",
     "accept": [
-      "get-localuser \\| where-object (-property )?enabled( -eq \\$true)?",
-      "get-localuser \\| where-object \\{ ?\\$_\\.enabled( -eq \\$true)? ?\\}"
+      "get-localuser ?\\| ?(where-object|where|\\?) (-property )?enabled( -eq \\$true)?",
+      "get-localuser ?\\| ?(where-object|where|\\?) \\{ ?\\$_\\.enabled( -eq \\$true)? ?\\}"
     ],
     "wrong": "Get-LocalUser -Enabled"
   },
@@ -440,7 +439,7 @@
     "answer": "Get-LocalUser | Select-Object Name, Enabled, LastLogon",
     "why": "A local account calls it LastLogon. LastLogonDate is what Active Directory calls it.",
     "accept": [
-      "get-localuser \\| select-object (-property )?name, ?enabled, ?lastlogon"
+      "get-localuser ?\\| ?(select-object|select) (-property )?(?=.*\\bname\\b)(?=.*\\benabled\\b)(?=.*\\blastlogon\\b)(name|enabled|lastlogon)(, ?(name|enabled|lastlogon)){2}"
     ],
     "wrong": "Get-LocalUser | Select-Object Name, Enabled, LastLogonDate"
   },
@@ -451,10 +450,10 @@
     "answer": "Get-LocalUser | Where-Object { $null -eq $_.PasswordExpires }",
     "why": "A local account with no expiry has an empty PasswordExpires. PasswordNeverExpires is an Active Directory property.",
     "accept": [
-      "get-localuser \\| where-object \\{ ?\\$null -eq \\$_\\.passwordexpires ?\\}",
-      "get-localuser \\| where-object \\{ ?\\$_\\.passwordexpires -eq \\$null ?\\}",
-      "get-localuser \\| where-object \\{ ?-not \\$_\\.passwordexpires ?\\}",
-      "get-localuser \\| where-object (-property )?passwordexpires -eq \\$null"
+      "get-localuser ?\\| ?(where-object|where|\\?) \\{ ?\\$null -eq \\$_\\.passwordexpires ?\\}",
+      "get-localuser ?\\| ?(where-object|where|\\?) \\{ ?-not \\$_\\.passwordexpires ?\\}",
+      "get-localuser ?\\| ?(where-object|where|\\?) (-property )?passwordexpires -eq \\$null",
+      "get-localuser ?\\| ?(where-object|where|\\?) \\{ ?\\$_\\.passwordexpires -eq \\$null ?\\}"
     ],
     "wrong": "Get-LocalUser | Where-Object PasswordNeverExpires"
   },
@@ -477,7 +476,7 @@
     "why": "Access is the list of entries: who, allow or deny, and which rights. The Mode column of Get-ChildItem is attributes, not permissions.",
     "accept": [
       "\\(get-acl (-(path|literalpath) )?['\\\"]?c:\\\\shares\\\\finance['\\\"]?\\)\\.access",
-      "get-acl (-(path|literalpath) )?['\\\"]?c:\\\\shares\\\\finance['\\\"]? \\| select-object -expandproperty access"
+      "get-acl (-(path|literalpath) )?['\\\"]?c:\\\\shares\\\\finance['\\\"]? ?\\| ?(select-object|select) -expandproperty access"
     ],
     "wrong": "Get-ChildItem C:\\Shares\\Finance | Select-Object Mode"
   },
@@ -489,7 +488,7 @@
     "why": "The owner can always change the permissions, so it matters. It is on the ACL, not on the item.",
     "accept": [
       "\\(get-acl (-(path|literalpath) )?['\\\"]?c:\\\\shares\\\\finance['\\\"]?\\)\\.owner",
-      "get-acl (-(path|literalpath) )?['\\\"]?c:\\\\shares\\\\finance['\\\"]? \\| select-object (-property |-expandproperty )?owner"
+      "get-acl (-(path|literalpath) )?['\\\"]?c:\\\\shares\\\\finance['\\\"]? ?\\| ?(select-object|select) (-property |-expandproperty )?owner"
     ],
     "wrong": "(Get-Item C:\\Shares\\Finance).Owner"
   },
@@ -500,8 +499,8 @@
     "answer": "(Get-Acl C:\\Shares\\Finance).Access | Where-Object IdentityReference -eq Everyone",
     "why": "IdentityReference names who the entry is for. An Everyone entry that allows writing is a finding.",
     "accept": [
-      "\\(get-acl (-(path|literalpath) )?['\\\"]?c:\\\\shares\\\\finance['\\\"]?\\)\\.access \\| where-object (-property )?identityreference -eq ['\\\"]?everyone['\\\"]?",
-      "\\(get-acl (-(path|literalpath) )?['\\\"]?c:\\\\shares\\\\finance['\\\"]?\\)\\.access \\| where-object \\{ ?\\$_\\.identityreference -eq ['\\\"]?everyone['\\\"]? ?\\}"
+      "\\(get-acl (-(path|literalpath) )?['\\\"]?c:\\\\shares\\\\finance['\\\"]?\\)\\.access ?\\| ?(where-object|where|\\?) (-property )?identityreference -eq ['\\\"]?everyone['\\\"]?",
+      "\\(get-acl (-(path|literalpath) )?['\\\"]?c:\\\\shares\\\\finance['\\\"]?\\)\\.access ?\\| ?(where-object|where|\\?) \\{ ?\\$_\\.identityreference -eq ['\\\"]everyone['\\\"] ?\\}"
     ],
     "wrong": "(Get-Acl C:\\Shares\\Finance).Access | Where-Object Identity -eq Everyone"
   },
@@ -523,7 +522,7 @@
     "answer": "Get-NetFirewallProfile | Select-Object Name, Enabled",
     "why": "There are three profiles (Domain, Private, Public) and each has its own switch.",
     "accept": [
-      "get-netfirewallprofile \\| select-object (-property )?name, ?enabled"
+      "get-netfirewallprofile ?\\| ?(select-object|select) (-property )?(?=.*\\bname\\b)(?=.*\\benabled\\b)(name|enabled)(, ?(name|enabled)){1}"
     ],
     "wrong": "Get-NetFirewallRule | Select-Object Name, Enabled"
   },
@@ -556,7 +555,7 @@
     "answer": "Get-NetFirewallRule -DisplayName 'Lab Web' | Get-NetFirewallPortFilter",
     "why": "A rule object does not carry its ports. Pipe it to Get-NetFirewallPortFilter to see them.",
     "accept": [
-      "get-netfirewallrule -displayname ['\\\"]lab web['\\\"] \\| get-netfirewallportfilter"
+      "get-netfirewallrule -displayname ['\\\"]lab web['\\\"] ?\\| ?get-netfirewallportfilter"
     ],
     "wrong": "Get-NetFirewallRule -DisplayName 'Lab Web' | Select-Object LocalPort"
   },
@@ -591,7 +590,8 @@
     "answer": "Get-ChildItem C:\\Tools -Recurse -File | Get-FileHash",
     "why": "Get-FileHash has no -Recurse. Let Get-ChildItem find the files and pipe them in.",
     "accept": [
-      "get-childitem (-(path|literalpath) )?['\\\"]?c:\\\\tools['\\\"]?(?=.* -recurse)(?=.* -file)( -(recurse|file)){2} \\| get-filehash"
+      "get-childitem (-(path|literalpath) )?['\\\"]?c:\\\\tools['\\\"]?(?=.* -recurse)(?=.* -file)( -(recurse|file)){2} ?\\| ?get-filehash",
+      "get-childitem(?=.* -recurse)(?=.* -file)( -(recurse|file)){2} (-(path|literalpath) )?['\\\"]?c:\\\\tools['\\\"]? ?\\| ?get-filehash"
     ],
     "wrong": "Get-FileHash C:\\Tools -Recurse"
   },
@@ -613,7 +613,7 @@
     "answer": "Get-Process | Select-Object Name, Id, Path",
     "why": "A process object calls it Path. ExecutablePath is the Win32_Process name for the same thing.",
     "accept": [
-      "get-process \\| select-object (-property )?name, ?id, ?path"
+      "get-process ?\\| ?(select-object|select) (-property )?(?=.*\\bname\\b)(?=.*\\bid\\b)(?=.*\\bpath\\b)(name|id|path)(, ?(name|id|path)){2}"
     ],
     "wrong": "Get-Process | Select-Object Name, Id, ExecutablePath"
   },
@@ -624,7 +624,7 @@
     "answer": "Get-CimInstance Win32_Process | Select-Object ProcessId, Name, CommandLine",
     "why": "The command line is on Win32_Process. It shows the arguments a program was started with, which is where the story usually is.",
     "accept": [
-      "get-ciminstance (-classname )?win32_process \\| select-object (-property )?processid, ?name, ?commandline"
+      "get-ciminstance (-classname )?win32_process ?\\| ?(select-object|select) (-property )?(?=.*\\bprocessid\\b)(?=.*\\bname\\b)(?=.*\\bcommandline\\b)(processid|name|commandline)(, ?(processid|name|commandline)){2}"
     ],
     "wrong": "Get-CimInstance Win32_Service | Select-Object ProcessId, Name, CommandLine"
   },
@@ -635,7 +635,7 @@
     "answer": "Get-CimInstance Win32_Process | Select-Object Name, ProcessId, ParentProcessId",
     "why": "The parent tells you what started it: a document viewer that starts a shell is a finding.",
     "accept": [
-      "get-ciminstance (-classname )?win32_process \\| select-object (-property )?name, ?processid, ?parentprocessid"
+      "get-ciminstance (-classname )?win32_process ?\\| ?(select-object|select) (-property )?(?=.*\\bname\\b)(?=.*\\bprocessid\\b)(?=.*\\bparentprocessid\\b)(name|processid|parentprocessid)(, ?(name|processid|parentprocessid)){2}"
     ],
     "wrong": "Get-Process | Select-Object Name, Id, ParentProcessId"
   },
@@ -654,10 +654,13 @@
     "id": "ps-port-owner",
     "platform": "powershell",
     "prompt": "Find which process owns the listener on TCP port 3389",
-    "answer": "Get-NetTCPConnection -LocalPort 3389 -State Listen | Select-Object LocalPort, OwningProcess",
-    "why": "A listener is a LOCAL port. OwningProcess is the ID to hand to Get-Process -Id.",
+    "answer": "Get-NetTCPConnection -LocalPort 3389 -State Listen",
+    "why": "A listener is a LOCAL port. The OwningProcess column is the ID to hand to Get-Process -Id.",
     "accept": [
-      "get-nettcpconnection(?=.* -localport 3389)(?=.* -state listen)( -(localport 3389|state listen)){2} \\| select-object (-property )?(localport, ?)?owningprocess",
+      "get-nettcpconnection(?=.* -localport 3389)(?=.* -state listen)( -(localport 3389|state listen)){2}",
+      "get-nettcpconnection(?=.* -localport 3389)(?=.* -state listen)( -(localport 3389|state listen)){2} ?\\| ?(select-object|select) (-property )?(?=.*\\bowningprocess\\b)(owningprocess)(, ?(owningprocess)){0}",
+      "get-nettcpconnection(?=.* -localport 3389)(?=.* -state listen)( -(localport 3389|state listen)){2} ?\\| ?(select-object|select) (-property )?(?=.*\\blocalport\\b)(?=.*\\bowningprocess\\b)(localport|owningprocess)(, ?(localport|owningprocess)){1}",
+      "get-nettcpconnection(?=.* -localport 3389)(?=.* -state listen)( -(localport 3389|state listen)){2} ?\\| ?(select-object|select) -expandproperty owningprocess",
       "\\(get-nettcpconnection(?=.* -localport 3389)(?=.* -state listen)( -(localport 3389|state listen)){2}\\)\\.owningprocess"
     ],
     "wrong": "Get-NetTCPConnection -RemotePort 3389 -State Listen"
@@ -680,7 +683,7 @@
     "answer": "Get-NetTCPConnection -State Established | Select-Object RemoteAddress, RemotePort, OwningProcess",
     "why": "Established means a live conversation. This is the answer to 'what is this machine talking to'.",
     "accept": [
-      "get-nettcpconnection -state established \\| select-object (-property )?remoteaddress, ?remoteport, ?owningprocess"
+      "get-nettcpconnection -state established ?\\| ?(select-object|select) (-property )?(?=.*\\bremoteaddress\\b)(?=.*\\bremoteport\\b)(?=.*\\bowningprocess\\b)(remoteaddress|remoteport|owningprocess)(, ?(remoteaddress|remoteport|owningprocess)){2}"
     ],
     "wrong": "Get-NetTCPConnection -State Listen | Select-Object RemoteAddress, RemotePort, OwningProcess"
   },
@@ -691,9 +694,9 @@
     "answer": "Search-ADAccount -AccountDisabled -UsersOnly",
     "why": "Search-ADAccount has a switch for the common account audits. With Get-ADUser the filter is Enabled -eq $false: there is no Disabled attribute.",
     "accept": [
-      "search-adaccount -accountdisabled -usersonly",
-      "search-adaccount -usersonly -accountdisabled",
-      "get-aduser -filter ['\\\"]enabled -eq \\$false['\\\"]"
+      "search-adaccount(?=.* -accountdisabled)(?=.* -usersonly)( -(accountdisabled|usersonly)){2}",
+      "get-aduser -filter ['\\\"]enabled -eq \\$false['\\\"]",
+      "get-aduser -filter \\{ ?enabled -eq \\$false ?\\}"
     ],
     "wrong": "Get-ADUser -Filter 'Disabled -eq $true'"
   },
@@ -702,11 +705,13 @@
     "platform": "powershell",
     "prompt": "Find user accounts that have not logged on for 90 days",
     "answer": "Search-ADAccount -AccountInactive -TimeSpan 90.00:00:00 -UsersOnly",
-    "why": "Inactive is about the last logon. -AccountExpiring is about the account's end date, a different question.",
+    "why": "The time span is days.hours:minutes:seconds. A bare 90 is taken as 90 ticks, nine millionths of a second, so every account that has ever been idle matches.",
     "accept": [
-      "search-adaccount(?=.* -accountinactive)(?=.* -timespan 90(\\.00:00:00)?)(?=.* -usersonly)( -(accountinactive|timespan 90(\\.00:00:00)?|usersonly)){3}"
+      "search-adaccount(?=.* -accountinactive)(?=.* -timespan 90\\.00:00:00)(?=.* -usersonly)( -(accountinactive|timespan 90\\.00:00:00|usersonly)){3}",
+      "search-adaccount(?=.* -accountinactive)(?=.* -timespan ['\\\"]90(\\.00:00:00)?['\\\"])(?=.* -usersonly)( -(accountinactive|timespan ['\\\"]90(\\.00:00:00)?['\\\"]|usersonly)){3}",
+      "search-adaccount(?=.* -accountinactive)(?=.* -timespan \\(new-timespan -days 90\\))(?=.* -usersonly)( -(accountinactive|timespan \\(new-timespan -days 90\\)|usersonly)){3}"
     ],
-    "wrong": "Search-ADAccount -AccountExpiring -TimeSpan 90.00:00:00 -UsersOnly"
+    "wrong": "Search-ADAccount -AccountInactive -TimeSpan 90 -UsersOnly"
   },
   {
     "id": "ps-ad-locked",
@@ -715,7 +720,8 @@
     "answer": "Search-ADAccount -LockedOut",
     "why": "LockedOut is worked out by the directory, so Get-ADUser -Filter cannot search on it. Search-ADAccount can.",
     "accept": [
-      "search-adaccount -lockedout( -usersonly)?"
+      "search-adaccount -lockedout( -usersonly)?",
+      "search-adaccount -usersonly -lockedout"
     ],
     "wrong": "Get-ADUser -Filter 'LockedOut -eq $true'"
   },
@@ -727,6 +733,7 @@
     "why": "Service accounts often have this set, which is why they are worth listing.",
     "accept": [
       "get-aduser -filter ['\\\"]passwordneverexpires -eq \\$true['\\\"]",
+      "get-aduser -filter \\{ ?passwordneverexpires -eq \\$true ?\\}",
       "search-adaccount -passwordneverexpires( -usersonly)?",
       "search-adaccount -usersonly -passwordneverexpires"
     ],

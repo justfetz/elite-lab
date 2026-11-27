@@ -15,6 +15,20 @@ BeforeDiscovery {
     $script:PowerShellDrills = @($bank | Where-Object { $_.platform -eq 'powershell' } | ForEach-Object {
             @{ Id = $_.id; Drill = $_ }
         })
+
+    # other spellings of an answer, and near misses: the same table pytest reads
+    $variantPath = Join-Path (Join-Path $PSScriptRoot '..') 'drill_variants.json'
+    $script:Variants = @(Get-Content -LiteralPath $variantPath -Raw | ConvertFrom-Json | ForEach-Object { $_ } | ForEach-Object {
+            $variant = $_
+            @{
+                Id       = $variant.id
+                Text     = $variant.text
+                Accepted = [bool]$variant.accepted
+                Verdict  = $(if ($variant.accepted) { 'accepts' } else { 'rejects' })
+                Note     = $variant.note
+                Drill    = $bank | Where-Object { $_.id -eq $variant.id }
+            }
+        })
 }
 
 BeforeAll {
@@ -163,6 +177,20 @@ Describe 'Drill <Id>' -ForEach $script:PowerShellDrills {
         ($parsed.Errors | ForEach-Object { $_.Message }) -join '; ' | Should -BeNullOrEmpty
         (ConvertTo-NormalText -Text $Drill.wrong) | Should -Not -Be (ConvertTo-NormalText -Text $Drill.answer)
         Test-DrillPattern -Drill $Drill -Text $Drill.wrong | Should -BeFalse
+    }
+}
+
+Describe 'Other ways to type the answer to <Id>' -ForEach $script:Variants {
+    It '<Verdict> "<Text>" (<Note>)' {
+        $Drill | Should -Not -BeNullOrEmpty
+        if ($Accepted) {
+            # a spelling that is accepted has to be PowerShell that parses
+            ((Get-ParsedCommand -Text $Text).Errors | ForEach-Object { $_.Message }) -join '; ' | Should -BeNullOrEmpty
+            Test-DrillPattern -Drill $Drill -Text $Text | Should -BeTrue
+        }
+        else {
+            Test-DrillPattern -Drill $Drill -Text $Text | Should -BeFalse
+        }
     }
 }
 

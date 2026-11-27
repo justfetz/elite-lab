@@ -2,10 +2,10 @@
 # The list is generated from the CLI's own argparse parser (pwsh/build_completions.py).
 # These tests fail when the generated file and the parser drift apart.
 #
-# One difference between the two PowerShells is tested as it is, not hidden: Windows
-# PowerShell 5.1 takes a word that starts with a dash as a parameter of the function
-# itself and never asks a completer about it, so 5.1 completes subcommands and choices
-# but not options. PowerShell 7 completes all three.
+# One difference between the two PowerShells is tested as it is, not hidden. Windows
+# PowerShell 5.1 asks no completer about a bare - or --, so there Tab offers the options
+# only once their first letter is typed (--v, then Tab). PowerShell 7 offers them for a
+# bare dash too.
 
 BeforeDiscovery {
     $dataPath = Join-Path (Join-Path (Join-Path (Join-Path (Join-Path $PSScriptRoot '..') '..') 'pwsh') 'EliteLab') 'EliteLab.Completions.json'
@@ -41,11 +41,19 @@ BeforeDiscovery {
         @{ Line = 'elite doctor; elite l'; Expected = @($commandNames | Where-Object { $_ -like 'l*' }) }
     )
 
-    # lines whose last word starts with a dash: an option is wanted
+    # an option with its first letter typed: every PowerShell completes these
     $script:OptionCases = @(
+        @{ Line = 'elite --v'; Expected = @('--version') }
+        @{ Line = 'elite --h'; Expected = @('--help') }
+        @{ Line = 'elite --HE'; Expected = @('--help') }
+        @{ Line = 'elite lab --h'; Expected = @('--help') }
+        @{ Line = 'elite lab start --he'; Expected = @('--help') }
+        @{ Line = 'elite learn networking --h'; Expected = @('--help') }
+    )
+    # a bare dash or double dash: PowerShell 7 lists the options, 5.1 asks nobody
+    $script:BareDashCases = @(
         @{ Line = 'elite -'; Expected = @('-h', '--help', '--version') }
         @{ Line = 'elite --'; Expected = @('--help', '--version') }
-        @{ Line = 'elite --v'; Expected = @('--version') }
         @{ Line = 'elite lab --'; Expected = @('--help') }
         @{ Line = 'elite lab start --'; Expected = @('--help') }
         @{ Line = 'elite learn networking -'; Expected = @('-h', '--help') }
@@ -82,11 +90,15 @@ Describe 'Tab completion through the PowerShell completion engine' {
         ($offered -join ' ') | Should -BeExactly ($Expected -join ' ')
     }
 
-    It 'offers the options for "<Line>" (PowerShell 7)' -ForEach $script:OptionCases -Skip:(-not $script:OnPowerShell7) {
+    It 'completes the option in "<Line>"' -ForEach $script:OptionCases {
         ((Get-Completion -Line $Line) -join ' ') | Should -BeExactly ($Expected -join ' ')
     }
 
-    It 'offers no option for "<Line>" in Windows PowerShell 5.1, which never asks a completer about a dash word' -ForEach $script:OptionCases -Skip:$script:OnPowerShell7 {
+    It 'lists the options for "<Line>" (PowerShell 7)' -ForEach $script:BareDashCases -Skip:(-not $script:OnPowerShell7) {
+        ((Get-Completion -Line $Line) -join ' ') | Should -BeExactly ($Expected -join ' ')
+    }
+
+    It 'lists no option for "<Line>" in Windows PowerShell 5.1, which asks no completer about a bare dash' -ForEach $script:BareDashCases -Skip:$script:OnPowerShell7 {
         # the documented limit of 5.1. If this ever starts to fail, 5.1 has begun to ask,
         # and the README and the help of Invoke-Elite can drop the caveat.
         $offered = Get-Completion -Line $Line

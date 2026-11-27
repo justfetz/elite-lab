@@ -1,0 +1,200 @@
+[
+  {
+    "id": "ps-svc-running",
+    "text": "Get-Service|Where-Object Status -eq Running",
+    "accepted": true,
+    "note": "a pipe without spaces"
+  },
+  {
+    "id": "ps-svc-running",
+    "text": "Get-Service | where Status -eq Running",
+    "accepted": true,
+    "note": "the short name where"
+  },
+  {
+    "id": "ps-svc-running",
+    "text": "Get-Service | ? { $_.Status -eq 'Running' }",
+    "accepted": true,
+    "note": "the short name ? with a script block"
+  },
+  {
+    "id": "ps-svc-running",
+    "text": "get-service | where-object { $_.status -eq \"running\" }",
+    "accepted": true,
+    "note": "lower case, double quotes"
+  },
+  {
+    "id": "ps-svc-running",
+    "text": "Get-Service | Where-Object { $_.Status -eq Running }",
+    "accepted": false,
+    "note": "a bare word in a script block does not parse"
+  },
+  {
+    "id": "ps-svc-running",
+    "text": "Get-Service | Where-Object Status -ne Running",
+    "accepted": false,
+    "note": "the opposite test"
+  },
+  {
+    "id": "ps-evt-logon-ok",
+    "text": "Get-WinEvent -FilterHashtable @{ Id = 4624; LogName = \"Security\" }",
+    "accepted": true,
+    "note": "keys in the other order, spaces, double quotes"
+  },
+  {
+    "id": "ps-evt-logon-ok",
+    "text": "Get-WinEvent -FilterHashtable @{LogName=Security;Id=4624}",
+    "accepted": false,
+    "note": "an unquoted log name is run as a command"
+  },
+  {
+    "id": "ps-evt-newest",
+    "text": "Get-WinEvent -MaxEvents 50 -LogName System",
+    "accepted": true,
+    "note": "parameters in the other order"
+  },
+  {
+    "id": "ps-proc-path",
+    "text": "Get-Process | Select-Object Id, Name, Path",
+    "accepted": true,
+    "note": "columns in another order"
+  },
+  {
+    "id": "ps-proc-path",
+    "text": "Get-Process | select Path,Name,Id",
+    "accepted": true,
+    "note": "the short name select, no spaces after the commas"
+  },
+  {
+    "id": "ps-proc-path",
+    "text": "Get-Process | Select-Object Name, Id",
+    "accepted": false,
+    "note": "the path is missing"
+  },
+  {
+    "id": "ps-proc-path",
+    "text": "Get-Process | Select-Object Name, Name, Path",
+    "accepted": false,
+    "note": "a column twice instead of all three"
+  },
+  {
+    "id": "ps-port-owner",
+    "text": "Get-NetTCPConnection -State Listen -LocalPort 3389",
+    "accepted": true,
+    "note": "parameters in the other order"
+  },
+  {
+    "id": "ps-port-owner",
+    "text": "Get-NetTCPConnection -LocalPort 3389 -State Listen | Select-Object LocalPort, OwningProcess",
+    "accepted": true,
+    "note": "with the two columns picked out"
+  },
+  {
+    "id": "ps-port-owner",
+    "text": "(Get-NetTCPConnection -LocalPort 3389 -State Listen).OwningProcess",
+    "accepted": true,
+    "note": "just the process ID"
+  },
+  {
+    "id": "ps-port-owner",
+    "text": "Get-NetTCPConnection -LocalPort 3389",
+    "accepted": false,
+    "note": "not limited to listeners"
+  },
+  {
+    "id": "ps-ad-disabled",
+    "text": "Get-ADUser -Filter {Enabled -eq $false}",
+    "accepted": true,
+    "note": "the filter as a script block"
+  },
+  {
+    "id": "ps-ad-disabled",
+    "text": "Search-ADAccount -UsersOnly -AccountDisabled",
+    "accepted": true,
+    "note": "switches in the other order"
+  },
+  {
+    "id": "ps-ad-inactive",
+    "text": "Search-ADAccount -UsersOnly -AccountInactive -TimeSpan 90.00:00:00",
+    "accepted": true,
+    "note": "parameters in another order"
+  },
+  {
+    "id": "ps-ad-inactive",
+    "text": "Search-ADAccount -AccountInactive -TimeSpan (New-TimeSpan -Days 90) -UsersOnly",
+    "accepted": true,
+    "note": "the time span built with New-TimeSpan"
+  },
+  {
+    "id": "ps-ad-inactive",
+    "text": "Search-ADAccount -AccountInactive -TimeSpan '90' -UsersOnly",
+    "accepted": true,
+    "note": "a quoted 90 is read as 90 days"
+  },
+  {
+    "id": "ps-ad-inactive",
+    "text": "Search-ADAccount -AccountInactive -TimeSpan 90 -UsersOnly",
+    "accepted": false,
+    "note": "a bare 90 is 90 ticks, not 90 days"
+  },
+  {
+    "id": "ps-hash-tree",
+    "text": "Get-ChildItem C:\\Tools -File -Recurse | Get-FileHash",
+    "accepted": true,
+    "note": "switches in the other order"
+  },
+  {
+    "id": "ps-hash-tree",
+    "text": "Get-ChildItem -Recurse -File -Path C:\\Tools | Get-FileHash",
+    "accepted": true,
+    "note": "the path last, named"
+  },
+  {
+    "id": "ps-hash-tree",
+    "text": "Get-ChildItem C:\\Tools -File | Get-FileHash",
+    "accepted": false,
+    "note": "subfolders are left out"
+  },
+  {
+    "id": "ps-fw-inbound-allow",
+    "text": "Get-NetFirewallRule -Enabled True -Action Allow -Direction Inbound",
+    "accepted": true,
+    "note": "parameters in another order"
+  },
+  {
+    "id": "ps-fw-inbound-allow",
+    "text": "Get-NetFirewallRule -Direction Inbound -Direction Inbound -Action Allow",
+    "accepted": false,
+    "note": "one parameter twice instead of all three"
+  },
+  {
+    "id": "ps-svc-binary",
+    "text": "(Get-CimInstance Win32_Service -Filter \"Name='Spooler'\").PathName",
+    "accepted": true,
+    "note": "just the path"
+  },
+  {
+    "id": "ps-svc-account",
+    "text": "Get-CimInstance -ClassName Win32_Service | select StartName, Name, StartMode",
+    "accepted": true,
+    "note": "the class named, select, another order"
+  },
+  {
+    "id": "ps-user-pw-never",
+    "text": "Get-LocalUser | where PasswordExpires -eq $null",
+    "accepted": true,
+    "note": "the short form"
+  },
+  {
+    "id": "ps-acl-everyone",
+    "text": "(Get-Acl C:\\Shares\\Finance).Access | ? { $_.IdentityReference -eq 'Everyone' }",
+    "accepted": true,
+    "note": "a script block with ?"
+  },
+  {
+    "id": "ps-task-nonmicrosoft",
+    "text": "Get-ScheduledTask | where { $_.TaskPath -notlike '\\Microsoft\\*' }",
+    "accepted": true,
+    "note": "a script block with where"
+  }
+]

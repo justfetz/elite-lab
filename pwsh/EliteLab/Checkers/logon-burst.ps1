@@ -143,6 +143,16 @@ $rows = Import-Csv -LiteralPath (Join-Path $Path 'logons.csv')
             Expected = @('192.0.2.10')
         }
         @{
+            Name     = 'a burst in the middle of a long day'
+            Why      = '203.0.113.80 fails now and then from 07:10 to 11:00, and ten times in two minutes at 09:00. Its failures span hours, and its first ten are not the burst: only a window that slides over all of them finds it.'
+            Series   = @($officeNoise + @(
+                    @{ Ip = '203.0.113.80'; Id = 4625; User = 'administrator'; Start = '07:10:00'; Repeat = 4; Step = 1500 }
+                    @{ Ip = '203.0.113.80'; Id = 4625; User = 'administrator'; Start = '09:00:00'; Repeat = 10; Step = 13 }
+                    @{ Ip = '203.0.113.80'; Id = 4625; User = 'administrator'; Start = '10:00:00'; Repeat = 3; Step = 1800 }
+                ))
+            Expected = @('203.0.113.80')
+        }
+        @{
             Name     = 'two sources, rows out of order'
             Why      = 'The rows are shuffled. The burst from 203.0.113.50 straddles 08:05:00 (six failures before, four after), so fixed five-minute buckets miss it. 192.0.2.99 fails twelve times in two groups an hour apart: not a burst.'
             Shuffle  = $true

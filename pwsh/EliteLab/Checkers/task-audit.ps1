@@ -2,15 +2,18 @@
 #
 # The fixture is one CSV file. Nothing here touches the Task Scheduler: the rows are
 # invented, and the encoded command lines decode to Get-Date and Write-Output "hello".
-# Each case isolates one rule, so a script that skips that rule fails that case only.
+# Each rule has a case of its own, and inside it one row for every spelling the brief
+# lists: a script that skips a rule, or one spelling of it, fails that case.
 
 $quiet = @(
     @{ TaskName = 'ScheduledDefrag'; TaskPath = '\Microsoft\Windows\Defrag\'; State = 'Ready'; RunAs = 'SYSTEM'
         Execute = '%windir%\system32\defrag.exe'; Arguments = '-c -h -k -g -$' }
     @{ TaskName = 'Schedule Scan'; TaskPath = '\Microsoft\Windows\UpdateOrchestrator\'; State = 'Ready'; RunAs = 'SYSTEM'
         Execute = '%systemroot%\system32\usoclient.exe'; Arguments = 'StartScan' }
+    # C:\Users\ in the arguments is not where the program runs from
     @{ TaskName = 'BackupNightly'; TaskPath = '\Lakefront\'; State = 'Ready'; RunAs = 'LAKEFRONT\svc_backup'
-        Execute = '"C:\Program Files\Lakefront\Backup\backup.exe"'; Arguments = '--target D:\Backups --quiet' }
+        Execute = '"C:\Program Files\Lakefront\Backup\backup.exe"'
+        Arguments = '--source C:\Users\Public\Documents --target D:\Backups --quiet' }
     # -Encoding is not -enc, and -ExecutionPolicy is not -e
     @{ TaskName = 'LogRotate'; TaskPath = '\Lakefront\'; State = 'Ready'; RunAs = 'SYSTEM'
         Execute = 'powershell.exe'; Arguments = '-NoProfile -File C:\Scripts\Rotate-Logs.ps1 -Encoding UTF8' }
@@ -34,14 +37,22 @@ $writableFolder = @(
         Execute = 'c:\windows\temp\tc.exe'; Arguments = '' }
     @{ TaskName = 'ProfileTidy'; TaskPath = '\'; State = 'Ready'; RunAs = 'LAKEFRONT\dana'
         Execute = '%APPDATA%\Tidy\tidy.exe'; Arguments = '--silent' }
+    @{ TaskName = 'CacheWarm'; TaskPath = '\'; State = 'Ready'; RunAs = 'LAKEFRONT\dana'
+        Execute = '%TEMP%\cachewarm.exe'; Arguments = '' }
+    @{ TaskName = 'NotesHelper'; TaskPath = '\'; State = 'Ready'; RunAs = 'LAKEFRONT\miguel'
+        Execute = '"%LOCALAPPDATA%\Programs\Notes\notes-helper.exe"'; Arguments = '--tray' }
+    @{ TaskName = 'ScanInbox'; TaskPath = '\Lakefront\'; State = 'Ready'; RunAs = 'SYSTEM'
+        Execute = '%public%\Scans\scan-inbox.cmd'; Arguments = '' }
 )
 
 $hiddenCommand = @(
     @{ TaskName = 'HealthCheck'; TaskPath = '\'; State = 'Ready'; RunAs = 'SYSTEM'
         Execute = 'powershell.exe'; Arguments = '-NoProfile -WindowStyle Hidden -File C:\Scripts\health.ps1' }
+    @{ TaskName = 'TrayRefresh'; TaskPath = '\'; State = 'Ready'; RunAs = 'LAKEFRONT\dana'
+        Execute = 'powershell.exe'; Arguments = '-nop -w hidden -File C:\Scripts\tray.ps1' }
     @{ TaskName = 'DriverSync'; TaskPath = '\Microsoft\Windows\'; State = 'Ready'; RunAs = 'SYSTEM'
         Execute = 'powershell.exe'
-        Arguments = '-nop -w hidden -enc VwByAGkAdABlAC0ATwB1AHQAcAB1AHQAIAAiAGgAZQBsAGwAbwAiAA==' }
+        Arguments = '-nop -enc VwByAGkAdABlAC0ATwB1AHQAcAB1AHQAIAAiAGgAZQBsAGwAbwAiAA==' }
     @{ TaskName = 'FontCache'; TaskPath = '\'; State = 'Ready'; RunAs = 'SYSTEM'
         Execute = 'C:\Windows\System32\WindowsPowerShell\v1.0\powershell.exe'
         Arguments = '-EncodedCommand RwBlAHQALQBEAGEAdABlAA==' }
@@ -123,40 +134,43 @@ foreach ($task in $tasks) {
 
     Sample     = @{
         Name  = 'sample'
-        Tasks = @($quiet[0], $writableFolder[0], $quiet[3], $hiddenCommand[1], $quiet[2], $network[0], $quiet[5])
+        Tasks = @($quiet[0], $writableFolder[0], $quiet[3], $hiddenCommand[2], $quiet[2], $network[0], $quiet[5])
     }
 
     Cases      = @(
         @{
             Name     = 'a clean export'
-            Why      = 'Nothing here is risky. A script that flags a row is matching too loosely: -Encoding is not -enc, -ExecutionPolicy is not -e, httpd.conf is not a URL, and D:\Apps\Users\ is not C:\Users\.'
+            Why      = 'Nothing here is risky. A script that flags a row is matching too loosely: -Encoding is not -enc, -ExecutionPolicy is not -e, httpd.conf is not a URL, D:\Apps\Users\ is not C:\Users\, and a path in the arguments is not where the program runs from.'
             Tasks    = $quiet
             Expected = @()
         }
         @{
             Name     = 'program in a folder any user can write to'
-            Why      = 'Rule 1 only. One path is quoted, one is lower case and one starts with %APPDATA%.'
-            Tasks    = @($quiet[0], $writableFolder[0], $quiet[2], $writableFolder[1], $quiet[6], $writableFolder[2], $writableFolder[3], $quiet[1])
-            Expected = @('Updater', 'SyncHelper', 'TelemetryCache', 'ProfileTidy')
+            Why      = 'Rule 1 only, with one task for each of the seven places it lists. Two paths are quoted and two are in lower case.'
+            Tasks    = @($quiet[0], $writableFolder[0], $quiet[2], $writableFolder[1], $quiet[6], $writableFolder[2],
+                $writableFolder[3], $quiet[1], $writableFolder[4], $writableFolder[5], $writableFolder[6])
+            Expected = @('Updater', 'SyncHelper', 'TelemetryCache', 'ProfileTidy', 'CacheWarm', 'NotesHelper', 'ScanInbox')
         }
         @{
             Name     = 'command line that hides what it runs'
-            Why      = 'Rule 2 only: -WindowStyle Hidden, -w hidden, -enc, -EncodedCommand and -e. The -Encoding, -ExecutionPolicy and -WindowStyle Normal rows must stay clean.'
-            Tasks    = @($quiet[3], $hiddenCommand[0], $quiet[4], $hiddenCommand[1], $hiddenCommand[2], $quiet[0], $hiddenCommand[3])
-            Expected = @('HealthCheck', 'DriverSync', 'FontCache', 'Indexer')
+            Why      = 'Rule 2 only, with one task for each of its five spellings: -WindowStyle Hidden, -w hidden, -enc, -EncodedCommand and -e. The -Encoding, -ExecutionPolicy and -WindowStyle Normal rows must stay clean.'
+            Tasks    = @($quiet[3], $hiddenCommand[0], $quiet[4], $hiddenCommand[1], $hiddenCommand[2], $quiet[0],
+                $hiddenCommand[3], $hiddenCommand[4])
+            Expected = @('HealthCheck', 'TrayRefresh', 'DriverSync', 'FontCache', 'Indexer')
         }
         @{
             Name     = 'command line that reaches the network'
-            Why      = 'Rule 3 only: http:// and https://, in any case. httpd.conf is a file name.'
+            Why      = 'Rule 3 only: one task with https://, one with http:// and one with HTTP:// in capitals. httpd.conf is a file name.'
             Tasks    = @($quiet[5], $network[0], $quiet[2], $network[1], $network[2], $quiet[1])
             Expected = @('PatchFetch', 'HelpViewer', 'CertSync')
         }
         @{
             Name     = 'all three rules in one export'
-            Why      = 'Every rule at once, among ordinary tasks. WeeklySync breaks two rules and is still one finding.'
+            Why      = 'Every rule at once, among ordinary tasks. WeeklySync breaks two rules and is still one finding: printing it twice fails the case.'
             Tasks    = @($quiet + $writableFolder + $hiddenCommand + $network + @($twoRules))
-            Expected = @('Updater', 'SyncHelper', 'TelemetryCache', 'ProfileTidy', 'HealthCheck', 'DriverSync',
-                'FontCache', 'Indexer', 'PatchFetch', 'HelpViewer', 'CertSync', 'WeeklySync')
+            Expected = @('Updater', 'SyncHelper', 'TelemetryCache', 'ProfileTidy', 'CacheWarm', 'NotesHelper', 'ScanInbox',
+                'HealthCheck', 'TrayRefresh', 'DriverSync', 'FontCache', 'Indexer', 'PatchFetch', 'HelpViewer',
+                'CertSync', 'WeeklySync')
         }
     )
 }
