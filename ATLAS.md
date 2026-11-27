@@ -39,7 +39,8 @@ and **drills it into muscle memory**. Hands-on first.
 | Break+fix pairs (blue-team twin) | 🟡 | 50% | `app-01-fix`, `idor-01-fix`, `ai-01-fix`, `domain-01-fix`; a few attack missions still need twins |
 | Spaced repetition + review coach | ✅ | 85% | `elite review` ranks weak/stale/unfinished; drills resurface overdue items |
 | Randomized per-user flags | ⬜ | 0% | flags are deterministic — memorizable/shareable |
-| **Command-drill mode** (type the real command) | ✅ | 90% | `elite drill commands`: 22 commands, spaced repetition; add more over time |
+| **Command-drill mode** (type the real command) | ✅ | 90% | `elite drill commands`: 70 commands, 48 of them PowerShell for administrators and defenders; spaced repetition |
+| **PowerShell module** (`pwsh/EliteLab`) | ✅ | 90% | native `elite` with tab completion generated from the CLI's parser, `Test-EliteSetup`, four blue-team checkers; Pester + PSScriptAnalyzer + CI on Windows PowerShell 5.1 and PowerShell 7 |
 | **`elite path`** (guided campaign up the layers) | ✅ | 90% | `elite path`: ordered campaign by layer with your progress + NEXT |
 | **`elite engage`** (connected company, open sandbox + loot) | ✅ | 85% | recon reveals the surface; loot chains to unlock deeper targets, derived from mission progress |
 | **Live lab provisioner** (Docker SQL Server + app, AD) | ⬜ | 0% | the realism jump — not built |
