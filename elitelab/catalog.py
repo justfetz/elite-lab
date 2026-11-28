@@ -11,10 +11,13 @@ from .missions import load_missions
 
 ROOT = Path(__file__).resolve().parent.parent
 BOOK_INDEX = ROOT / ".book_index.pkl"
-DOCS = [("README.md", "start here"), ("map (elite map)", "the territory + how it connects"),
-        ("SCENARIO.md", "the company story"), ("CURRICULUM.md", "the layer map"),
+DOCS = [("README.md", "start here: what this is + the doc map"),
+        ("map (elite map)", "the territory + how it connects"),
+        ("SCENARIO.md", "the company story"), ("ATLAS.md", "every mission + what's not built yet"),
+        ("MISSIONS.md", "how a mission is designed"), ("CURRICULUM.md", "the layer map"),
+        ("PRINCIPLES.md", "the design rules"),
         ("LIBRARY.md", "set up your local AI book tutor"), ("TOOLS.md", "the tool/library index"),
-        ("PRINCIPLES.md", "the design rules"), ("ATLAS.md", "live status / what's next")]
+        ("VISION.md", "the long-run plan"), ("SPEC.md", "the build order")]
 
 
 def _count(mod):

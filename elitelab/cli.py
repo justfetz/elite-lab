@@ -119,7 +119,7 @@ def build_parser(modules):
     sub.add_parser("review", help="what to redo now: weak spots + stale mastery")
 
     # engage: the connected company engagement (open sandbox)
-    ep = sub.add_parser("engage", help="assess Vantaris AI as one connected engagement")
+    ep = sub.add_parser("engage", help="assess Lakefront Paper & Container Co. as one connected engagement")
     ep.add_argument("engage_action", nargs="?", choices=["recon"],
                     help="'recon' to reveal the surface; omit for the target board")
 

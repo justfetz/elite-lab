@@ -1,5 +1,7 @@
 # Build your own library + a free local AI tutor
 
+> **Doc status: reference** · answers: *How do I set up the local AI tutor over my own books?* · [doc map](README.md#doc-map)
+
 This guide sets up a private study system: a shelf of books *you own*, searched locally,
 with a free AI model running **on your own laptop** — no account, no internet, nothing
 leaves your machine. You end up able to ask your books questions in plain English from the
@@ -129,16 +131,9 @@ relevant passages to read. The model is the bonus, not the engine.
 
 ## How it fits together
 
-```
-your PDFs ──pypdf──▶ text ──scikit-learn(TF-IDF)──▶ searchable index ──▶ top pages
-                                                                            │
-                        your question ────────────────────────────────────┘
-                                                                            ▼
-                                              local model (Ollama) explains, cites [book p.N]
-```
-
-- **pypdf** reads the words out of the PDF.
-- **scikit-learn** turns them into something searchable and finds the right pages.
-- **Ollama** runs the model that explains those pages — on your laptop, for free.
+pypdf reads the words out of your PDFs, scikit-learn turns them into a searchable
+index and finds the right pages, and Ollama runs the model that explains those pages.
+[TOOLS.md](TOOLS.md#how-the-study-stack-fits-together) has the diagram and says why
+each library was chosen.
 
 Private by construction: your books, your index, and your model all live on your disk.
