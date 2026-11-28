@@ -1,0 +1,128 @@
+name: CI
+
+# Every push and every pull request runs three legs:
+#
+#   Windows PowerShell 5.1   windows-latest, shell: powershell
+#   PowerShell 7 on Windows  windows-latest, shell: pwsh
+#   PowerShell 7 on Ubuntu   ubuntu-latest,  shell: pwsh
+#
+# Each leg runs the Python suite (pytest), PSScriptAnalyzer with the committed
+# settings, and the Pester suite for the EliteLab module (tests/pwsh).
+#
+# The Python that setup-python installs runs pytest. On the PowerShell 7 on Windows leg
+# that is 3.8, the oldest version the project supports (ubuntu-latest no longer offers
+# it), so the bootstrap and the completion generator are tested there under 3.8. The
+# module picks its own Python the way a learner's machine would: py, python3, python.
+#
+# The Windows legs also add the Active Directory PowerShell module, so that the drills
+# on directory queries are checked against the real cmdlets. Nothing connects to a domain.
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.event_name }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    name: ${{ matrix.name }}
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: Windows PowerShell 5.1
+            os: windows-latest
+            shell: powershell
+            python: '3.13'
+          - name: PowerShell 7 on Windows
+            os: windows-latest
+            shell: pwsh
+            python: '3.8'
+          - name: PowerShell 7 on Ubuntu
+            os: ubuntu-latest
+            shell: pwsh
+            python: '3.12'
+    defaults:
+      run:
+        shell: ${{ matrix.shell }}
+    steps:
+      - name: Check out the repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python ${{ matrix.python }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python }}
+
+      - name: Show the PowerShell and Python in use
+        run: |
+          "PowerShell $($PSVersionTable.PSVersion) ($($PSVersionTable.PSEdition)) on $([System.Environment]::OSVersion.VersionString)"
+          "pytest runs under: $(python --version)"
+          Import-Module ./pwsh/EliteLab
+          "elite runs under:  Python $((Test-EliteSetup | Select-Object -First 1).Detail)"
+
+      - name: Add the Active Directory PowerShell module (Windows legs)
+        if: runner.os == 'Windows'
+        continue-on-error: true
+        shell: powershell
+        run: |
+          $ProgressPreference = 'SilentlyContinue'
+          try {
+            $feature = Install-WindowsFeature -Name RSAT-AD-PowerShell
+            "RSAT-AD-PowerShell: success={0} exit={1}" -f $feature.Success, $feature.ExitCode
+          }
+          catch {
+            "RSAT-AD-PowerShell could not be added: $($_.Exception.Message)"
+          }
+          $module = Get-Module -ListAvailable -Name ActiveDirectory | Select-Object -First 1
+          if ($null -eq $module) {
+            # the run goes on and says so on its summary page. Where the module is there,
+            # the Pester suite requires that every directory cmdlet in the drills was checked.
+            '::warning::The Active Directory module could not be added on this leg, so the directory drills cannot be checked against the real cmdlets.'
+          }
+          else {
+            '{0} {1}' -f $module.Name, $module.Version
+          }
+
+      - name: Python suite (pytest)
+        run: |
+          python -m pip install --disable-pip-version-check --quiet pytest
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          python -m pytest -q
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+
+      - name: Install Pester and PSScriptAnalyzer
+        run: |
+          $ProgressPreference = 'SilentlyContinue'
+          [Net.ServicePointManager]::SecurityProtocol = [Net.ServicePointManager]::SecurityProtocol -bor [Net.SecurityProtocolType]::Tls12
+          Set-PSRepository -Name PSGallery -InstallationPolicy Trusted
+          Install-Module -Name Pester -RequiredVersion 5.7.1 -Scope CurrentUser -Force -SkipPublisherCheck
+          Install-Module -Name PSScriptAnalyzer -RequiredVersion 1.24.0 -Scope CurrentUser -Force
+          Import-Module Pester -RequiredVersion 5.7.1
+          Import-Module PSScriptAnalyzer -RequiredVersion 1.24.0
+          Get-Module -Name Pester, PSScriptAnalyzer | ForEach-Object { '{0} {1}' -f $_.Name, $_.Version }
+
+      # The analyzer runs in a child process with a time limit and is started again if it
+      # crashes or hangs (it did both once on the Ubuntu leg). Findings are never retried.
+      - name: PSScriptAnalyzer
+        run: |
+          ./tests/pwsh/Invoke-Analyzer.ps1 -ModuleVersion 1.24.0
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+
+      - name: Pester
+        run: |
+          Import-Module Pester -RequiredVersion 5.7.1
+          $configuration = New-PesterConfiguration
+          $configuration.Run.Path = 'tests/pwsh'
+          $configuration.Run.PassThru = $true
+          $configuration.Output.Verbosity = 'Detailed'
+          $result = Invoke-Pester -Configuration $configuration
+          "Pester {0}: {1} passed, {2} failed, {3} skipped, {4} not run, in {5:n0} s" -f (Get-Module Pester).Version, $result.PassedCount, $result.FailedCount, $result.SkippedCount, $result.NotRunCount, $result.Duration.TotalSeconds
+          if ($result.Result -ne 'Passed' -or $result.FailedCount -gt 0 -or $result.PassedCount -eq 0) { exit 1 }

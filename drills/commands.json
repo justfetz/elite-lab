@@ -84,7 +84,8 @@
     "why": "Enumerates all domain-joined machines.",
     "accept": [
       "get-adcomputer -filter \\*"
-    ]
+    ],
+    "wrong": "Get-ADComputer *"
   },
   {
     "id": "ad-dcs",
@@ -94,7 +95,8 @@
     "why": "DCs are the crown jewels of AD.",
     "accept": [
       "get-addomaincontroller -filter \\*"
-    ]
+    ],
+    "wrong": "Get-ADDomain"
   },
   {
     "id": "ad-dadmins",
@@ -104,7 +106,8 @@
     "why": "Who holds the keys to the domain.",
     "accept": [
       "get-adgroupmember ['\\\"]?domain admins['\\\"]?"
-    ]
+    ],
+    "wrong": "Get-ADGroup 'Domain Admins'"
   },
   {
     "id": "local-admins",
@@ -114,7 +117,8 @@
     "why": "Who is admin on THIS box.",
     "accept": [
       "get-localgroupmember administrators"
-    ]
+    ],
+    "wrong": "Get-LocalGroup Administrators"
   },
   {
     "id": "net-listen",
@@ -124,7 +128,8 @@
     "why": "PowerShell's answer to 'what's exposed here'.",
     "accept": [
       "get-nettcpconnection -state listen"
-    ]
+    ],
+    "wrong": "Get-NetTCPConnection -State Established"
   },
   {
     "id": "whoami-priv",
@@ -142,7 +147,8 @@
     "why": "Event 4625 = failed logon: spot brute force.",
     "accept": [
       "get-winevent -filterhashtable @\\{logname=['\\\"]security['\\\"];id=4625\\}"
-    ]
+    ],
+    "wrong": "Get-WinEvent -FilterHashtable @{LogName='Security';Id=4624}"
   },
   {
     "id": "john-md5",
@@ -212,5 +218,565 @@
     "accept": [
       "sqlmap -u ['\\\"]?http://10\\.0\\.0\\.5/item\\?id=1['\\\"]? --batch"
     ]
+  },
+  {
+    "id": "ps-evt-newest",
+    "platform": "powershell",
+    "prompt": "Show the 50 newest events in the System log",
+    "answer": "Get-WinEvent -LogName System -MaxEvents 50",
+    "why": "-MaxEvents caps the count, and Get-WinEvent returns the newest first. -Newest belongs to the older Get-EventLog.",
+    "accept": [
+      "get-winevent(?=.* -logname (?:system|'system'|\\\"system\\\"))(?=.* -maxevents 50)(?: -(?:logname (?:system|'system'|\\\"system\\\")|maxevents 50)){2}"
+    ],
+    "wrong": "Get-WinEvent -LogName System -Newest 50"
+  },
+  {
+    "id": "ps-evt-logon-ok",
+    "platform": "powershell",
+    "prompt": "List successful logons (event 4624) from the Security log",
+    "answer": "Get-WinEvent -FilterHashtable @{LogName='Security';Id=4624}",
+    "why": "4624 is a logon that worked; 4625 is one that failed. The hashtable filters at the source, which is far faster than filtering afterwards.",
+    "accept": [
+      "get-winevent -filterhashtable @\\{ ?(?=[^}]*\\blogname ?=)(?=[^}]*\\bid ?=)(?:logname ?= ?(?:'security'|\\\"security\\\")|id ?= ?4624)(?: ?; ?(?:logname ?= ?(?:'security'|\\\"security\\\")|id ?= ?4624)){1} ?\\}"
+    ],
+    "wrong": "Get-WinEvent -FilterHashtable @{LogName='Security';Id=4625}"
+  },
+  {
+    "id": "ps-evt-last-day",
+    "platform": "powershell",
+    "prompt": "Find failed logons (event 4625) from the last 24 hours",
+    "answer": "Get-WinEvent -FilterHashtable @{LogName='Security';Id=4625;StartTime=(Get-Date).AddDays(-1)}",
+    "why": "StartTime is the oldest event you want. EndTime with the same value would return everything BEFORE yesterday.",
+    "accept": [
+      "get-winevent -filterhashtable @\\{ ?(?=[^}]*\\blogname ?=)(?=[^}]*\\bid ?=)(?=[^}]*\\bstarttime ?=)(?:logname ?= ?(?:'security'|\\\"security\\\")|id ?= ?4625|starttime ?= ?\\(get-date\\)\\.add(?:days\\(-1\\)|hours\\(-24\\)))(?: ?; ?(?:logname ?= ?(?:'security'|\\\"security\\\")|id ?= ?4625|starttime ?= ?\\(get-date\\)\\.add(?:days\\(-1\\)|hours\\(-24\\)))){2} ?\\}"
+    ],
+    "wrong": "Get-WinEvent -FilterHashtable @{LogName='Security';Id=4625;EndTime=(Get-Date).AddDays(-1)}"
+  },
+  {
+    "id": "ps-evt-account-created",
+    "platform": "powershell",
+    "prompt": "Find user accounts that were created (event 4720)",
+    "answer": "Get-WinEvent -FilterHashtable @{LogName='Security';Id=4720}",
+    "why": "4720 = a user account was created. 4726 is the opposite: an account was deleted.",
+    "accept": [
+      "get-winevent -filterhashtable @\\{ ?(?=[^}]*\\blogname ?=)(?=[^}]*\\bid ?=)(?:logname ?= ?(?:'security'|\\\"security\\\")|id ?= ?4720)(?: ?; ?(?:logname ?= ?(?:'security'|\\\"security\\\")|id ?= ?4720)){1} ?\\}"
+    ],
+    "wrong": "Get-WinEvent -FilterHashtable @{LogName='Security';Id=4726}"
+  },
+  {
+    "id": "ps-evt-log-cleared",
+    "platform": "powershell",
+    "prompt": "Find when the Security audit log was cleared (event 1102)",
+    "answer": "Get-WinEvent -FilterHashtable @{LogName='Security';Id=1102}",
+    "why": "1102 is written to the Security log itself when someone clears it. A cleared log is a finding.",
+    "accept": [
+      "get-winevent -filterhashtable @\\{ ?(?=[^}]*\\blogname ?=)(?=[^}]*\\bid ?=)(?:logname ?= ?(?:'security'|\\\"security\\\")|id ?= ?1102)(?: ?; ?(?:logname ?= ?(?:'security'|\\\"security\\\")|id ?= ?1102)){1} ?\\}"
+    ],
+    "wrong": "Get-WinEvent -FilterHashtable @{LogName='System';Id=1102}"
+  },
+  {
+    "id": "ps-evt-service-installed",
+    "platform": "powershell",
+    "prompt": "Find services that were installed on this machine (event 7045)",
+    "answer": "Get-WinEvent -FilterHashtable @{LogName='System';Id=7045}",
+    "why": "7045 lives in the System log (the Security log's version is 4697). A new service is a common way to stay on a machine.",
+    "accept": [
+      "get-winevent -filterhashtable @\\{ ?(?=[^}]*\\blogname ?=)(?=[^}]*\\bid ?=)(?:logname ?= ?(?:'system'|\\\"system\\\")|id ?= ?7045)(?: ?; ?(?:logname ?= ?(?:'system'|\\\"system\\\")|id ?= ?7045)){1} ?\\}"
+    ],
+    "wrong": "Get-WinEvent -FilterHashtable @{LogName='Security';Id=7045}"
+  },
+  {
+    "id": "ps-evt-scriptblock",
+    "platform": "powershell",
+    "prompt": "Read PowerShell script-block logging events (event 4104)",
+    "answer": "Get-WinEvent -FilterHashtable @{LogName='Microsoft-Windows-PowerShell/Operational';Id=4104}",
+    "why": "4104 records the script text that ran. It is in the Operational log, not the classic 'Windows PowerShell' log.",
+    "accept": [
+      "get-winevent -filterhashtable @\\{ ?(?=[^}]*\\blogname ?=)(?=[^}]*\\bid ?=)(?:logname ?= ?(?:'microsoft-windows-powershell/operational'|\\\"microsoft-windows-powershell/operational\\\")|id ?= ?4104)(?: ?; ?(?:logname ?= ?(?:'microsoft-windows-powershell/operational'|\\\"microsoft-windows-powershell/operational\\\")|id ?= ?4104)){1} ?\\}"
+    ],
+    "wrong": "Get-WinEvent -FilterHashtable @{LogName='Windows PowerShell';Id=4104}"
+  },
+  {
+    "id": "ps-evt-list-logs",
+    "platform": "powershell",
+    "prompt": "List every event log on this machine with its record count",
+    "answer": "Get-WinEvent -ListLog *",
+    "why": "-ListLog describes the logs. -LogName * asks for the events themselves, from every log at once.",
+    "accept": [
+      "get-winevent -listlog (?:\\*|'\\*'|\\\"\\*\\\")"
+    ],
+    "wrong": "Get-WinEvent -LogName *"
+  },
+  {
+    "id": "ps-evt-from-file",
+    "platform": "powershell",
+    "prompt": "Read the events in the saved log file C:\\Cases\\security.evtx",
+    "answer": "Get-WinEvent -Path C:\\Cases\\security.evtx",
+    "why": "-Path reads an exported .evtx file, so you can work a case away from the machine. -LogName only names a live log.",
+    "accept": [
+      "get-winevent -path (?:c:\\\\cases\\\\security\\.evtx|'c:\\\\cases\\\\security\\.evtx'|\\\"c:\\\\cases\\\\security\\.evtx\\\")"
+    ],
+    "wrong": "Get-WinEvent -LogName C:\\Cases\\security.evtx"
+  },
+  {
+    "id": "ps-svc-running",
+    "platform": "powershell",
+    "prompt": "List only the services that are running",
+    "answer": "Get-Service | Where-Object Status -eq Running",
+    "why": "Get-Service has no -Status parameter: filter its objects with Where-Object.",
+    "accept": [
+      "get-service ?\\| ?(?:where-object|where|\\?) (?:-property )?status -eq (?:running|'running'|\\\"running\\\")",
+      "get-service ?\\| ?(?:where-object|where|\\?) \\{ ?\\$_\\.status -eq (?:'running'|\\\"running\\\") ?\\}"
+    ],
+    "wrong": "Get-Service -Status Running"
+  },
+  {
+    "id": "ps-svc-account",
+    "platform": "powershell",
+    "prompt": "Show each service's start mode and the account it runs as",
+    "answer": "Get-CimInstance Win32_Service | Select-Object Name, StartMode, StartName",
+    "why": "StartName is the account. It lives on the Win32_Service class, not on what Get-Service returns.",
+    "accept": [
+      "get-ciminstance (?:-classname )?win32_service ?\\| ?(?:select-object|select) (?:-property )?(?=.*\\bname\\b)(?=.*\\bstartmode\\b)(?=.*\\bstartname\\b)(?!.*\\bname\\b.*\\bname\\b)(?!.*\\bstartmode\\b.*\\bstartmode\\b)(?!.*\\bstartname\\b.*\\bstartname\\b)(?:name|startmode|startname)(?:, ?(?:name|startmode|startname)){2,2}"
+    ],
+    "wrong": "Get-Service | Select-Object Name, StartMode, StartName"
+  },
+  {
+    "id": "ps-svc-binary",
+    "platform": "powershell",
+    "prompt": "Show the program file behind the service named Spooler",
+    "answer": "Get-CimInstance Win32_Service -Filter \"Name='Spooler'\" | Select-Object Name, PathName",
+    "why": "PathName is the command the service starts. Check where it lives and who can write there.",
+    "accept": [
+      "get-ciminstance (?:-classname )?win32_service -filter \\\"name ?= ?'spooler'\\\" ?\\| ?(?:select-object|select) (?:-property )?(?=.*\\bpathname\\b)(?!.*\\bpathname\\b.*\\bpathname\\b)(?!.*\\bname\\b.*\\bname\\b)(?:pathname|name)(?:, ?(?:pathname|name)){0,1}",
+      "get-ciminstance (?:-classname )?win32_service -filter \\\"name ?= ?'spooler'\\\" ?\\| ?(?:select-object|select) -expandproperty pathname",
+      "\\(get-ciminstance (?:-classname )?win32_service -filter \\\"name ?= ?'spooler'\\\"\\)\\.pathname"
+    ],
+    "wrong": "Get-Service Spooler | Select-Object Name, PathName"
+  },
+  {
+    "id": "ps-svc-auto-stopped",
+    "platform": "powershell",
+    "prompt": "Find services that are set to start automatically but are not running",
+    "answer": "Get-Service | Where-Object { $_.StartType -eq 'Automatic' -and $_.Status -ne 'Running' }",
+    "why": "An automatic service that is stopped either failed or was stopped by someone. Both are worth a look.",
+    "accept": [
+      "get-service ?\\| ?(?:where-object|where|\\?) \\{ ?\\$_\\.starttype -eq (?:'automatic'|\\\"automatic\\\") -and \\$_\\.status -ne (?:'running'|\\\"running\\\") ?\\}",
+      "get-service ?\\| ?(?:where-object|where|\\?) \\{ ?\\$_\\.status -ne (?:'running'|\\\"running\\\") -and \\$_\\.starttype -eq (?:'automatic'|\\\"automatic\\\") ?\\}"
+    ],
+    "wrong": "Get-Service | Where-Object { $_.StartType -eq 'Automatic' -and $_.Status -eq 'Running' }"
+  },
+  {
+    "id": "ps-task-active",
+    "platform": "powershell",
+    "prompt": "List the scheduled tasks that are not disabled",
+    "answer": "Get-ScheduledTask | Where-Object State -ne Disabled",
+    "why": "Ready and Running tasks will fire. Start an audit with the ones that can actually run.",
+    "accept": [
+      "get-scheduledtask ?\\| ?(?:where-object|where|\\?) (?:-property )?state -ne (?:disabled|'disabled'|\\\"disabled\\\")",
+      "get-scheduledtask ?\\| ?(?:where-object|where|\\?) \\{ ?\\$_\\.state -ne (?:'disabled'|\\\"disabled\\\") ?\\}"
+    ],
+    "wrong": "Get-ScheduledTask | Where-Object State -eq Disabled"
+  },
+  {
+    "id": "ps-task-action",
+    "platform": "powershell",
+    "prompt": "Show what the scheduled task named Backup actually runs",
+    "answer": "(Get-ScheduledTask -TaskName Backup).Actions",
+    "why": "Actions holds the program and its arguments. Get-ScheduledTaskInfo shows when it ran, not what.",
+    "accept": [
+      "\\(get-scheduledtask (?:-taskname )?(?:backup|'backup'|\\\"backup\\\")\\)\\.actions",
+      "get-scheduledtask (?:-taskname )?(?:backup|'backup'|\\\"backup\\\") ?\\| ?(?:select-object|select) -expandproperty actions"
+    ],
+    "wrong": "Get-ScheduledTaskInfo -TaskName Backup"
+  },
+  {
+    "id": "ps-task-lastrun",
+    "platform": "powershell",
+    "prompt": "Show when the scheduled task named Backup last ran, and with what result",
+    "answer": "Get-ScheduledTaskInfo -TaskName Backup",
+    "why": "LastRunTime and LastTaskResult are on the info object. Get-ScheduledTask alone shows only the state.",
+    "accept": [
+      "get-scheduledtaskinfo (?:-taskname )?(?:backup|'backup'|\\\"backup\\\")",
+      "get-scheduledtask (?:-taskname )?(?:backup|'backup'|\\\"backup\\\") ?\\| ?get-scheduledtaskinfo"
+    ],
+    "wrong": "Get-ScheduledTask -TaskName Backup"
+  },
+  {
+    "id": "ps-task-nonmicrosoft",
+    "platform": "powershell",
+    "prompt": "List the scheduled tasks that live outside the \\Microsoft\\ folder",
+    "answer": "Get-ScheduledTask | Where-Object TaskPath -notlike '\\Microsoft\\*'",
+    "why": "Windows keeps its own tasks under \\Microsoft\\. What sits elsewhere was added by someone.",
+    "accept": [
+      "get-scheduledtask ?\\| ?(?:where-object|where|\\?) (?:-property )?taskpath -notlike (?:\\\\microsoft\\\\\\*|'\\\\microsoft\\\\\\*'|\\\"\\\\microsoft\\\\\\*\\\")",
+      "get-scheduledtask ?\\| ?(?:where-object|where|\\?) \\{ ?\\$_\\.taskpath -notlike (?:'\\\\microsoft\\\\\\*'|\\\"\\\\microsoft\\\\\\*\\\") ?\\}"
+    ],
+    "wrong": "Get-ScheduledTask -TaskPath '\\Microsoft\\*'"
+  },
+  {
+    "id": "ps-user-enabled",
+    "platform": "powershell",
+    "prompt": "List the local accounts that are enabled",
+    "answer": "Get-LocalUser | Where-Object Enabled",
+    "why": "Enabled is a property to filter on. Get-LocalUser has no -Enabled parameter.",
+    "accept": [
+      "get-localuser ?\\| ?(?:where-object|where|\\?) (?:-property )?enabled(?: -eq \\$true)?",
+      "get-localuser ?\\| ?(?:where-object|where|\\?) \\{ ?\\$_\\.enabled(?: -eq \\$true)? ?\\}"
+    ],
+    "wrong": "Get-LocalUser -Enabled"
+  },
+  {
+    "id": "ps-user-lastlogon",
+    "platform": "powershell",
+    "prompt": "Show each local account's name, whether it is enabled, and its last logon",
+    "answer": "Get-LocalUser | Select-Object Name, Enabled, LastLogon",
+    "why": "A local account calls it LastLogon. LastLogonDate is what Active Directory calls it.",
+    "accept": [
+      "get-localuser ?\\| ?(?:select-object|select) (?:-property )?(?=.*\\bname\\b)(?=.*\\benabled\\b)(?=.*\\blastlogon\\b)(?!.*\\bname\\b.*\\bname\\b)(?!.*\\benabled\\b.*\\benabled\\b)(?!.*\\blastlogon\\b.*\\blastlogon\\b)(?:name|enabled|lastlogon)(?:, ?(?:name|enabled|lastlogon)){2,2}"
+    ],
+    "wrong": "Get-LocalUser | Select-Object Name, Enabled, LastLogonDate"
+  },
+  {
+    "id": "ps-user-pw-never",
+    "platform": "powershell",
+    "prompt": "Find the local accounts whose password never expires",
+    "answer": "Get-LocalUser | Where-Object { $null -eq $_.PasswordExpires }",
+    "why": "A local account with no expiry has an empty PasswordExpires. PasswordNeverExpires is an Active Directory property.",
+    "accept": [
+      "get-localuser ?\\| ?(?:where-object|where|\\?) \\{ ?\\$null -eq \\$_\\.passwordexpires ?\\}",
+      "get-localuser ?\\| ?(?:where-object|where|\\?) \\{ ?-not \\$_\\.passwordexpires ?\\}",
+      "get-localuser ?\\| ?(?:where-object|where|\\?) (?:-property )?passwordexpires -eq \\$null",
+      "get-localuser ?\\| ?(?:where-object|where|\\?) \\{ ?\\$_\\.passwordexpires -eq \\$null ?\\}"
+    ],
+    "wrong": "Get-LocalUser | Where-Object PasswordNeverExpires"
+  },
+  {
+    "id": "ps-group-rdp",
+    "platform": "powershell",
+    "prompt": "List who may log on to this machine over Remote Desktop",
+    "answer": "Get-LocalGroupMember 'Remote Desktop Users'",
+    "why": "Membership of Remote Desktop Users is what allows it. Remote Management Users is WinRM, a different door.",
+    "accept": [
+      "get-localgroupmember (?:-(?:group|name) )?(?:'remote desktop users'|\\\"remote desktop users\\\")"
+    ],
+    "wrong": "Get-LocalGroupMember 'Remote Management Users'"
+  },
+  {
+    "id": "ps-acl-entries",
+    "platform": "powershell",
+    "prompt": "Show who has what access to C:\\Shares\\Finance",
+    "answer": "(Get-Acl C:\\Shares\\Finance).Access",
+    "why": "Access is the list of entries: who, allow or deny, and which rights. The Mode column of Get-ChildItem is attributes, not permissions.",
+    "accept": [
+      "\\(get-acl (?:-(?:path|literalpath) )?(?:c:\\\\shares\\\\finance|'c:\\\\shares\\\\finance'|\\\"c:\\\\shares\\\\finance\\\")\\)\\.access",
+      "get-acl (?:-(?:path|literalpath) )?(?:c:\\\\shares\\\\finance|'c:\\\\shares\\\\finance'|\\\"c:\\\\shares\\\\finance\\\") ?\\| ?(?:select-object|select) -expandproperty access"
+    ],
+    "wrong": "Get-ChildItem C:\\Shares\\Finance | Select-Object Mode"
+  },
+  {
+    "id": "ps-acl-owner",
+    "platform": "powershell",
+    "prompt": "Show the owner of C:\\Shares\\Finance",
+    "answer": "(Get-Acl C:\\Shares\\Finance).Owner",
+    "why": "The owner can always change the permissions, so it matters. It is on the ACL, not on the item.",
+    "accept": [
+      "\\(get-acl (?:-(?:path|literalpath) )?(?:c:\\\\shares\\\\finance|'c:\\\\shares\\\\finance'|\\\"c:\\\\shares\\\\finance\\\")\\)\\.owner",
+      "get-acl (?:-(?:path|literalpath) )?(?:c:\\\\shares\\\\finance|'c:\\\\shares\\\\finance'|\\\"c:\\\\shares\\\\finance\\\") ?\\| ?(?:select-object|select) (?:-property |-expandproperty )?owner"
+    ],
+    "wrong": "(Get-Item C:\\Shares\\Finance).Owner"
+  },
+  {
+    "id": "ps-acl-everyone",
+    "platform": "powershell",
+    "prompt": "From the access list of C:\\Shares\\Finance, show only the entries for Everyone",
+    "answer": "(Get-Acl C:\\Shares\\Finance).Access | Where-Object IdentityReference -eq Everyone",
+    "why": "IdentityReference names who the entry is for. An Everyone entry that allows writing is a finding.",
+    "accept": [
+      "\\(get-acl (?:-(?:path|literalpath) )?(?:c:\\\\shares\\\\finance|'c:\\\\shares\\\\finance'|\\\"c:\\\\shares\\\\finance\\\")\\)\\.access ?\\| ?(?:where-object|where|\\?) (?:-property )?identityreference -eq (?:everyone|'everyone'|\\\"everyone\\\")",
+      "\\(get-acl (?:-(?:path|literalpath) )?(?:c:\\\\shares\\\\finance|'c:\\\\shares\\\\finance'|\\\"c:\\\\shares\\\\finance\\\")\\)\\.access ?\\| ?(?:where-object|where|\\?) \\{ ?\\$_\\.identityreference -eq (?:'everyone'|\\\"everyone\\\") ?\\}"
+    ],
+    "wrong": "(Get-Acl C:\\Shares\\Finance).Access | Where-Object Identity -eq Everyone"
+  },
+  {
+    "id": "ps-acl-inheritance",
+    "platform": "powershell",
+    "prompt": "Check whether C:\\Shares\\Finance has stopped inheriting permissions from its parent",
+    "answer": "(Get-Acl C:\\Shares\\Finance).AreAccessRulesProtected",
+    "why": "True means inheritance is off and the folder carries its own list. IsInherited is a property of one entry, not of the folder.",
+    "accept": [
+      "\\(get-acl (?:-(?:path|literalpath) )?(?:c:\\\\shares\\\\finance|'c:\\\\shares\\\\finance'|\\\"c:\\\\shares\\\\finance\\\")\\)\\.areaccessrulesprotected"
+    ],
+    "wrong": "(Get-Acl C:\\Shares\\Finance).IsInherited"
+  },
+  {
+    "id": "ps-fw-profiles",
+    "platform": "powershell",
+    "prompt": "Show whether the firewall is on for each profile",
+    "answer": "Get-NetFirewallProfile | Select-Object Name, Enabled",
+    "why": "There are three profiles (Domain, Private, Public) and each has its own switch.",
+    "accept": [
+      "get-netfirewallprofile ?\\| ?(?:select-object|select) (?:-property )?(?=.*\\bname\\b)(?=.*\\benabled\\b)(?!.*\\bname\\b.*\\bname\\b)(?!.*\\benabled\\b.*\\benabled\\b)(?:name|enabled)(?:, ?(?:name|enabled)){1,1}"
+    ],
+    "wrong": "Get-NetFirewallRule | Select-Object Name, Enabled"
+  },
+  {
+    "id": "ps-fw-inbound-allow",
+    "platform": "powershell",
+    "prompt": "List the enabled inbound firewall rules that allow traffic",
+    "answer": "Get-NetFirewallRule -Direction Inbound -Action Allow -Enabled True",
+    "why": "Without -Enabled True the list also holds rules that are switched off and let nothing in.",
+    "accept": [
+      "get-netfirewallrule(?=.* -direction inbound)(?=.* -action allow)(?=.* -enabled true)(?: -(?:direction inbound|action allow|enabled true)){3}"
+    ],
+    "wrong": "Get-NetFirewallRule -Direction Inbound -Action Allow"
+  },
+  {
+    "id": "ps-fw-outbound-block",
+    "platform": "powershell",
+    "prompt": "List the outbound firewall rules that block traffic",
+    "answer": "Get-NetFirewallRule -Direction Outbound -Action Block",
+    "why": "Outbound block rules are what stops a program from calling out.",
+    "accept": [
+      "get-netfirewallrule(?=.* -direction outbound)(?=.* -action block)(?: -(?:direction outbound|action block)){2}"
+    ],
+    "wrong": "Get-NetFirewallRule -Direction Inbound -Action Block"
+  },
+  {
+    "id": "ps-fw-rule-ports",
+    "platform": "powershell",
+    "prompt": "Show which ports the firewall rule with the display name 'Lab Web' covers",
+    "answer": "Get-NetFirewallRule -DisplayName 'Lab Web' | Get-NetFirewallPortFilter",
+    "why": "A rule object does not carry its ports. Pipe it to Get-NetFirewallPortFilter to see them.",
+    "accept": [
+      "get-netfirewallrule -displayname (?:'lab web'|\\\"lab web\\\") ?\\| ?get-netfirewallportfilter"
+    ],
+    "wrong": "Get-NetFirewallRule -DisplayName 'Lab Web' | Select-Object LocalPort"
+  },
+  {
+    "id": "ps-hash-sha256",
+    "platform": "powershell",
+    "prompt": "Compute the SHA-256 hash of C:\\Tools\\agent.exe",
+    "answer": "Get-FileHash C:\\Tools\\agent.exe",
+    "why": "SHA256 is the default, so no -Algorithm is needed. MD5 is not what a modern feed lists.",
+    "accept": [
+      "get-filehash (?:-(?:path|literalpath) )?(?:c:\\\\tools\\\\agent\\.exe|'c:\\\\tools\\\\agent\\.exe'|\\\"c:\\\\tools\\\\agent\\.exe\\\")(?: -algorithm sha256)?",
+      "get-filehash -algorithm sha256 (?:-(?:path|literalpath) )?(?:c:\\\\tools\\\\agent\\.exe|'c:\\\\tools\\\\agent\\.exe'|\\\"c:\\\\tools\\\\agent\\.exe\\\")"
+    ],
+    "wrong": "Get-FileHash C:\\Tools\\agent.exe -Algorithm MD5"
+  },
+  {
+    "id": "ps-hash-sha1",
+    "platform": "powershell",
+    "prompt": "Compute the SHA-1 hash of C:\\Tools\\agent.exe (an old report lists SHA-1)",
+    "answer": "Get-FileHash C:\\Tools\\agent.exe -Algorithm SHA1",
+    "why": "The algorithm names have no dash: SHA1, SHA256, SHA384, SHA512, MD5.",
+    "accept": [
+      "get-filehash (?:-(?:path|literalpath) )?(?:c:\\\\tools\\\\agent\\.exe|'c:\\\\tools\\\\agent\\.exe'|\\\"c:\\\\tools\\\\agent\\.exe\\\") -algorithm sha1",
+      "get-filehash -algorithm sha1 (?:-(?:path|literalpath) )?(?:c:\\\\tools\\\\agent\\.exe|'c:\\\\tools\\\\agent\\.exe'|\\\"c:\\\\tools\\\\agent\\.exe\\\")"
+    ],
+    "wrong": "Get-FileHash C:\\Tools\\agent.exe -Algorithm SHA-1"
+  },
+  {
+    "id": "ps-hash-tree",
+    "platform": "powershell",
+    "prompt": "Hash every file under C:\\Tools, subfolders included",
+    "answer": "Get-ChildItem C:\\Tools -Recurse -File | Get-FileHash",
+    "why": "Get-FileHash has no -Recurse. Let Get-ChildItem find the files and pipe them in.",
+    "accept": [
+      "get-childitem (?:-(?:path|literalpath) )?(?:c:\\\\tools|'c:\\\\tools'|\\\"c:\\\\tools\\\")(?=.* -recurse)(?=.* -file)(?: -(?:recurse|file)){2} ?\\| ?get-filehash",
+      "get-childitem(?=.* -recurse)(?=.* -file)(?: -(?:recurse|file)){2} (?:-(?:path|literalpath) )?(?:c:\\\\tools|'c:\\\\tools'|\\\"c:\\\\tools\\\") ?\\| ?get-filehash"
+    ],
+    "wrong": "Get-FileHash C:\\Tools -Recurse"
+  },
+  {
+    "id": "ps-sig-check",
+    "platform": "powershell",
+    "prompt": "Check the digital signature of C:\\Tools\\agent.exe",
+    "answer": "Get-AuthenticodeSignature C:\\Tools\\agent.exe",
+    "why": "Status says Valid, NotSigned or HashMismatch, and SignerCertificate says who signed it.",
+    "accept": [
+      "get-authenticodesignature (?:-(?:filepath|literalpath) )?(?:c:\\\\tools\\\\agent\\.exe|'c:\\\\tools\\\\agent\\.exe'|\\\"c:\\\\tools\\\\agent\\.exe\\\")"
+    ],
+    "wrong": "Get-FileHash C:\\Tools\\agent.exe -Algorithm Authenticode"
+  },
+  {
+    "id": "ps-proc-path",
+    "platform": "powershell",
+    "prompt": "List the running processes with the file each one runs from",
+    "answer": "Get-Process | Select-Object Name, Id, Path",
+    "why": "A process object calls it Path. ExecutablePath is the Win32_Process name for the same thing.",
+    "accept": [
+      "get-process ?\\| ?(?:select-object|select) (?:-property )?(?=.*\\bname\\b)(?=.*\\bpath\\b)(?!.*\\bname\\b.*\\bname\\b)(?!.*\\bpath\\b.*\\bpath\\b)(?!.*\\bid\\b.*\\bid\\b)(?:name|path|id)(?:, ?(?:name|path|id)){1,2}",
+      "get-process ?\\| ?(?:select-object|select) (?:-property )?(?=.*\\bid\\b)(?=.*\\bpath\\b)(?!.*\\bid\\b.*\\bid\\b)(?!.*\\bpath\\b.*\\bpath\\b)(?!.*\\bname\\b.*\\bname\\b)(?:id|path|name)(?:, ?(?:id|path|name)){1,2}"
+    ],
+    "wrong": "Get-Process | Select-Object Name, Id, ExecutablePath"
+  },
+  {
+    "id": "ps-proc-cmdline",
+    "platform": "powershell",
+    "prompt": "Show the full command line of every running process",
+    "answer": "Get-CimInstance Win32_Process | Select-Object ProcessId, Name, CommandLine",
+    "why": "The command line is on Win32_Process. It shows the arguments a program was started with, which is where the story usually is.",
+    "accept": [
+      "get-ciminstance (?:-classname )?win32_process ?\\| ?(?:select-object|select) (?:-property )?(?=.*\\bcommandline\\b)(?!.*\\bcommandline\\b.*\\bcommandline\\b)(?!.*\\bprocessid\\b.*\\bprocessid\\b)(?!.*\\bname\\b.*\\bname\\b)(?:commandline|processid|name)(?:, ?(?:commandline|processid|name)){0,2}"
+    ],
+    "wrong": "Get-CimInstance Win32_Service | Select-Object ProcessId, Name, CommandLine"
+  },
+  {
+    "id": "ps-proc-parent",
+    "platform": "powershell",
+    "prompt": "Show every process with the process ID of its parent",
+    "answer": "Get-CimInstance Win32_Process | Select-Object Name, ProcessId, ParentProcessId",
+    "why": "The parent tells you what started it: a document viewer that starts a shell is a finding.",
+    "accept": [
+      "get-ciminstance (?:-classname )?win32_process ?\\| ?(?:select-object|select) (?:-property )?(?=.*\\bname\\b)(?=.*\\bparentprocessid\\b)(?!.*\\bname\\b.*\\bname\\b)(?!.*\\bparentprocessid\\b.*\\bparentprocessid\\b)(?!.*\\bprocessid\\b.*\\bprocessid\\b)(?:name|parentprocessid|processid)(?:, ?(?:name|parentprocessid|processid)){1,2}",
+      "get-ciminstance (?:-classname )?win32_process ?\\| ?(?:select-object|select) (?:-property )?(?=.*\\bprocessid\\b)(?=.*\\bparentprocessid\\b)(?!.*\\bprocessid\\b.*\\bprocessid\\b)(?!.*\\bparentprocessid\\b.*\\bparentprocessid\\b)(?!.*\\bname\\b.*\\bname\\b)(?:processid|parentprocessid|name)(?:, ?(?:processid|parentprocessid|name)){1,2}"
+    ],
+    "wrong": "Get-Process | Select-Object Name, Id, ParentProcessId"
+  },
+  {
+    "id": "ps-proc-by-id",
+    "platform": "powershell",
+    "prompt": "Show the process whose ID is 4242",
+    "answer": "Get-Process -Id 4242",
+    "why": "A bare value is taken as a process NAME. An ID needs -Id.",
+    "accept": [
+      "get-process -id 4242"
+    ],
+    "wrong": "Get-Process 4242"
+  },
+  {
+    "id": "ps-port-owner",
+    "platform": "powershell",
+    "prompt": "Find which process owns the listener on TCP port 3389",
+    "answer": "Get-NetTCPConnection -LocalPort 3389 -State Listen",
+    "why": "A listener is a LOCAL port. The OwningProcess column is the ID to hand to Get-Process -Id.",
+    "accept": [
+      "get-nettcpconnection(?=.* -localport 3389)(?=.* -state listen)(?: -(?:localport 3389|state listen)){2}",
+      "get-nettcpconnection(?=.* -localport 3389)(?=.* -state listen)(?: -(?:localport 3389|state listen)){2} ?\\| ?(?:select-object|select) (?:-property )?(?=.*\\bowningprocess\\b)(?!.*\\bowningprocess\\b.*\\bowningprocess\\b)(?!.*\\blocalport\\b.*\\blocalport\\b)(?!.*\\blocaladdress\\b.*\\blocaladdress\\b)(?:owningprocess|localport|localaddress)(?:, ?(?:owningprocess|localport|localaddress)){0,2}",
+      "get-nettcpconnection(?=.* -localport 3389)(?=.* -state listen)(?: -(?:localport 3389|state listen)){2} ?\\| ?(?:select-object|select) -expandproperty owningprocess",
+      "\\(get-nettcpconnection(?=.* -localport 3389)(?=.* -state listen)(?: -(?:localport 3389|state listen)){2}\\)\\.owningprocess",
+      "get-process -id \\(get-nettcpconnection(?=.* -localport 3389)(?=.* -state listen)(?: -(?:localport 3389|state listen)){2}\\)\\.owningprocess"
+    ],
+    "wrong": "Get-NetTCPConnection -RemotePort 3389 -State Listen"
+  },
+  {
+    "id": "ps-port-udp",
+    "platform": "powershell",
+    "prompt": "List the UDP endpoints this machine is listening on",
+    "answer": "Get-NetUDPEndpoint",
+    "why": "UDP has no connections, so it has its own cmdlet. Get-NetTCPConnection knows only TCP.",
+    "accept": [
+      "get-netudpendpoint",
+      "get-netudpendpoint ?\\| ?(?:select-object|select) (?:-property )?(?=.*\\blocalport\\b)(?!.*\\blocalport\\b.*\\blocalport\\b)(?!.*\\blocaladdress\\b.*\\blocaladdress\\b)(?!.*\\bowningprocess\\b.*\\bowningprocess\\b)(?!.*\\bcreationtime\\b.*\\bcreationtime\\b)(?:localport|localaddress|owningprocess|creationtime)(?:, ?(?:localport|localaddress|owningprocess|creationtime)){0,3}"
+    ],
+    "wrong": "Get-NetTCPConnection -Protocol UDP"
+  },
+  {
+    "id": "ps-conn-established",
+    "platform": "powershell",
+    "prompt": "List the established TCP connections with their remote address, remote port and owning process",
+    "answer": "Get-NetTCPConnection -State Established | Select-Object RemoteAddress, RemotePort, OwningProcess",
+    "why": "Established means a live conversation. This is the answer to 'what is this machine talking to'.",
+    "accept": [
+      "get-nettcpconnection -state established ?\\| ?(?:select-object|select) (?:-property )?(?=.*\\bremoteaddress\\b)(?=.*\\bremoteport\\b)(?=.*\\bowningprocess\\b)(?!.*\\bremoteaddress\\b.*\\bremoteaddress\\b)(?!.*\\bremoteport\\b.*\\bremoteport\\b)(?!.*\\bowningprocess\\b.*\\bowningprocess\\b)(?:remoteaddress|remoteport|owningprocess)(?:, ?(?:remoteaddress|remoteport|owningprocess)){2,2}"
+    ],
+    "wrong": "Get-NetTCPConnection -State Listen | Select-Object RemoteAddress, RemotePort, OwningProcess"
+  },
+  {
+    "id": "ps-ad-disabled",
+    "platform": "powershell",
+    "prompt": "List the disabled user accounts in the domain",
+    "answer": "Search-ADAccount -AccountDisabled -UsersOnly",
+    "why": "Search-ADAccount has a switch for the common account audits. With Get-ADUser the filter is Enabled -eq $false: there is no Disabled attribute.",
+    "accept": [
+      "search-adaccount(?=.* -accountdisabled)(?=.* -usersonly)(?: -(?:accountdisabled|usersonly)){2}",
+      "get-aduser -filter (?:'enabled -eq \\$false'|\\{ ?enabled -eq \\$false ?\\})"
+    ],
+    "wrong": "Get-ADUser -Filter 'Disabled -eq $true'"
+  },
+  {
+    "id": "ps-ad-inactive",
+    "platform": "powershell",
+    "prompt": "Find user accounts that have not logged on for 90 days",
+    "answer": "Search-ADAccount -AccountInactive -TimeSpan 90.00:00:00 -UsersOnly",
+    "why": "The time span is days.hours:minutes:seconds. A bare 90 is taken as 90 ticks, nine millionths of a second, so every account that has ever been idle matches.",
+    "accept": [
+      "search-adaccount(?=.* -accountinactive)(?=.* -timespan 90\\.00:00:00)(?=.* -usersonly)(?: -(?:accountinactive|timespan 90\\.00:00:00|usersonly)){3}",
+      "search-adaccount(?=.* -accountinactive)(?=.* -timespan (?:'90(?:\\.00:00:00)?'|\\\"90(?:\\.00:00:00)?\\\"))(?=.* -usersonly)(?: -(?:accountinactive|timespan (?:'90(?:\\.00:00:00)?'|\\\"90(?:\\.00:00:00)?\\\")|usersonly)){3}",
+      "search-adaccount(?=.* -accountinactive)(?=.* -timespan \\(new-timespan -days 90\\))(?=.* -usersonly)(?: -(?:accountinactive|timespan \\(new-timespan -days 90\\)|usersonly)){3}"
+    ],
+    "wrong": "Search-ADAccount -AccountInactive -TimeSpan 90 -UsersOnly"
+  },
+  {
+    "id": "ps-ad-locked",
+    "platform": "powershell",
+    "prompt": "List the accounts that are locked out right now",
+    "answer": "Search-ADAccount -LockedOut",
+    "why": "LockedOut is worked out by the directory, so Get-ADUser -Filter cannot search on it. Search-ADAccount can.",
+    "accept": [
+      "search-adaccount -lockedout(?: -usersonly)?",
+      "search-adaccount -usersonly -lockedout"
+    ],
+    "wrong": "Get-ADUser -Filter 'LockedOut -eq $true'"
+  },
+  {
+    "id": "ps-ad-pw-never",
+    "platform": "powershell",
+    "prompt": "List the domain users whose password never expires",
+    "answer": "Get-ADUser -Filter 'PasswordNeverExpires -eq $true'",
+    "why": "Service accounts often have this set, which is why they are worth listing.",
+    "accept": [
+      "get-aduser -filter (?:'passwordneverexpires -eq \\$true'|\\{ ?passwordneverexpires -eq \\$true ?\\})",
+      "search-adaccount -passwordneverexpires(?: -usersonly)?",
+      "search-adaccount -usersonly -passwordneverexpires"
+    ],
+    "wrong": "Get-ADUser -Filter 'PasswordExpires -eq $false'"
+  },
+  {
+    "id": "ps-ad-memberof",
+    "platform": "powershell",
+    "prompt": "Show every group the user jsmith belongs to",
+    "answer": "Get-ADPrincipalGroupMembership jsmith",
+    "why": "This asks about one account's groups. Get-ADGroupMember asks the opposite: one group's members.",
+    "accept": [
+      "get-adprincipalgroupmembership (?:-identity )?(?:jsmith|'jsmith'|\\\"jsmith\\\")"
+    ],
+    "wrong": "Get-ADGroupMember jsmith"
+  },
+  {
+    "id": "ps-ad-nested-admins",
+    "platform": "powershell",
+    "prompt": "List the members of Domain Admins, including the members of groups nested inside it",
+    "answer": "Get-ADGroupMember 'Domain Admins' -Recursive",
+    "why": "Nested groups hide administrators. The switch is -Recursive; -Recurse belongs to Get-ChildItem.",
+    "accept": [
+      "get-adgroupmember (?:-identity )?(?:'domain admins'|\\\"domain admins\\\") -recursive",
+      "get-adgroupmember -recursive (?:-identity )?(?:'domain admins'|\\\"domain admins\\\")"
+    ],
+    "wrong": "Get-ADGroupMember 'Domain Admins' -Recurse"
+  },
+  {
+    "id": "ps-ad-pw-policy",
+    "platform": "powershell",
+    "prompt": "Show the domain's default password policy",
+    "answer": "Get-ADDefaultDomainPasswordPolicy",
+    "why": "Length, age, history, complexity and lockout in one object: the first thing to compare with a baseline.",
+    "accept": [
+      "get-addefaultdomainpasswordpolicy"
+    ],
+    "wrong": "Get-ADDomainPasswordPolicy"
+  },
+  {
+    "id": "ps-ad-user-dates",
+    "platform": "powershell",
+    "prompt": "Show jsmith's last logon date and when the password was last set",
+    "answer": "Get-ADUser jsmith -Properties LastLogonDate, PasswordLastSet",
+    "why": "Get-ADUser returns a short default set. Anything else has to be asked for with -Properties, or it comes back empty.",
+    "accept": [
+      "get-aduser (?:-identity )?(?:jsmith|'jsmith'|\\\"jsmith\\\") -properties (?:lastlogondate, ?passwordlastset|passwordlastset, ?lastlogondate)(?: ?\\| ?(?:select-object|select) (?:-property )?(?=.*\\blastlogondate\\b)(?=.*\\bpasswordlastset\\b)(?!.*\\blastlogondate\\b.*\\blastlogondate\\b)(?!.*\\bpasswordlastset\\b.*\\bpasswordlastset\\b)(?!.*\\bname\\b.*\\bname\\b)(?!.*\\bsamaccountname\\b.*\\bsamaccountname\\b)(?:lastlogondate|passwordlastset|name|samaccountname)(?:, ?(?:lastlogondate|passwordlastset|name|samaccountname)){1,3})?"
+    ],
+    "wrong": "Get-ADUser jsmith | Select-Object LastLogonDate, PasswordLastSet"
   }
 ]

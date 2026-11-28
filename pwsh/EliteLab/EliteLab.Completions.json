@@ -1,0 +1,628 @@
+{
+  "schema": 1,
+  "generated_by": "pwsh/build_completions.py",
+  "prog": "elite",
+  "options": [
+    {
+      "flags": [
+        "-h",
+        "--help"
+      ],
+      "help": "show the help for this command and exit",
+      "takes_value": false
+    },
+    {
+      "flags": [
+        "--version"
+      ],
+      "help": "show the elite-lab version and exit",
+      "takes_value": false
+    }
+  ],
+  "positionals": [],
+  "commands": [
+    {
+      "name": "list",
+      "help": "show all modules and progress",
+      "options": [
+        {
+          "flags": [
+            "-h",
+            "--help"
+          ],
+          "help": "show the help for this command and exit",
+          "takes_value": false
+        }
+      ],
+      "positionals": [],
+      "commands": []
+    },
+    {
+      "name": "learn",
+      "help": "read a module's lessons",
+      "options": [
+        {
+          "flags": [
+            "-h",
+            "--help"
+          ],
+          "help": "show the help for this command and exit",
+          "takes_value": false
+        }
+      ],
+      "positionals": [
+        {
+          "name": "module",
+          "help": "",
+          "nargs": 1,
+          "choices": [
+            "basics",
+            "threat-modeling",
+            "shell-basics",
+            "networking",
+            "people",
+            "security",
+            "windows",
+            "windows-ps",
+            "linux",
+            "tools-recon",
+            "web-vulns",
+            "tools-web",
+            "tools-ad",
+            "tools-pw",
+            "tools-re"
+          ]
+        }
+      ],
+      "commands": []
+    },
+    {
+      "name": "quiz",
+      "help": "quiz yourself on a module",
+      "options": [
+        {
+          "flags": [
+            "-h",
+            "--help"
+          ],
+          "help": "show the help for this command and exit",
+          "takes_value": false
+        }
+      ],
+      "positionals": [
+        {
+          "name": "module",
+          "help": "",
+          "nargs": 1,
+          "choices": [
+            "basics",
+            "threat-modeling",
+            "shell-basics",
+            "networking",
+            "people",
+            "security",
+            "windows",
+            "windows-ps",
+            "linux",
+            "tools-recon",
+            "web-vulns",
+            "tools-web",
+            "tools-ad",
+            "tools-pw",
+            "tools-re"
+          ]
+        }
+      ],
+      "commands": []
+    },
+    {
+      "name": "tools",
+      "help": "list every tool, or one module's briefings",
+      "options": [
+        {
+          "flags": [
+            "-h",
+            "--help"
+          ],
+          "help": "show the help for this command and exit",
+          "takes_value": false
+        }
+      ],
+      "positionals": [
+        {
+          "name": "module",
+          "help": "omit to list all tools; name a module for its full briefings",
+          "nargs": "?",
+          "choices": [
+            "basics",
+            "threat-modeling",
+            "shell-basics",
+            "networking",
+            "people",
+            "security",
+            "windows",
+            "windows-ps",
+            "linux",
+            "tools-recon",
+            "web-vulns",
+            "tools-web",
+            "tools-ad",
+            "tools-pw",
+            "tools-re"
+          ]
+        }
+      ],
+      "commands": []
+    },
+    {
+      "name": "drill",
+      "help": "endless practice",
+      "options": [
+        {
+          "flags": [
+            "-h",
+            "--help"
+          ],
+          "help": "show the help for this command and exit",
+          "takes_value": false
+        }
+      ],
+      "positionals": [
+        {
+          "name": "kind",
+          "help": "",
+          "nargs": 1,
+          "choices": [
+            "ports",
+            "subnet",
+            "commands"
+          ]
+        }
+      ],
+      "commands": []
+    },
+    {
+      "name": "progress",
+      "help": "show quiz scores",
+      "options": [
+        {
+          "flags": [
+            "-h",
+            "--help"
+          ],
+          "help": "show the help for this command and exit",
+          "takes_value": false
+        }
+      ],
+      "positionals": [],
+      "commands": []
+    },
+    {
+      "name": "reset",
+      "help": "clear progress",
+      "options": [
+        {
+          "flags": [
+            "-h",
+            "--help"
+          ],
+          "help": "show the help for this command and exit",
+          "takes_value": false
+        }
+      ],
+      "positionals": [],
+      "commands": []
+    },
+    {
+      "name": "ask",
+      "help": "ask a question; answers from the course (and your books)",
+      "options": [
+        {
+          "flags": [
+            "-h",
+            "--help"
+          ],
+          "help": "show the help for this command and exit",
+          "takes_value": false
+        }
+      ],
+      "positionals": [
+        {
+          "name": "query",
+          "help": "e.g. elite ask \"how does an access check work\"",
+          "nargs": "+",
+          "choices": null
+        }
+      ],
+      "commands": []
+    },
+    {
+      "name": "study",
+      "help": "your own books: elite study ask \"...\" (see LIBRARY.md)",
+      "options": [
+        {
+          "flags": [
+            "-h",
+            "--help"
+          ],
+          "help": "show the help for this command and exit",
+          "takes_value": false
+        }
+      ],
+      "positionals": [
+        {
+          "name": "study_action",
+          "help": "ask / summarize / lesson / search your indexed books, or (re)index",
+          "nargs": 1,
+          "choices": [
+            "ask",
+            "summarize",
+            "lesson",
+            "search",
+            "index"
+          ]
+        },
+        {
+          "name": "text",
+          "help": "the question or topic",
+          "nargs": "*",
+          "choices": null
+        }
+      ],
+      "commands": []
+    },
+    {
+      "name": "status",
+      "help": "home screen: your progress, next move, and what's available",
+      "options": [
+        {
+          "flags": [
+            "-h",
+            "--help"
+          ],
+          "help": "show the help for this command and exit",
+          "takes_value": false
+        }
+      ],
+      "positionals": [],
+      "commands": []
+    },
+    {
+      "name": "help",
+      "help": "same as 'status' - your 'you are here' home screen",
+      "options": [
+        {
+          "flags": [
+            "-h",
+            "--help"
+          ],
+          "help": "show the help for this command and exit",
+          "takes_value": false
+        }
+      ],
+      "positionals": [],
+      "commands": []
+    },
+    {
+      "name": "map",
+      "help": "the territory: the company, its surface, and how it all connects",
+      "options": [
+        {
+          "flags": [
+            "-h",
+            "--help"
+          ],
+          "help": "show the help for this command and exit",
+          "takes_value": false
+        }
+      ],
+      "positionals": [],
+      "commands": []
+    },
+    {
+      "name": "catalog",
+      "help": "the full list of materials: modules, missions, tools, books, docs",
+      "options": [
+        {
+          "flags": [
+            "-h",
+            "--help"
+          ],
+          "help": "show the help for this command and exit",
+          "takes_value": false
+        }
+      ],
+      "positionals": [],
+      "commands": []
+    },
+    {
+      "name": "cheat",
+      "help": "instant command reference for a tool (e.g. elite cheat grep)",
+      "options": [
+        {
+          "flags": [
+            "-h",
+            "--help"
+          ],
+          "help": "show the help for this command and exit",
+          "takes_value": false
+        }
+      ],
+      "positionals": [
+        {
+          "name": "tool",
+          "help": "grep, curl, awk, find, john, nmap ... (omit to list)",
+          "nargs": "?",
+          "choices": null
+        }
+      ],
+      "commands": []
+    },
+    {
+      "name": "path",
+      "help": "guided campaign through the missions, with your progress",
+      "options": [
+        {
+          "flags": [
+            "-h",
+            "--help"
+          ],
+          "help": "show the help for this command and exit",
+          "takes_value": false
+        }
+      ],
+      "positionals": [],
+      "commands": []
+    },
+    {
+      "name": "scenario",
+      "help": "incident chains: break, detect, and fix one incident end to end",
+      "options": [
+        {
+          "flags": [
+            "-h",
+            "--help"
+          ],
+          "help": "show the help for this command and exit",
+          "takes_value": false
+        }
+      ],
+      "positionals": [
+        {
+          "name": "scenario_id",
+          "help": "omit to list; name one to walk it",
+          "nargs": "?",
+          "choices": null
+        }
+      ],
+      "commands": []
+    },
+    {
+      "name": "doctor",
+      "help": "check what tools/libraries are installed and what's needed",
+      "options": [
+        {
+          "flags": [
+            "-h",
+            "--help"
+          ],
+          "help": "show the help for this command and exit",
+          "takes_value": false
+        }
+      ],
+      "positionals": [],
+      "commands": []
+    },
+    {
+      "name": "review",
+      "help": "what to redo now: weak spots + stale mastery",
+      "options": [
+        {
+          "flags": [
+            "-h",
+            "--help"
+          ],
+          "help": "show the help for this command and exit",
+          "takes_value": false
+        }
+      ],
+      "positionals": [],
+      "commands": []
+    },
+    {
+      "name": "engage",
+      "help": "assess Lakefront Paper & Container Co. as one connected engagement",
+      "options": [
+        {
+          "flags": [
+            "-h",
+            "--help"
+          ],
+          "help": "show the help for this command and exit",
+          "takes_value": false
+        }
+      ],
+      "positionals": [
+        {
+          "name": "engage_action",
+          "help": "'recon' to reveal the surface; omit for the target board",
+          "nargs": "?",
+          "choices": [
+            "recon"
+          ]
+        }
+      ],
+      "commands": []
+    },
+    {
+      "name": "run",
+      "help": "run a real security tool and get a taught debrief",
+      "options": [
+        {
+          "flags": [
+            "-h",
+            "--help"
+          ],
+          "help": "show the help for this command and exit",
+          "takes_value": false
+        }
+      ],
+      "positionals": [
+        {
+          "name": "toolargs",
+          "help": "tool and its args, e.g. nmap 127.0.0.1",
+          "nargs": "...",
+          "choices": null
+        }
+      ],
+      "commands": []
+    },
+    {
+      "name": "lab",
+      "help": "missions: goal, flag, hints, checker",
+      "options": [
+        {
+          "flags": [
+            "-h",
+            "--help"
+          ],
+          "help": "show the help for this command and exit",
+          "takes_value": false
+        }
+      ],
+      "positionals": [],
+      "commands": [
+        {
+          "name": "list",
+          "help": "list missions",
+          "options": [
+            {
+              "flags": [
+                "-h",
+                "--help"
+              ],
+              "help": "show the help for this command and exit",
+              "takes_value": false
+            }
+          ],
+          "positionals": [],
+          "commands": []
+        },
+        {
+          "name": "status",
+          "help": "your mission progress",
+          "options": [
+            {
+              "flags": [
+                "-h",
+                "--help"
+              ],
+              "help": "show the help for this command and exit",
+              "takes_value": false
+            }
+          ],
+          "positionals": [],
+          "commands": []
+        },
+        {
+          "name": "start",
+          "help": "",
+          "options": [
+            {
+              "flags": [
+                "-h",
+                "--help"
+              ],
+              "help": "show the help for this command and exit",
+              "takes_value": false
+            }
+          ],
+          "positionals": [
+            {
+              "name": "mission",
+              "help": "",
+              "nargs": 1,
+              "choices": null
+            }
+          ],
+          "commands": []
+        },
+        {
+          "name": "hint",
+          "help": "",
+          "options": [
+            {
+              "flags": [
+                "-h",
+                "--help"
+              ],
+              "help": "show the help for this command and exit",
+              "takes_value": false
+            }
+          ],
+          "positionals": [
+            {
+              "name": "mission",
+              "help": "",
+              "nargs": 1,
+              "choices": null
+            }
+          ],
+          "commands": []
+        },
+        {
+          "name": "restart",
+          "help": "",
+          "options": [
+            {
+              "flags": [
+                "-h",
+                "--help"
+              ],
+              "help": "show the help for this command and exit",
+              "takes_value": false
+            }
+          ],
+          "positionals": [
+            {
+              "name": "mission",
+              "help": "",
+              "nargs": 1,
+              "choices": null
+            }
+          ],
+          "commands": []
+        },
+        {
+          "name": "submit",
+          "help": "",
+          "options": [
+            {
+              "flags": [
+                "-h",
+                "--help"
+              ],
+              "help": "show the help for this command and exit",
+              "takes_value": false
+            }
+          ],
+          "positionals": [
+            {
+              "name": "mission",
+              "help": "",
+              "nargs": 1,
+              "choices": null
+            },
+            {
+              "name": "flag",
+              "help": "",
+              "nargs": 1,
+              "choices": null
+            }
+          ],
+          "commands": []
+        }
+      ]
+    }
+  ]
+}

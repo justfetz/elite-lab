@@ -19,7 +19,7 @@ What a mission is, and what each registry field means, is in [MISSIONS.md](MISSI
 | Systems | 11 | `SYSTEMS` in the registry; 8 carry at least one mission |
 | Incident scenarios | 2 | `SCENARIOS` in the registry |
 | Learn modules | 15 | `modules/*.json`: 62 lessons, 49 quiz questions, 13 tool briefings |
-| Drills | 3 | `elite drill`: ports, subnet, commands; the command bank holds 22 commands |
+| Drills | 3 | `elite drill`: ports, subnet, commands; the command bank holds 70 commands |
 | Tool tutors | 5 | `elite run`: nmap, sqlmap, john, gobuster, ffuf |
 | Cheat sheets | 11 | `elite cheat`: grep, curl, awk, find, sort, chmod, strings, ssh, nmap, john, sudo |
 | Tests | run `pytest -q` | the test run prints its own count; no doc repeats it |
@@ -202,7 +202,7 @@ questions and `elite tools <module>` shows the tool briefings.
 
 | Platform | Commands |
 |---|---|
-| powershell | 6 |
+| powershell | 54 |
 | linux | 4 |
 | nmap | 4 |
 | curl | 2 |
