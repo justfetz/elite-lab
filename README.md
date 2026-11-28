@@ -1,11 +1,50 @@
 # elite-lab
 
-A terminal cyber range that teaches offensive **and** defensive security by making you
-*do* it — break a vulnerable app, then fix it; reverse a binary; trace a path to Domain
-Admin; poison an AI agent and then defend it. It's a coach, not a video course: it assigns
-real work on real files, checks your actual solution, and teaches the lesson behind it.
+> **Doc status: current** · answers: *What is elite-lab, what is built, and where do I start?* · [doc map](#doc-map)
 
-## ▶ Start here
+**What it is.** elite-lab is a terminal training range for security skills, written in
+Python. It gives you a goal and real files, you do the work at your own prompt with real
+tools, and it checks the result: a flag you captured, or your own code run by a checker.
+
+**The goal.** That you can *do* security, not only describe it: break a system, fix it
+without stopping the business, and find the attack in the logs.
+
+**The company you defend.** You are the security team at **Lakefront Paper & Container
+Co.**, a fictional paper maker with a mill on the Chicago River. It has a public order
+portal (OrderDesk), an AI order agent, an office network and a plant floor that has to
+keep producing.
+Every mission is set there. [SCENARIO.md](SCENARIO.md) tells its story.
+
+**What is built, and what is planned.** A script writes this block from the code, chiefly
+the registry, the one file that lists every mission. A test fails when it falls behind.
+
+<!-- BEGIN GENERATED BLOCK: built. _build_atlas.py writes this from the registry; change the code and rerun it, don't edit here. -->
+
+**Built today:** 20 missions on 8 of the 11 systems, in 4 of the 5 zones. Around them: 2 incident scenarios, 15 learn modules, 3 drills and 5 tool tutors.
+
+| Zone of the company | Systems in it | Missions built |
+|---|---|---|
+| IT / Business (public) | Customer Portal · Millie, the AI order agent | 6 |
+| IT / Corporate (internal) | Domain Controller dc01 · Workstation ws01 · SOC / log pipeline · The wire | 11 |
+| DMZ / Conduit | Order-release staging | none yet |
+| OT / Plant floor | Mill-floor agent · PM3 paper machine · LoadMaster optimizer | 2 |
+| People | Corporate email | 1 |
+
+**Planned, not built.** The registry shows these gaps:
+
+- no mission yet on Order-release staging, PM3 paper machine or LoadMaster optimizer;
+- no fix mission yet to pair with the break missions `crack-01`, `bin-01` and `priv-01`;
+- no mission yet at the `recovery` level (missions are graded on levels from `intro` to `recovery`).
+
+<!-- END GENERATED BLOCK: built -->
+
+[ATLAS.md](ATLAS.md) lists every mission and what it teaches. Beyond those gaps, the plan
+is a live lab you host yourself, missions that run against it, and more tool tutors. Of
+the lab, the database, the web portal and the optimizer exist and the rest does not: see
+[live-lab/README.md](live-lab/README.md). [VISION.md](VISION.md) and [SPEC.md](SPEC.md)
+hold the plans, with every section marked built, partly built or not built.
+
+**How to start.** You need only Python 3.8 or newer to begin.
 
 ```bash
 git clone https://github.com/justfetz/elite-lab.git
@@ -13,43 +52,42 @@ cd elite-lab
 python3 elite.py
 ```
 
-That's it. Running `python3 elite.py` greets you and tells you exactly what to do next
-(`elite doctor` to check your setup, then `elite engage` to begin). You need nothing but
-**Python 3.8+** to start.
+The last command greets you and names your next one. [Quick start](#quick-start) lists the
+commands that follow. A few missions want one extra tool, and `python3 elite.py doctor`
+names it.
 
 ---
 
-**The bet:** knowing *about* security is cheap and getting cheaper. Being able to *do* it —
-and to explain why a system breaks and how to defend it — is what lasts. So every topic
-ends in something you run at a prompt, not something you watch.
+## Doc map
 
----
+Each doc has one job. The table gives the question it answers and its status, and every
+doc opens with the same line you see at the top of this page.
 
-## ★ Your own private AI tutor — free, offline, over *your* books
+| Doc | The question it answers | Status |
+|-----|-------------------------|--------|
+| [README.md](README.md) | What is elite-lab, what is built, and where do I start? | current |
+| [SCENARIO.md](SCENARIO.md) | Who is the company I defend, and where can it be broken? | current |
+| [ATLAS.md](ATLAS.md) | Which missions exist, where does each one live, and what is not built yet? | current |
+| [MISSIONS.md](MISSIONS.md) | How is a mission designed, and how do I add one? | current |
+| [CURRICULUM.md](CURRICULUM.md) | How is the learning organised? | current |
+| [PRINCIPLES.md](PRINCIPLES.md) | Which design decisions are settled? | current |
+| [VISION.md](VISION.md) | Where is this going in the long run? | plan |
+| [SPEC.md](SPEC.md) | What gets built next, and in what order? | plan |
+| [LIBRARY.md](LIBRARY.md) | How do I set up the local AI tutor over my own books? | reference |
+| [TOOLS.md](TOOLS.md) | Which libraries and tools does the project use, and why those? | reference |
+| [live-lab/README.md](live-lab/README.md) | What is the optional live lab, and how much of it exists? | current |
+| [live-lab/orderdesk/README.md](live-lab/orderdesk/README.md) | How do I run the OrderDesk portal on my own machine? | reference |
+| [live-lab/loadmaster/README.md](live-lab/loadmaster/README.md) | What does LoadMaster solve, and how do I run it? | reference |
 
-The feature that makes this unusual: you can run a **free AI model on your own laptop**
-(no account, no internet, no bill) and ask questions straight out of **security books you
-own** — the answers come back grounded in the text, citing the page.
+What the three statuses mean:
 
-```bash
-winget install Ollama.Ollama          # one-time (Windows); macOS/Linux: ollama.com
-ollama pull llama3.2:3b               # a real model on your machine (~2 GB)
-pip install pypdf scikit-learn        # the PDF reader + the search index
-#   put PDFs you own in ./books/  (gitignored — your library stays on your disk)
-python3 study_books.py index
-$env:OLLAMA_MODEL = "llama3.2:3b"     # PowerShell;  bash: export OLLAMA_MODEL=llama3.2:3b
-elite study ask "how does an access check work?"
-```
-
-```
-> An access check in Windows evaluates the object's DACL against the caller's access token:
-> a null DACL grants all; take-ownership is handled first; then each allow/deny ACE whose
-> SID matches the token adjusts the granted-access mask...  [Windows Internals Part 1 p.678]
-```
-
-That's a 3-billion-parameter model, running on your hardware, answering from *your* copy of
-Windows Internals — offline. Full setup, a reading list, and the dense-embeddings upgrade
-path are in **[`LIBRARY.md`](LIBRARY.md)**.
+- **current** describes the project as it stands today: the code, and the fiction the
+  code is built on. Where one disagrees with the code, the doc is wrong.
+  [ATLAS.md](ATLAS.md) is generated from the code, and a test fails when it falls behind.
+- **plan** describes what we intend to build. Each section opens by saying whether it is
+  built, partly built or not built.
+- **reference** is background and how-to material: setup guides and tool lists. Read it
+  to use something, not to learn what state the project is in.
 
 ---
 
@@ -67,12 +105,16 @@ After working through it, you can:
   then cut the path.
 - **Secure the new attack surface** — break an AI/RAG agent with prompt injection and
   harden it, the skill almost nobody has yet.
+- **Defend the plant floor** — forge an order release across the link from HQ to the mill,
+  then verify releases so that only a genuine one runs.
+- **Catch the human way in** — triage a phishing email and pull out the real link.
 
-Each of those is a mission with a goal and a checker. The **fix** and **build** missions run
+Each of those is a mission with a goal and a check. The **fix** and **build** missions run
 *your actual code* against real cases — open sockets, compile and fuzz a C target, send a
 forged *and* a genuine release at your patched agent — and several show you each probe and
-verdict, so you see exactly what holds. (The break missions use fixed flags for zero-setup
-personal practice; they prove you got the answer, not that no shortcut exists.)
+verdict, so you see exactly what holds. (The missions that take a flag use a fixed one,
+for zero-setup personal practice: a flag proves you got the answer, not that no shortcut
+exists.)
 
 ---
 
@@ -172,8 +214,9 @@ Start every session the same way: **`elite review`** (it tells you what to redo)
 | 6 | The AI product | `elite learn threat-modeling`, then `ai-01` + `ai-01-fix` (prompt injection, then defend) |
 | 7 | Consolidate | `elite review` — redo anything shaky or stale; finish clearing `engage` |
 
-You don't have to follow it — `engage` always offers a valid next move — but this hits
-every layer once and ends with the coach pulling back your weak spots.
+You don't have to follow it — `engage` always offers a valid next move. This week is a
+sample, not the whole course, and it ends with the coach pulling back your weak spots.
+`elite path` is the full campaign, in order.
 
 ---
 
@@ -198,78 +241,77 @@ understanding exactly how they fall.
 
 ## The commands
 
+`python3 elite.py -h` prints the full list. These are the ones you will use:
+
 | Command | What it does |
 |---------|--------------|
+| `elite status` (or `elite help`) | Home screen: your progress, your next move and what is available |
+| `elite doctor` | Check your setup: what is installed and what, if anything, to get |
+| `elite map` | The company: its zones, its systems and the missions on each |
 | `elite engage` | Assess the company as one connected job; recon reveals the surface, loot unlocks deeper targets |
 | `elite path` | A linear guided campaign through the missions, with your progress and a NEXT marker |
+| `elite scenario [id]` | Incident chains: break, detect and fix one incident end to end |
 | `elite review` | The coach: what to redo now — weak spots, barely-cleared missions, stale mastery |
-| `elite lab start/hint/submit <id>` | Set up a mission, unlock a hint, check your captured flag |
-| `elite run <tool> ...` | Run a real tool (nmap, sqlmap, john, gobuster) and get a taught debrief |
+| `elite lab list` / `elite lab status` | The missions, and your progress on each |
+| `elite lab start/hint/restart <id>` | Set up a mission, unlock a hint, or start it again clean |
+| `elite lab submit <id> <flag>` | Check your work: the flag you captured, or the word that starts the checker |
+| `elite run <tool> ...` | Run a real tool (nmap, sqlmap, john, gobuster, ffuf) and get a taught debrief |
 | `elite ask "<question>"` | In-tool tutor — answers any term from the course (and points at your indexed books) |
-| `elite study ask/summarize/lesson "<topic>"` | Cited answers from your *own* books via a free local model — see `LIBRARY.md` |
+| `elite study ask/summarize/lesson "<topic>"` | Cited answers from your *own* books via a free local model — see [LIBRARY.md](LIBRARY.md) |
+| `elite list` | Every learn module, with your best quiz score |
 | `elite learn / quiz <module>` | Read a module's lessons, or take a shuffled quiz (optional reinforcement) |
+| `elite tools [module]` | Every tool the course briefs you on, or one module's full briefings |
+| `elite cheat [tool]` | Instant command reference for a tool, such as grep, curl or nmap |
 | `elite drill commands / subnet / ports` | Reps: type the real command / subnet / port; spaced repetition |
+| `elite catalog` | Everything available to you: modules, missions, drills, books and docs |
 | `elite progress` / `elite reset` | Your scores / clear saved progress |
 
 ---
 
 ## The missions (the training ground)
 
-Each mission gives you a goal, a real artifact, and a flag to capture; a checker verifies it
-and hints unlock when you're stuck — the Hack The Box loop, offline and legal. Many come as
-**break + fix pairs**, and the checker runs *your* code.
+Each mission gives you a goal, a real artifact, and either a flag to capture or a checker
+that runs your work; hints unlock when you're stuck — the Hack The Box loop, offline and
+legal. Many break missions come with a **fix twin**: you break the thing, then you patch
+it, and the checker runs *your* patch.
 
-| Layer | Missions |
-|-------|----------|
-| 1 The Wire | `wire-01` hunt a brute-force · `build-01` write a port scanner · `build-02` write a packet parser |
-| 2 The Door | `crack-01` crack password hashes with John/Hashcat |
-| 3 The App | `app-01`/`-fix` SQL injection · `idor-01`/`-fix` broken access control |
-| 4 The Host | `bin-01` reverse a crackme · `priv-01` Linux privesc · `build-03` a debugger's breakpoint engine · `build-04` a fuzzer |
-| 5 The Domain | `domain-01`/`-fix` path to Domain Admin, then cut it |
-| 6 The Hunt | `hunt-01` correlate logs to find the breach and its C2 |
-| AI product | `ai-01`/`-fix` prompt-injection attack, then defend the RAG agent |
+The full list of missions lives in one place, [ATLAS.md](ATLAS.md), which is generated
+from the code: every mission by campaign order, by zone and by layer.
+[MISSIONS.md](MISSIONS.md) explains how a mission is designed and how to add one.
 
 In **`engage`** mode you recon the company, then attack in any order — and the loot you
 capture (a credential from the web app, local root on a workstation) unlocks the deeper
 targets (the Domain Controller, a licensed binary). It's one connected assessment built
 from the same missions.
 
-The **build-your-own-tools** missions (`build-01`…`build-04`) hand you a skeleton with
-`TODO`s; the checker runs your implementation against real targets (listeners it opens, a
-crackme it compiles, a vulnerable C program it fuzzes). You learn the tool by building it.
+The **build-your-own-tools** missions hand you a skeleton with `TODO`s; the checker runs
+your implementation against real cases (listeners it opens on localhost, packets it
+builds, a C program it compiles for your fuzzer). You learn the tool by building it.
 
 ---
 
 ## The learn modules (reference, not the main event)
 
 Lessons are there to *support* the missions — reach for them when a mission exposes a gap,
-or via `elite ask`.
-
-**Fundamentals:** `threat-modeling` · `shell-basics` (grep & curl) · `networking` ·
-`security` · `web-vulns` · `windows` · `windows-ps` · `linux`
-**Tool briefings:** `tools-recon` · `tools-web` · `tools-ad` · `tools-pw` · `tools-re`
+or via `elite ask`. `elite list` shows every module, and [ATLAS.md](ATLAS.md) has the
+generated table of modules, lessons, quizzes and tool briefings.
 
 ---
 
-## Study from your own books (local, private)
+## Study from your own books
 
-`study_books.py` runs entirely on your machine over books *you own* (PDF/TXT/MD in a
-`books/` folder). It finds the relevant pages locally, then — if you've configured an LLM —
-turns them into an answer, summary, or lesson, grounded in the text and citing `[book p.N]`.
+`elite study` answers questions from books *you own*, and every answer cites its page.
+With a free local model (Ollama) everything stays on your machine: no account and no
+bill. If you set `ANTHROPIC_API_KEY` instead, it uses that API, and the excerpts it sends
+leave your machine. With neither, it shows you the passages to read.
 
 ```bash
-pip install pypdf scikit-learn markitdown
-# put books you own in ./books/
-python3 study_books.py index                 # or: elite study index
 elite study ask "how does an access check work?"
 ```
 
-LLM backend is auto-detected: Anthropic API (`ANTHROPIC_API_KEY`) or local Ollama
-(`OLLAMA_MODEL=llama3.1`, free/offline). With neither, it shows you the passages to read.
-
-**New to this?** See **[`LIBRARY.md`](LIBRARY.md)** — a full walkthrough: what books to put on
-the shelf, how to run a **free AI model on your own laptop** (Ollama), how to index your
-library, and how to ask it questions from the terminal.
+[LIBRARY.md](LIBRARY.md) is the one guide to setting it up: what to put on the shelf, how
+to run a local model, how to index your books and how to ask. [TOOLS.md](TOOLS.md) explains
+the libraries behind it.
 
 > `books/` and its index are **gitignored and never committed.** This repo contains only
 > original content — never book text. Index anything you own for personal study; only
@@ -281,45 +323,35 @@ library, and how to ask it questions from the terminal.
 
 Content is **data**; the engine is **code**. Each module is a JSON file in `modules/`;
 each mission is a small Python module in `elitelab/missions/` with a `setup()` and either a
-flag `solution()` or a `checker()` that runs your work.
+flag `solution()` or a `checker()` that runs your work. One record per mission in the world
+registry places it in the company; the map, the campaign, the engagement board and the
+scenarios are all derived from that registry.
 
 ```
 elite.py                 # entry point
 elitelab/
   cli.py                 # commands
-  engage.py  path/review # the connected job, campaign, and coach
+  world.py               # the registry: zones, systems, one record per mission, scenarios
+  missions/              # one module per mission (setup + checker/solution)
+  engage.py  map.py  scenario.py  lab.py   # views derived from the registry
+  review.py              # the coach
   ask.py                 # the in-tool tutor
   runner.py              # `elite run` tool tutors
-  missions/              # one module per mission (setup + checker/solution)
   content.py ui.py ...   # module loading + lesson/quiz/drill UI
-modules/   *.json        # learn content (data)
-drills/commands.json     # the command drills (generated by _build_commands.py)
+modules/   *.json        # learn content (data); the _build_*.py scripts generate these
+drills/commands.json     # the command-drill bank (generated by _build_commands.py)
 pwsh/EliteLab/           # the PowerShell module: `elite`, Test-EliteSetup, the checkers
-tests/                   # pytest: proves every mission is solvable; tests/pwsh: Pester
+tests/                   # pytest: every mission is solvable; the docs match the code; tests/pwsh: Pester
+_build_atlas.py          # writes ATLAS.md and the block at the top of this page
 study_books.py           # local RAG over your own books
+live-lab/                # the optional running version of the company
 ```
 
-Extend it by dropping a JSON file in `modules/` (a new lesson/quiz) or a mission module in
-`elitelab/missions/` — the test suite will tell you if a mission isn't solvable.
-
-See `CURRICULUM.md` (the layer map), `SCENARIO.md` (the company story), `PRINCIPLES.md`
-(the design rules), `LIBRARY.md` (set up your own book shelf + a free local AI tutor),
-`TOOLS.md` (the libraries behind it, and what to reach for when), `SPEC.md` (the build
-brief), and `ATLAS.md` (live status / what's next).
-
----
-
-## What's next (honest)
-
-Done: all 7 layers have missions, break/fix pairs, build-your-own-tools, the AI capstone,
-spaced repetition, the review coach, packaging, and tests. Still thin:
-
-- **Realism** — an optional Docker/AD live lab for when you want real targets (kept optional
-  on purpose; the core stays zero-setup).
-- **Depth** — more missions per layer (a second web bug like XSS, a Door password-spray).
-- **More tool tutors** in `elite run` (BloodHound, gdb, Ghidra workflows).
-
-See `ATLAS.md` for the current completion map.
+Extend it by adding a learn module to `modules/` (a JSON file, written by hand or by a
+`_build_*.py` script) or a mission module to
+`elitelab/missions/` plus its registry record — the test suite will tell you if a mission
+isn't solvable, isn't registered, or isn't in the atlas. [MISSIONS.md](MISSIONS.md) walks
+through it.
 
 ---
 

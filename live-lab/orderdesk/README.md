@@ -1,5 +1,7 @@
 # OrderDesk — the Lakefront customer portal (training target)
 
+> **Doc status: reference** · answers: *How do I run the OrderDesk portal on my own machine?* · [doc map](../../README.md#doc-map)
+
 A small, **intentionally vulnerable** web app you host on your own machine. It's the public
 face of Lakefront Paper: a mill dashboard, a login, and order tracking — wired onto the same
 weaknesses the `millops` schema documents, so you practice finding and fixing them.
@@ -32,10 +34,11 @@ exploit it to understand it, then **write the fix.**
 
 ## How the CLI points you (the design)
 
-You never have to guess which tool to use. Each live mission's briefing names **the surface,
-the tool, and the target** at the moment you need it — then explains *why* that tool fits
-*that* hole. OrderDesk is the running target those missions aim you at. Build order and the
-mission list are in `../README.md`.
+This part is the design, and the live missions are not built yet. The plan: you never have
+to guess which tool to use. Each live mission's briefing names **the surface, the tool, and
+the target** at the moment you need it — then explains *why* that tool fits *that* hole.
+OrderDesk is the running target those missions aim you at. Build order and the mission
+list are in [the live-lab README](../README.md).
 
-The defensive habit this builds: for every hole you open, you close it. The repo keeps both
-the broken version (to learn on) and the fix (to verify you understood).
+The defensive habit this builds: for every hole you open, you close it. The repo holds the
+broken version to learn on; writing the fix is your part.

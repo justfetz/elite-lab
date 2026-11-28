@@ -1,5 +1,7 @@
 # LoadMaster — the mill's cutting-stock optimizer
 
+> **Doc status: reference** · answers: *What does LoadMaster solve, and how do I run it?* · [doc map](../../README.md#doc-map)
+
 The real optimization problem behind Lakefront Paper: the machine makes a **200″ parent
 reel**, and corrugator plants order rolls in specific widths. LoadMaster decides how to
 **slit** each reel so all orders are met with the fewest reels and the least **trim waste**.

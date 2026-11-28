@@ -1,5 +1,7 @@
 # Tools & libraries — what we used, and what each one is for
 
+> **Doc status: reference** · answers: *Which libraries and tools does the project use, and why those?* · [doc map](README.md#doc-map)
+
 An inventory of the libraries and tools behind this project — especially the
 **local AI study system** (`study_books.py` + `LIBRARY.md`) — organized by the problem
 each one solves, so you can answer "what would I reach for here, and why this over the

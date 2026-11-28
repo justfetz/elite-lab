@@ -1,8 +1,10 @@
 # live-lab — Lakefront Paper & Container Co., for real
 
+> **Doc status: current** · answers: *What is the optional live lab, and how much of it exists?* · [doc map](../README.md#doc-map)
+
 The offline missions teach the concepts with zero setup. **live-lab** is the optional
-graduation: a real, running version of the company (see `../SCENARIO.md`) that you host on
-your own machine and attack with real tools — then defend.
+graduation: a real, running version of the company (see [SCENARIO.md](../SCENARIO.md))
+that you host on your own machine and attack with real tools — then defend.
 
 It's a **"Northwind for security"**: a reproducible sample company whose database, data, and
 app ship here in the repo. Some objects are *intentionally* vulnerable — each tagged `[VULN]`
@@ -18,13 +20,21 @@ with the lesson — so you find the hole, exploit it, and write the fix.
 live-lab/
   db/
     schema.sql      ✅ the millops SQL Server schema + seed data + a vulnerable proc
-  orderdesk/        ⏳ the OrderDesk web portal (login, order tracking, the mill dashboard)
-  mill-agent/       ⏳ the on-site edge service (receives order releases over TCP/UDP)
+  orderdesk/        ✅ the OrderDesk web portal (login, order tracking, the mill dashboard)
+  loadmaster/       ✅ the cutting-stock optimizer behind the orders
+  mill-agent/       ⏳ the on-site edge service that receives order releases
   millie/           ⏳ the AI order agent (RAG + data agent over millops)
   docker-compose.yml ⏳ brings the whole company up with one command
 ```
 
-✅ = built · ⏳ = being built, in order.
+✅ = built · ⏳ = not built yet.
+
+The built parts, each with its own page:
+
+- [db/schema.sql](db/schema.sql), the database. Step 1 below loads it.
+- [orderdesk/](orderdesk/README.md), the portal. It runs today on its own SQLite file;
+  it does not talk to the SQL Server database yet.
+- [loadmaster/](loadmaster/README.md), the optimizer.
 
 ## Step 1 — the database (available now)
 
@@ -41,11 +51,14 @@ docker exec -i millops-sql /opt/mssql-tools/bin/sqlcmd \
 ```
 
 That creates the `millops` database. Now open `db/schema.sql` and read it as the security
-team would: **find every `[VULN]` tag and name the lesson.** There are four to start —
-unsalted hashes, an injectable tracking proc, an over-privileged app login, and a weak admin
-password. The upcoming OrderDesk app wires a UI onto exactly these holes.
+team would: **find every `[VULN]` tag and name the lesson.** You are looking for unsalted
+hashes, an injectable tracking proc and an over-privileged app login, plus a weak admin
+password in the seed data. The OrderDesk app wires a UI onto the same kinds of hole.
 
 ## The planned missions (against your own running company)
+
+**Not built.** None of these missions exists yet, and the CLI has no `live-*` mission.
+The offline missions that do exist are listed in [ATLAS.md](../ATLAS.md).
 
 | Mission | Surface | You do | Then you fix |
 |---|---|---|---|
@@ -56,5 +69,5 @@ password. The upcoming OrderDesk app wires a UI onto exactly these holes.
 | `live-millie` | the AI agent | prompt-inject Millie into leaking another plant's data | scope the agent + least-privilege DB login |
 | `live-hunt` | the logs | spot the SQLi, the phish, and the Tor exit node | — (detection) |
 
-Build order follows the table. Next up: the `db/` is in; the OrderDesk portal (with the
-mill dashboard as its front page) comes next.
+Build order follows the table. The database, the portal and the optimizer are in. What
+comes next is in [SPEC.md](../SPEC.md#build-order).
